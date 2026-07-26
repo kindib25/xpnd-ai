@@ -41,18 +41,46 @@ export function AIExtractionPreview({
   }
 
   return (
-    <div className="w-full space-y-4 md:space-y-6 max-w-2xl mx-auto">
+    <div className="w-full space-y-4 md:space-y-6 max-w-2xl mx-auto mt-3">
       {/* Header */}
-      <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-        <button
-          onClick={onEdit}
-          className="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="min-w-0">
-          <h2 className="text-lg md:text-xl font-semibold">AI Extraction Preview</h2>
-          <p className="text-xs md:text-sm text-muted-foreground">Review before saving</p>
+      <div className="mb-4 md:mb-6">
+        {/* Mobile Header */}
+        <div className="md:hidden">
+          <div className="relative flex items-center justify-center h-10">
+            <button
+              onClick={onEdit}
+              className="absolute left-0 p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-lg font-semibold">
+              AI Extraction Preview
+            </h2>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            Review before saving
+          </p>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:flex items-center gap-3">
+          <button
+            onClick={onEdit}
+            className="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold">
+              AI Extraction Preview
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review before saving
+            </p>
+          </div>
         </div>
       </div>
 
@@ -62,7 +90,7 @@ export function AIExtractionPreview({
           {/* Amount */}
           <div className="flex items-start gap-3 md:gap-4">
             <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-primary to-primary/60 rounded opacity-20" />
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs md:text-sm text-muted-foreground font-medium">Amount</p>
@@ -75,7 +103,7 @@ export function AIExtractionPreview({
           {/* Category */}
           <div className="flex items-start gap-3 md:gap-4">
             <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-accent to-accent/60 rounded opacity-20" />
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs md:text-sm text-muted-foreground font-medium">Category</p>
@@ -88,7 +116,7 @@ export function AIExtractionPreview({
           {/* Description */}
           <div className="flex items-start gap-3 md:gap-4">
             <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-blue-500 to-blue-500/60 rounded opacity-20" />
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs md:text-sm text-muted-foreground font-medium">Description</p>
@@ -101,7 +129,7 @@ export function AIExtractionPreview({
           {/* Merchant */}
           <div className="flex items-start gap-3 md:gap-4">
             <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-green-500 to-green-500/60 rounded opacity-20" />
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs md:text-sm text-muted-foreground font-medium">Merchant</p>
@@ -114,7 +142,7 @@ export function AIExtractionPreview({
           {/* Date */}
           <div className="flex items-start gap-3 md:gap-4">
             <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-orange-500 to-orange-500/60 rounded opacity-20" />
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs md:text-sm text-muted-foreground font-medium">Date</p>

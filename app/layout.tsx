@@ -1,6 +1,17 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { Geist, Geist_Mono } from "next/font/google";
+
+export const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+});
+
+export const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+});
 
 export const metadata: Metadata = {
   title: 'Xpnd - Smart Expense Tracking',
@@ -43,7 +54,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-background">
-      <body className="antialiased bg-background text-foreground">
+      <body className={`${geist.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

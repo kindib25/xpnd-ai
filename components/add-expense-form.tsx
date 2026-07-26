@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Send, AlertCircle, ArrowRight } from 'lucide-react'
 import { AIExtractionPreview } from './ai-extraction-preview'
+
+import AILoader from '@/components/ui/ai-loader'
+import AILoaderBackground from './ui/ai-loader-background'
+
 
 const EXPENSE_CATEGORIES = [
   'Food & Dining',
@@ -35,6 +39,10 @@ const EXAMPLE_EXPENSES = [
   'Spent 25 on jeep fare',
   'Lunch at Jollibee 200',
   'Movie ticket 250',
+  'Paid electricity bill 3000',
+  'Taxi ride to airport 500',
+  'Coffee at Starbucks 150',
+  'Bought a new book for 400',
 ]
 
 interface ParsedExpense {
@@ -45,12 +53,26 @@ interface ParsedExpense {
   date: string
 }
 
-export function AddExpenseForm() {
+interface AddExpenseFormProps {
+  onLoadingChange?: (loading: boolean) => void
+  onPreviewChange?: (preview: boolean) => void
+}
+
+export function AddExpenseForm({
+  onLoadingChange,
+  onPreviewChange,
+}: AddExpenseFormProps) {
   const [step, setStep] = useState<'input' | 'preview' | 'manual'>('input')
   const [input, setInput] = useState('')
   const [isParsingNLP, setIsParsingNLP] = useState(false)
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null)
   const [error, setError] = useState('')
+
+
+  useEffect(() => {
+    onPreviewChange?.(step === 'preview')
+  }, [step, onPreviewChange])
+
 
   // Manual form state
   const [amount, setAmount] = useState('')
@@ -66,12 +88,15 @@ export function AddExpenseForm() {
     if (!text.trim()) return
 
     setIsParsingNLP(true)
+    onLoadingChange?.(true)
     setError('')
 
     try {
       const response = await fetch('/api/parse-expense', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ text }),
       })
 
@@ -81,18 +106,25 @@ export function AddExpenseForm() {
       }
 
       const data = await response.json()
+
       setParsedExpense(data.expense)
       setAmount(data.expense.amount.toString())
       setCategory(data.expense.category || '')
       setDescription(data.expense.description || '')
       setMerchant(data.expense.merchant || '')
-      // Store ISO date string from API response
       setDate(data.expense.date || new Date().toISOString())
+
       setStep('preview')
+      onPreviewChange?.(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to parse expense')
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to parse expense'
+      )
     } finally {
       setIsParsingNLP(false)
+      onLoadingChange?.(false)
     }
   }
 
@@ -101,14 +133,8 @@ export function AddExpenseForm() {
     await handleParseExpense(input)
   }
 
-  const handleExampleClick = async (example: string) => {
-    setInput(example)
-    await handleParseExpense(example)
-  }
-
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     if (!amount || !category || !date) {
       setError('Please fill in all required fields')
       return
@@ -145,6 +171,7 @@ export function AddExpenseForm() {
       setMerchant('')
       setDate(new Date().toISOString())
       setStep('input')
+      onPreviewChange?.(false)
 
       router.push('/dashboard')
     } catch (err) {
@@ -156,12 +183,27 @@ export function AddExpenseForm() {
     }
   }
 
+  if (isParsingNLP) {
+    return (
+      <>
+        <AILoaderBackground />
+
+        <div className="fixed inset-0 z-10 flex items-center justify-center">
+          <AILoader />
+        </div>
+      </>
+    )
+  }
+
   // Show preview step
   if (step === 'preview' && parsedExpense) {
     return (
       <AIExtractionPreview
         expense={parsedExpense}
-        onEdit={() => setStep('input')}
+        onEdit={() => {
+          setStep('input')
+          onPreviewChange?.(false)
+        }}
         onConfirm={handleSubmit}
         isLoading={isSaving}
       />
@@ -178,7 +220,7 @@ export function AddExpenseForm() {
             <div>
               <label className="block text-sm md:text-base font-medium mb-2 md:mb-3">What did you spend on?</label>
               <textarea
-                placeholder="Spent 150 on Coffee at Starbucks |"
+                placeholder="Describe your expense..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isParsingNLP}
@@ -193,7 +235,7 @@ export function AddExpenseForm() {
                 type="submit"
                 disabled={isParsingNLP || !input.trim()}
                 size="lg"
-                className="rounded-full w-12 h-12 p-0 flex items-center justify-center"
+                className="rounded-full w-12 h-12 p-0 flex items-center justify-center cursor-pointer"
               >
                 {isParsingNLP ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -209,16 +251,14 @@ export function AddExpenseForm() {
       {/* Examples Section */}
       <div>
         <p className="text-xs md:text-sm text-muted-foreground font-medium mb-2 md:mb-3">Examples</p>
-        <div className="grid grid-cols-1 gap-2">
-          {EXAMPLE_EXPENSES.map((example, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleExampleClick(example)}
-              disabled={isParsingNLP}
-              className="p-2 md:p-3 text-xs md:text-sm bg-muted hover:bg-muted/80 disabled:opacity-50 rounded-lg text-left transition-colors border border-transparent hover:border-primary/20"
+        <div className="grid grid-cols-2 gap-2">
+          {EXAMPLE_EXPENSES.map((example) => (
+            <div
+              key={example}
+              className="p-2 md:p-3 text-xs md:text-sm bg-muted rounded-2xl text-left border border-transparent"
             >
               {example}
-            </button>
+            </div>
           ))}
         </div>
       </div>

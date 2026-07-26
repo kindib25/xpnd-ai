@@ -3,10 +3,11 @@
 import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, TrendingUp, Target, DollarSign } from 'lucide-react'
+import { Plus, TrendingUp, Target, DollarSign, UserRound, Bell } from 'lucide-react'
 import Link from 'next/link'
 import { ExpenseChart } from './expense-chart'
 import { BudgetOverview } from './budget-overview'
+import { RecentActivity } from './recent-activity'
 
 interface DashboardOverviewProps {
   profile: any
@@ -30,29 +31,48 @@ function DashboardOverviewComponent({
     <div className="w-full p-4 md:p-8 max-w-7xl mx-auto">
       {/* Header - Mobile optimized */}
       <div className="mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4 md:hidden">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">👤</div>
-          <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">
-            ⚙️
-          </Link>
+
+        {/* Mobile Only */}
+        <div className="flex items-center justify-between mb-2 md:hidden">
+          {/* Profile */}
+          <div className="w-11 h-11 rounded-full bg-gray-500 flex items-center justify-center">
+            <UserRound />
+          </div>
+
+          {/* Logo */}
+          <div>
+            <img
+              src="/xpnd-ai-logo-dark.svg"
+              alt="Logo"
+              className="w-60 h-15 object-contain"
+            />
+          </div>
+
+          {/* Notification */}
+          <button className="w-11 h-11 rounded-full flex items-center justify-center">
+            <Bell className="text-white" />
+          </button>
         </div>
+
         <h1 className="text-xl md:text-3xl font-bold">Good day, User!</h1>
-        <p className="text-xs md:text-sm text-muted-foreground mt-1">Track smarter with AI-powered insights.</p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">
+          Track smarter with AI-powered insights.
+        </p>
       </div>
 
       {/* This Month Overview - Featured Card */}
-      <Card className="mb-6 md:mb-8 border-primary/10 bg-gradient-to-br from-background to-muted/50">
+      <Card className="mb-6 md:mb-8 border-primary/10 bg-gradient-to-br from-[#4242fe] to-[#8368fd]">
         <CardHeader className="pb-3 md:pb-4">
-          <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">This Month Overview</CardTitle>
+          <CardTitle className="text-xs md:text-sm font-medium text-white/70">This Month Overview</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 md:space-y-6">
           <div className="grid grid-cols-2 gap-4 md:gap-8">
             <div>
-              <p className="text-xs text-muted-foreground font-medium mb-1 md:mb-2">Total Spent</p>
+              <p className="text-xs text-white/70 font-medium mb-1 md:mb-2">Total Spent</p>
               <p className="text-2xl md:text-3xl font-bold">₱{totalExpenses.toFixed(0)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-muted-foreground font-medium mb-1 md:mb-2">Budget</p>
+              <p className="text-xs text-white/70 font-medium mb-1 md:mb-2">Budget</p>
               <p className="text-2xl md:text-3xl font-bold">₱{totalBudget.toFixed(0)}</p>
             </div>
           </div>
@@ -60,10 +80,10 @@ function DashboardOverviewComponent({
           {/* Budget Progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs md:text-sm">
-              <p className="text-muted-foreground">Budget Usage</p>
-              <p className="font-medium">{totalBudget > 0 ? Math.round((totalExpenses / totalBudget) * 100) : 0}% used</p>
+              <p className="text-white/70">Budget Usage</p>
+
             </div>
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-primary to-primary/80 h-full transition-all"
                 style={{
@@ -71,7 +91,10 @@ function DashboardOverviewComponent({
                 }}
               />
             </div>
-            <p className="text-xs text-muted-foreground">₱{Math.max(totalBudget - totalExpenses, 0).toFixed(0)} left</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs md:text-sm text-white/70">₱{Math.max(totalBudget - totalExpenses, 0).toFixed(0)} left</p>
+              <p className="text-xs md:text-sm font-medium">{totalBudget > 0 ? Math.round((totalExpenses / totalBudget) * 100) : 0}% used</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -100,7 +123,7 @@ function DashboardOverviewComponent({
         <CardContent className="pt-4 md:pt-6">
           <div className="flex items-start gap-3 md:gap-4">
             <div className="p-2 bg-accent/10 rounded-lg flex-shrink-0">
-              <span className="text-lg md:text-xl">✨</span>
+              <TrendingUp className="w-6 h-6 md:w-7 md:h-7 text-accent" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-sm md:text-base mb-1">AI Insight</h3>
@@ -116,31 +139,27 @@ function DashboardOverviewComponent({
       </Card>
 
       {/* Add Expense Button */}
+      <div className="flex items-center justify-between mb-2 md:mb-3">
+        <p className="text-base md:text-lg">Add Expense</p>
+      </div>
       <div className="mb-6 md:mb-8">
         <Link href="/dashboard/add-expense" className="block">
-          <Card className="border-2 border-dashed border-primary/30 hover:border-primary transition-all cursor-pointer bg-muted/30 hover:bg-muted/50">
+          <Card className="transition-all cursor-pointer bg-primary/90 hover:bg-primary">
             <CardContent className="py-6 md:py-8 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2 md:mb-3">
-                  <Plus className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                </div>
-                <p className="font-semibold text-sm md:text-base">Add Expense</p>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1">Type naturally, let AI handle the rest</p>
+                  <Plus className="w-10 h-10 md:w-11 md:h-11 text-background" />
               </div>
             </CardContent>
           </Card>
         </Link>
       </div>
 
-      {/* Charts and Details - Only on desktop */}
-      <div className="hidden lg:grid lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2">
-          <ExpenseChart expenses={expenses} />
-        </div>
+      {/* Recent Activity and Budget Overview - Mobile and Desktop */}
+
         <div>
-          <BudgetOverview budgets={budgets} expenses={expenses} />
-        </div>
+          <RecentActivity expenses={expenses} />
       </div>
+      
     </div>
   )
 }

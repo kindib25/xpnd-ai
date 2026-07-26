@@ -19,15 +19,15 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-col min-h-screen bg-background md:flex-row">
       {/* Desktop Sidebar - Hidden on mobile */}
-      <div className="hidden md:block md:w-64 md:border-r md:border-border md:bg-card">
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-border bg-card">
         <Navigation variant="sidebar" />
-      </div>
-      
+      </aside>
+
       {/* Main Content */}
-      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+      <main className="flex-1 md:ml-64 overflow-y-auto pb-20 md:pb-0">
         {children}
       </main>
-      
+
       {/* Mobile Bottom Navigation - Hidden on desktop */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden border-t border-border bg-card">
         <Navigation variant="mobile" />

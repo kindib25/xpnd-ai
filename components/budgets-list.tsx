@@ -180,7 +180,7 @@ export function BudgetsList({ budgets, expenses, monthYear }: BudgetsListProps) 
                       <div>
                         <h3 className="font-semibold">{budget.category}</h3>
                         <p className="text-sm text-muted-foreground">
-                          ${progress.spent.toFixed(2)} / ${progress.limit.toFixed(2)}
+                          ₱{progress.spent.toFixed(2)} / ₱{progress.limit.toFixed(2)}
                         </p>
                       </div>
                       <Button
