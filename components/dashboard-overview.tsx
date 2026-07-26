@@ -105,7 +105,7 @@ function DashboardOverviewComponent({
           { label: 'Today', value: '₱320' },
           { label: 'This Week', value: '₱1,250' },
           { label: 'Pending', value: '2' },
-          { label: 'Top Category', value: '₱1,2od' },
+          { label: 'Top Category', value: 'Food' },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="pb-1 md:pb-2">

@@ -16,7 +16,7 @@ export default async function TransactionsPage() {
     .order('date', { ascending: false })
 
   return (
-    <div className="w-full p-4 md:p-8">
+    <div className="w-full p-10 md:p-15">
       <div className="mb-6 md:mb-8">
         <h1 className="text-xl md:text-3xl font-bold">Transactions</h1>
         <p className="text-xs md:text-sm text-muted-foreground mt-1">Review and manage your expenses</p>

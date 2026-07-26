@@ -26,7 +26,7 @@ export default async function BudgetsPage() {
     .order('date', { ascending: false })
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-8 md:p-15">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Budgets</h1>
         <p className="text-muted-foreground mt-1">Manage your monthly budgets</p>

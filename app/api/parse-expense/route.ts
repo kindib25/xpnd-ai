@@ -172,14 +172,14 @@ function handleFallbackParsing(text: string) {
   if (lowerText.match(/(hotel|trip|travel|vacation|airbnb|resort|nyc|london|paris|hawaii|flight.*to|plane|flight)/i))
     category = 'Travel'
   // Shopping (check before Transportation/Gas since "supplies" is vague)
-  else if (lowerText.match(/(shop|buy|store|mall|purchase|clothing|clothes|amazon|target|walmart|supplies|retail)/i))
+  else if (lowerText.match(/(grocery|shop|buy|store|mall|purchase|clothing|clothes|amazon|target|walmart|supplies|retail)/i))
     category = 'Shopping'
   // Food & Dining
-  else if (lowerText.match(/(grocery|food|restaurant|lunch|dinner|breakfast|eat|meal|coffee|cafe)/))
+  else if (lowerText.match(/(food|restaurant|lunch|dinner|breakfast|eat|meal|coffee|cafe|snack)/))
     category = 'Food & Dining'
   // Transportation
   else if (
-    lowerText.match(/(gas|uber|taxi|bus|train|parking|fuel|transport|car|bike)/i)
+    lowerText.match(/(gas|uber|taxi|bus|train|parking|fuel|transport|car|bike|tricycle|sidecar|jeep)/i)
   )
     category = 'Transportation'
   // Entertainment

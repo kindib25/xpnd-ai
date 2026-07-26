@@ -101,7 +101,7 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
                 >
                   {/* Icon */}
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 text-base md:text-lg">
-                    📷
+                    {/* Icon Here*/}
                   </div>
 
                   {/* Content */}
