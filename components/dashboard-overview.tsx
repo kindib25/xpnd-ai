@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, TrendingUp, Target, DollarSign, UserRound, Bell } from 'lucide-react'
+import { Plus, TrendingUp, Target, DollarSign, UserRound, Bell, Calendar, Calendars, Database, Layers } from 'lucide-react'
 import Link from 'next/link'
 import { ExpenseChart } from './expense-chart'
 import { BudgetOverview } from './budget-overview'
@@ -26,6 +26,46 @@ function DashboardOverviewComponent({
   const totalBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.limit_amount || 0), 0)
   const totalGoalsAmount = goals.reduce((sum, goal) => sum + parseFloat(goal.current_amount || 0), 0)
   const totalGoalsTarget = goals.reduce((sum, goal) => sum + parseFloat(goal.target_amount || 0), 0)
+
+  // Calculate today's spending
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todaySpending = expenses
+    .filter((exp) => {
+      const expDate = new Date(exp.date)
+      expDate.setHours(0, 0, 0, 0)
+      return expDate.getTime() === today.getTime()
+    })
+    .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
+
+  // Calculate this week's spending (Sunday to Saturday)
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - today.getDay())
+  weekStart.setHours(0, 0, 0, 0)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 7)
+  weekEnd.setHours(0, 0, 0, 0)
+
+  const weekSpending = expenses
+    .filter((exp) => {
+      const expDate = new Date(exp.date)
+      return expDate >= weekStart && expDate < weekEnd
+    })
+    .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
+
+  // Count total transactions
+  const transactionCount = expenses.length
+
+  // Find top category
+  const categoryTotals: Record<string, number> = {}
+  expenses.forEach((exp) => {
+    const category = exp.category || 'Uncategorized'
+    categoryTotals[category] = (categoryTotals[category] || 0) + parseFloat(exp.amount || 0)
+  })
+  const topCategory = Object.entries(categoryTotals).reduce(
+    (top, [category, amount]) => (amount > top.amount ? { category, amount } : top),
+    { category: 'N/A', amount: 0 }
+  )
 
   return (
     <div className="w-full p-4 md:p-8 max-w-7xl mx-auto">
@@ -102,14 +142,15 @@ function DashboardOverviewComponent({
       {/* Quick Stats Cards - 2 columns on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-6 md:mb-8">
         {[
-          { label: 'Today', value: '₱320' },
-          { label: 'This Week', value: '₱1,250' },
-          { label: 'Pending', value: '2' },
-          { label: 'Top Category', value: 'Food' },
+          { label: 'Today', value: `₱${todaySpending.toFixed(0)}`, icon: Calendar },
+          { label: 'This Week', value: `₱${weekSpending.toFixed(0)}`, icon: Calendars },
+          { label: 'Transactions', value: transactionCount.toString(), icon: Database },
+          { label: 'Top Category', value: topCategory.category, icon: Layers },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">{stat.label}</CardTitle>
+              <stat.icon className="w-4 h-4 md:w-5 md:h-5" />
+              <CardTitle className="text-xs font-medium text-white/70">{stat.label}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xl md:text-2xl font-bold">{stat.value}</p>
@@ -147,7 +188,7 @@ function DashboardOverviewComponent({
           <Card className="transition-all cursor-pointer bg-primary/90 hover:bg-primary">
             <CardContent className="py-6 md:py-8 flex items-center justify-center">
               <div className="text-center">
-                  <Plus className="w-10 h-10 md:w-11 md:h-11 text-background" />
+                <Plus className="w-10 h-10 md:w-11 md:h-11 text-background" />
               </div>
             </CardContent>
           </Card>
@@ -156,10 +197,10 @@ function DashboardOverviewComponent({
 
       {/* Recent Activity and Budget Overview - Mobile and Desktop */}
 
-        <div>
-          <RecentActivity expenses={expenses} />
+      <div>
+        <RecentActivity expenses={expenses} />
       </div>
-      
+
     </div>
   )
 }
