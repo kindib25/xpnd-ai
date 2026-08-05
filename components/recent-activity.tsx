@@ -13,20 +13,26 @@ function RecentActivityComponent({ expenses }: RecentActivityProps) {
   const recentExpenses = expenses.slice(0, 5)
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+
     const today = new Date()
     const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setDate(today.getDate() - 1)
 
-    const isToday = date.toDateString() === today.toDateString()
-    const isYesterday = date.toDateString() === yesterday.toDateString()
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today'
+    }
 
-    const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday'
+    }
 
-    if (isToday) return `Today – ${time}`
-    if (isYesterday) return `Yesterday – ${time}`
-
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
   }
 
   return (

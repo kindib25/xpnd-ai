@@ -26,22 +26,25 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Received expense text:', text.substring(0, 100))
 
-    // Get current date/time for context
+    // Get current date for context
     const now = new Date()
-    const currentDate = now.toISOString().split('T')[0] // YYYY-MM-DD
-    const currentTime = now.toTimeString().split(' ')[0] // HH:mm:ss
+
+
+    const currentDate = now.toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Manila',
+    }) // 2026-08-05
 
     // Create a prompt for Gemma 3:4B to parse the expense
     const prompt = `You are an expert at parsing expense information from natural language text.
 
-IMPORTANT: Today's date is ${currentDate} and the current time is ${currentTime}. Use this to interpret relative dates like "yesterday", "this morning", "last week", etc.
+IMPORTANT: Today's date is ${currentDate}. Use this to interpret relative dates like "yesterday", "this morning", "last week", etc. If date not mentioned, use today's date ${currentDate}.
 
 The user has described an expense. Extract and return ONLY a JSON object (no markdown, no code blocks) with these exact fields:
 - amount: (number, extract the numeric amount)
 - category: (string, must be one of: ${EXPENSE_CATEGORIES.join(', ')})
 - description: (string, one short sentence describing what was purchased)
 - merchant: (string, the store/business name if mentioned)
-- date: (string, in YYYY-MM-DD HH:mm format, interpret relative dates based on today being ${currentDate})
+- date: (string, in YYYY-MM-DD format, interpret relative dates based on today being ${currentDate}).
 
 User expense description: "${text}"
 
@@ -142,11 +145,11 @@ function validateDate(value: any): string {
     const date = new Date(value)
     if (!isNaN(date.getTime())) {
       // Return ISO string for consistent storage
-      return date.toISOString()
+      return date.toISOString().split('T')[0]
     }
   }
   // Default to current date/time in ISO format
-  return new Date().toISOString()
+  return new Date().toISOString().split('T')[0]
 }
 
 function handleFallbackParsing(text: string) {
@@ -203,7 +206,7 @@ function handleFallbackParsing(text: string) {
     category,
     description: text.substring(0, 255),
     merchant: '',
-    date: new Date().toISOString(),
+    date: new Date().toISOString().split('T')[0],
   }
 
   return NextResponse.json({ expense })
