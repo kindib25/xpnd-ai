@@ -16,8 +16,8 @@ export function BudgetOverview({ budgets, expenses }: BudgetOverviewProps) {
 
     return {
       spent: categoryExpenses,
-      limit: parseFloat(budget.limit_amount || 0),
-      percentage: Math.min(100, (categoryExpenses / parseFloat(budget.limit_amount || 1)) * 100),
+      limit: parseFloat(budget.budget_amount || 0),
+      percentage: Math.min(100, (categoryExpenses / parseFloat(budget.budget_amount || 1)) * 100),
     }
   }
 

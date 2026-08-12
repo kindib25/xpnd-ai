@@ -52,8 +52,8 @@ export function BudgetsList({ budgets, expenses, monthYear }: BudgetsListProps) 
 
     return {
       spent: categoryExpenses,
-      limit: parseFloat(budget.limit_amount || 0),
-      percentage: Math.min(100, (categoryExpenses / parseFloat(budget.limit_amount || 1)) * 100),
+      limit: parseFloat(budget.budget_amount || 0),
+      percentage: Math.min(100, (categoryExpenses / parseFloat(budget.budget_amount || 1)) * 100),
     }
   }
 
@@ -73,7 +73,7 @@ export function BudgetsList({ budgets, expenses, monthYear }: BudgetsListProps) 
       const { error } = await supabase.from('budgets').insert({
         user_id: user.id,
         category: newCategory,
-        limit_amount: parseFloat(newAmount),
+        budget_amount: parseFloat(newAmount),
         month_year: monthYear,
       })
 

@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, TrendingUp, Target, DollarSign, UserRound, Bell, Calendar, Calendars, Database, Layers } from 'lucide-react'
+import { Plus, TrendingUp, Target, DollarSign, UserRound, Bell, Calendar, Calendars, Database, Layers, Icon } from 'lucide-react'
 import Link from 'next/link'
 import { ExpenseChart } from './expense-chart'
 import { BudgetOverview } from './budget-overview'
@@ -23,7 +23,7 @@ function DashboardOverviewComponent({
   goals,
 }: DashboardOverviewProps) {
   const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
-  const totalBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.limit_amount || 0), 0)
+  const totalBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.budget_amount || 0), 0)
   const totalGoalsAmount = goals.reduce((sum, goal) => sum + parseFloat(goal.current_amount || 0), 0)
   const totalGoalsTarget = goals.reduce((sum, goal) => sum + parseFloat(goal.target_amount || 0), 0)
 
@@ -160,23 +160,39 @@ function DashboardOverviewComponent({
       </div>
 
       {/* AI Insight Card */}
-      <Card className="mb-6 md:mb-8 bg-muted/40 border-muted">
-        <CardContent className="pt-4 md:pt-6">
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="p-2 bg-accent/10 rounded-lg flex-shrink-0">
-              <TrendingUp className="w-6 h-6 md:w-7 md:h-7 text-accent" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm md:text-base mb-1">AI Insight</h3>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                You spent 25% more on Food compared to last month.
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary text-xs md:text-sm flex-shrink-0">
-              View
+      <Card className="mb-6 overflow-hidden rounded-2xl border-0">
+        <div className="flex h-[130px]">
+
+          <div className="flex w-[65%] flex-col justify-center bg-card px-5 py-4">
+            <h3 className="text-lg font-bold text-foreground">
+              AI Insight
+            </h3>
+
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              You spent{" "}
+              <span className="font-semibold text-foreground">
+                25% more on Food
+              </span>{" "}
+              compared to last month.
+            </p>
+
+            <Button className="mt-4 h-9 w-fit rounded-md">
+              View Details
             </Button>
           </div>
-        </CardContent>
+
+          <div className="flex w-[35%] items-center justify-center bg-muted">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-background/50">
+              <Icon
+                name="image"
+                size="xl"
+                color="currentColor"
+                iconNode={[]}
+              />
+            </div>
+          </div>
+
+        </div>
       </Card>
 
       {/* Add Expense Button */}

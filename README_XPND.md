@@ -191,7 +191,7 @@ xpnd/
 
 **budgets**
 - id, user_id, category
-- limit_amount, current_amount
+- budget_amount, current_amount
 - month_year (e.g., "2024-07")
 - created_at, updated_at
 
