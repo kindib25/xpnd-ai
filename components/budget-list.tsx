@@ -34,16 +34,7 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
 
   const allocated = useMemo(() => budgets.reduce((sum, budget) => sum + Number(budget.budget_amount || 0), 0), [budgets])
   const monthlyLimit = Number(monthlyBudget?.limit_amount || 0)
-  const monthExpenses = useMemo(
-    () => expenses.filter((expense) => new Date(expense.date).toISOString().substring(0, 7) === monthYear),
-    [expenses, monthYear],
-  )
-  const totalSpent = useMemo(
-    () => monthExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
-    [monthExpenses],
-  )
-  const remaining = monthlyLimit - totalSpent
-  const monthlyPercentage = monthlyLimit > 0 ? Math.min(100, (totalSpent / monthlyLimit) * 100) : 0
+  const remaining = monthlyLimit - allocated
 
   const getBudgetProgress = (budget: any) => {
     const spent = expenses
@@ -115,68 +106,53 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
 
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-xl">This Month Overview</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">{monthYear}</p>
+            <CardTitle>Monthly Budget</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{monthYear} · {money(Math.max(remaining, 0))} unallocated</p>
           </div>
-          <Button size="sm" variant="ghost" onClick={() => setEditingMonthly((value) => !value)} aria-label="Edit monthly budget">
-            <Pencil className="w-4 h-4" />
+          <Button size="sm" variant="outline" onClick={() => setEditingMonthly((value) => !value)}>
+            <Pencil className="w-4 h-4 mr-2" /> {monthlyBudget ? 'Edit' : 'Set budget'}
           </Button>
         </CardHeader>
         <CardContent>
           {editingMonthly && (
-            <form onSubmit={saveMonthlyBudget} className="mb-5 rounded-xl bg-muted/60 p-4 space-y-3">
-              <Label htmlFor="monthly-amount">Monthly budget limit</Label>
+            <form onSubmit={saveMonthlyBudget} className="mb-5 p-4 bg-muted rounded-lg space-y-3">
+              <Label htmlFor="monthly-amount">Monthly limit</Label>
               <div className="flex gap-2">
                 <Input id="monthly-amount" type="number" min="0.01" step="0.01" value={monthlyAmount} onChange={(event) => setMonthlyAmount(event.target.value)} disabled={isLoading} placeholder="10000" />
                 <Button type="submit" disabled={isLoading}>Save</Button>
               </div>
             </form>
           )}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Spent</p>
-              <p className="text-2xl font-bold">{money(totalSpent)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Budget</p>
-              <p className="text-2xl font-bold">{money(monthlyLimit)}</p>
-            </div>
+          <div className="flex justify-between text-sm">
+            <span>Allocated to categories</span>
+            <span className={remaining < 0 ? 'text-destructive font-medium' : 'font-medium'}>{money(allocated)} / {money(monthlyLimit)}</span>
           </div>
-          <Progress value={monthlyPercentage} className="mt-5 h-3" />
-          <div className="mt-3 flex justify-between text-sm text-muted-foreground">
-            <span>{Math.round(monthlyPercentage)}% used</span>
-            <span className={remaining < 0 ? 'text-destructive font-medium' : ''}>{money(Math.max(remaining, 0))} left</span>
-          </div>
+          <Progress value={monthlyLimit > 0 ? Math.min(100, (allocated / monthlyLimit) * 100) : 0} className="mt-3" />
           {error && <p className="text-sm text-destructive mt-3" role="alert">{error}</p>}
         </CardContent>
       </Card>
 
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">Category Budgets</h2>
-            <p className="text-sm text-muted-foreground">{monthYear}</p>
-          </div>
-          {!isAdding && <Button size="sm" variant="outline" onClick={() => setIsAdding(true)}><Plus className="w-4 h-4 mr-2" />Add category</Button>}
-        </div>
-        <Card className="border-0 shadow-none bg-transparent">
-        <CardContent className="p-0">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Category Budgets · {monthYear}</CardTitle>
+          {!isAdding && <Button size="sm" onClick={() => setIsAdding(true)}><Plus className="w-4 h-4 mr-2" />Add Budget</Button>}
+        </CardHeader>
+        <CardContent>
           {isAdding && (
             <form onSubmit={handleAddBudget} className="mb-6 p-4 bg-muted rounded-lg space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label htmlFor="category">Category</Label><Select value={newCategory} onValueChange={(value) => setNewCategory(value || '')} disabled={isLoading}><SelectTrigger id="category" className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{CATEGORIES.filter((category) => !budgets.some((budget) => budget.category === category)).map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent></Select></div>
+                <div><Label htmlFor="category">Category</Label><Select value={newCategory} onValueChange={(value) => setNewCategory(value ?? '')} disabled={isLoading}><SelectTrigger id="category" className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{CATEGORIES.filter((category) => !budgets.some((budget) => budget.category === category)).map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent></Select></div>
                 <div><Label htmlFor="amount">Amount</Label><Input id="amount" type="number" min="0.01" step="0.01" placeholder="100.00" value={newAmount} onChange={(event) => setNewAmount(event.target.value)} disabled={isLoading} className="mt-1" /></div>
               </div>
               <div className="flex gap-2"><Button type="submit" disabled={isLoading || !newCategory || !newAmount}>Add</Button><Button type="button" variant="outline" onClick={() => setIsAdding(false)} disabled={isLoading}>Cancel</Button></div>
             </form>
           )}
-          {budgets.length === 0 ? <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-sm">No category budgets set yet.</div> : <div className="space-y-4">{budgets.map((budget) => { const progress = getBudgetProgress(budget); const isOverBudget = progress.spent > progress.limit; return <div key={budget.id} className="rounded-xl bg-card p-4 shadow-sm"><div className="flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"><span className="text-2xl">{budget.category.charAt(0)}</span></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><h3 className="truncate font-semibold">{budget.category}</h3><span className={isOverBudget ? 'text-destructive font-semibold' : 'font-semibold'}>{Math.round(progress.percentage)}%</span></div><div className="mt-1 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{money(progress.spent)} / {money(progress.limit)}</p><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDeleteBudget(budget.id)} aria-label={`Delete ${budget.category} budget`}><Trash2 className="w-4 h-4" /></Button></div><Progress value={progress.percentage} className={`mt-3 h-2 ${isOverBudget ? 'bg-red-100' : ''}`} /></div></div></div> })}</div>}
+          {budgets.length === 0 ? <div className="text-center py-8 text-muted-foreground">No category budgets set yet.</div> : <div className="space-y-4">{budgets.map((budget) => { const progress = getBudgetProgress(budget); const isOverBudget = progress.spent > progress.limit; return <div key={budget.id} className="space-y-2"><div className="flex justify-between items-center"><div><h3 className="font-semibold">{budget.category}</h3><p className="text-sm text-muted-foreground">{money(progress.spent)} / {money(progress.limit)}</p></div><Button size="sm" variant="ghost" onClick={() => handleDeleteBudget(budget.id)} aria-label={`Delete ${budget.category} budget`}><Trash2 className="w-4 h-4" /></Button></div><Progress value={progress.percentage} className={isOverBudget ? 'bg-red-100' : ''} /></div> })}</div>}
         </CardContent>
-        </Card>
-      </section>
+      </Card>
     </div>
   )
 }

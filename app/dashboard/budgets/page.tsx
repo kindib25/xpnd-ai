@@ -9,30 +9,40 @@ export default async function BudgetsPage() {
 
   if (!user) return null
 
-  const now = new Date()
-  const monthYear = now.toISOString().substring(0, 7)
-
-  const { data: budgets } = await supabase
-    .from('budgets')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('month_year', monthYear)
-    .order('category', { ascending: true })
-
-  const { data: expenses } = await supabase
-    .from('expenses')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('date', { ascending: false })
+  const monthYear = new Date().toISOString().substring(0, 7)
+  const [budgetsResult, monthlyBudgetResult, expensesResult] = await Promise.all([
+    supabase
+      .from('budgets')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('month_year', monthYear)
+      .order('category', { ascending: true }),
+    supabase
+      .from('monthly_budgets')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('month_year', monthYear)
+      .maybeSingle(),
+    supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false }),
+  ])
 
   return (
-    <div className="flex-1 p-8 md:p-15">
+    <div className="flex-1 p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Budgets</h1>
-        <p className="text-muted-foreground mt-1">Manage your monthly budgets</p>
+        <h1 className="text-3xl font-bold">Budget</h1>
+        <p className="text-muted-foreground mt-1">Stay on track with your budget.</p>
       </div>
 
-      <BudgetsList budgets={budgets || []} expenses={expenses || []} monthYear={monthYear} />
+      <BudgetsList
+        budgets={budgetsResult.data || []}
+        monthlyBudget={monthlyBudgetResult.data}
+        expenses={expensesResult.data || []}
+        monthYear={monthYear}
+      />
     </div>
   )
 }
