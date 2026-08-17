@@ -23,9 +23,8 @@ function DashboardOverviewComponent({
   goals,
 }: DashboardOverviewProps) {
   const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
-  const totalBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.budget_amount || 0), 0)
-  const totalGoalsAmount = goals.reduce((sum, goal) => sum + parseFloat(goal.current_amount || 0), 0)
-  const totalGoalsTarget = goals.reduce((sum, goal) => sum + parseFloat(goal.target_amount || 0), 0)
+  const totalBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.limit_amount || 0), 0)
+
 
   // Calculate today's spending
   const today = new Date()

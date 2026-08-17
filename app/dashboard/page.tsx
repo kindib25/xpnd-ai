@@ -22,8 +22,12 @@ export default async function DashboardPage() {
   const monthYear = now.toISOString().substring(0, 7) // YYYY-MM
 
   // Run all queries in parallel
-  const [profileResult, expensesResult, budgetsResult, goalsResult] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+  const [profileResult, expensesResult, monthlyBudgetsResult, goalsResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
     supabase
       .from('expenses')
       .select('*')
@@ -32,7 +36,7 @@ export default async function DashboardPage() {
       .lte('date', endOfMonth)
       .order('date', { ascending: false }),
     supabase
-      .from('budgets')
+      .from('monthly_budgets')
       .select('*')
       .eq('user_id', user.id)
       .eq('month_year', monthYear),
@@ -45,14 +49,14 @@ export default async function DashboardPage() {
 
   const { data: profile } = profileResult
   const { data: expenses } = expensesResult
-  const { data: budgets } = budgetsResult
+  const { data: monthlyBudgets } = monthlyBudgetsResult
   const { data: goals } = goalsResult
 
   return (
     <DashboardOverview
       profile={profile}
       expenses={expenses || []}
-      budgets={budgets || []}
+      budgets={monthlyBudgets || []}
       goals={goals || []}
     />
   )

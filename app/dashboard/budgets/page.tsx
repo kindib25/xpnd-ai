@@ -31,10 +31,11 @@ export default async function BudgetsPage() {
   ])
 
   return (
-    <div className="flex-1 p-8">
+    <div className="w-full p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Budget</h1>
         <p className="text-muted-foreground mt-1">Stay on track with your budget.</p>
+        
       </div>
 
       <BudgetsList
