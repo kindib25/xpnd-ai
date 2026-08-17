@@ -144,40 +144,70 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
           </Card>
 
           {/* Category Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg md:text-xl">Category Breakdown</CardTitle>
+          <Card className="border-0 bg-transparent shadow-none p-3 md:p-5">
+            <CardHeader className="px-0 pb-4">
+              <CardTitle className="text-lg md:text-xl">
+                Category Breakdown
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+
+            <CardContent className="px-0">
               {topCategories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No spending data available</p>
+                <p className="text-sm text-muted-foreground">
+                  No spending data available
+                </p>
               ) : (
-                topCategories.map((category, index) => {
-                  const percentage = Math.round((category.value / totalSpending) * 100)
-                  return (
-                    <div key={category.name} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                <div className="space-y-5">
+                  {topCategories.map((category, index) => {
+                    const percentage =
+                      totalSpending > 0
+                        ? Math.round((category.value / totalSpending) * 100)
+                        : 0
+
+                    return (
+                      <div
+                        key={category.name}
+                        className="
+                flex items-center justify-between
+                px-4 py-5
+                md:px-5 md:py-6
+                rounded-2xl
+                bg-[#1e293b]
+                transition-colors
+                hover:bg-[#253247]
+              "
+                      >
+                        {/* Left Side */}
+                        <div className="flex items-center gap-4 min-w-0">
+                          {/* Category Color */}
                           <div
                             className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            style={{
+                              backgroundColor:
+                                COLORS[index % COLORS.length],
+                            }}
                           />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm md:text-base">{category.name}</p>
-                            <p className="text-xs text-muted-foreground">₱{category.value.toFixed(2)}</p>
+
+                          {/* Category Information */}
+                          <div className="min-w-0">
+                            <p className="text-base md:text-lg font-bold text-white">
+                              {category.name}
+                            </p>
+
+                            <p className="mt-1 text-sm md:text-base text-slate-400">
+                              ₱{category.value.toFixed(2)}
+                            </p>
                           </div>
                         </div>
-                        <p className="text-sm md:text-base font-semibold ml-2">{percentage}%</p>
+
+                        {/* Percentage */}
+                        <p className="ml-4 text-xl md:text-2xl font-bold text-white">
+                          {percentage}%
+                        </p>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-primary rounded-full h-2 transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })
+                    )
+                  })}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -234,12 +264,7 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
                     </div>
                     <p className="text-lg md:text-2xl font-bold ml-4">{percentage}%</p>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-primary rounded-full h-2 transition-all"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+
                 </CardContent>
               </Card>
             )
