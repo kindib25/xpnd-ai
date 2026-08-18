@@ -47,7 +47,7 @@ const LandingPage: React.FC = () => {
         className="
           absolute
           left-1/2
-          top-[37%]
+          top-[34%]
           -translate-x-1/2
           -translate-y-1/2
           w-[150vw]
@@ -82,7 +82,7 @@ const LandingPage: React.FC = () => {
       </div>
 
       {/* BOTTOM CONTENT */}
-      <div className="relative z-20 flex flex-col justify-end items-center min-h-screen pb-50 md:pb-16 px-6 md:px-10">
+      <div className="relative z-20 flex flex-col justify-end items-center min-h-screen pb-60 md:pb-16 px-6 md:px-10">
         <div className="w-full max-w-7xl">
           <div
             className={`flex flex-col lg:flex-row justify-between items-end gap-8 w-full transition-all duration-1000 ease-out ${isTextVisible
