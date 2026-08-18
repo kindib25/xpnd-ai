@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { getAuthRedirectUrl } from '@/lib/supabase/auth-redirect'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
@@ -69,14 +70,12 @@ export default function SignUpPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback?next=/dashboard`,
+          redirectTo: getAuthRedirectUrl('/dashboard'),
         },
       })
       if (error) throw error
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError('Google sign-in could not be started. Please try again.')
       setIsLoading(false)
     }
   }

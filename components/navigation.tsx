@@ -34,12 +34,12 @@ const navItems = [
     href: '/dashboard/budgets',
     icon: Wallet,
   },
-  {
+  /*{
     label: 'Goals',
     href: '/dashboard/goals',
     icon: Target,
-  },
-  {
+  },*/
+  { 
     label: 'Analytics',
     href: '/dashboard/analytics',
     icon: ChartNoAxesCombined,

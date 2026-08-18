@@ -13,7 +13,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getAuthRedirectUrl } from '@/lib/supabase/auth-redirect'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -21,6 +23,42 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient()
+    let isMounted = true
+
+    supabase.auth.getSession().then(({ data, error }: { data: { session: Session | null }; error: { message: string } | null }) => {
+      console.log('[v0] Google auth getSession:', {
+        hasSession: Boolean(data.session),
+        userId: data.session?.user.id ?? null,
+        error: error?.message ?? null,
+      })
+      if (isMounted && data.session) {
+        console.log('[v0] Google auth redirecting to dashboard from getSession')
+        window.location.replace('/dashboard')
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        console.log('[v0] Google auth state change:', {
+          event,
+          hasSession: Boolean(session),
+          userId: session?.user.id ?? null,
+        })
+        if (isMounted && session) {
+          console.log('[v0] Google auth redirecting to dashboard from auth state change')
+          window.location.replace('/dashboard')
+        }
+      },
+    )
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,14 +90,12 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback?next=/dashboard`,
+          redirectTo: getAuthRedirectUrl('/dashboard'),
         },
       })
       if (error) throw error
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError('Google sign-in could not be started. Please try again.')
       setIsLoading(false)
     }
   }

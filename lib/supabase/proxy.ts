@@ -41,9 +41,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log('[v0] Supabase proxy auth check:', {
+    pathname: request.nextUrl.pathname,
+    hasUser: Boolean(user),
+    userId: user?.id ?? null,
+  })
+
+  if (request.nextUrl.pathname === '/auth/login' && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
   if (
-    // if the user is not logged in and the app path, in this case, /protected, is accessed, redirect to the login page
-    request.nextUrl.pathname.startsWith('/protected') &&
+    // Redirect unauthenticated users away from protected application routes.
+    (request.nextUrl.pathname.startsWith('/protected') || request.nextUrl.pathname.startsWith('/dashboard')) &&
     !user
   ) {
     // no user, potentially respond by redirecting the user to the login page
