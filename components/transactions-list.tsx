@@ -7,6 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface TransactionsListProps {
   expenses: any[]
@@ -28,6 +34,8 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
+
+  const [selectedExpense, setSelectedExpense] = useState<any | null>(null)
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this expense?')) return
@@ -97,7 +105,8 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
               {filteredExpenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="p-3 md:p-4 hover:bg-muted/50 transition-colors flex items-center gap-2 md:gap-4 group"
+                  onClick={() => setSelectedExpense(expense)}
+                  className="p-3 md:p-4 hover:bg-muted/50 transition-colors flex items-center gap-2 md:gap-4 group cursor-pointer"
                 >
                   {/* Icon */}
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 text-base md:text-lg">
@@ -105,15 +114,15 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm md:text-base truncate">
+                  <div className="flex-1 min-w-0 mr-8 md:mr-0">
+                    <h3 className="font-semibold text-xs md:text-base truncate">
                       {expense.description || 'Expense'}
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       {new Date(expense.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
-                        year: 'numeric',  
+                        year: 'numeric',
                       })}
                     </p>
                   </div>
@@ -136,7 +145,10 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleDelete(expense.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(expense.id)
+                    }}
                     disabled={isDeleting === expense.id}
                     className="md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0"
                   >
@@ -148,6 +160,100 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!selectedExpense}
+        onOpenChange={(open) => {
+          if (!open) setSelectedExpense(null)
+        }}
+      >
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
+          {selectedExpense && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg md:text-xl">
+                  Transaction Details
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 pt-2">
+                {/* Description */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Description
+                  </p>
+                  <p className="font-semibold text-base">
+                    {selectedExpense.description || 'Expense'}
+                  </p>
+                </div>
+
+                {/* Amount */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Amount
+                  </p>
+                  <p className="text-2xl font-bold">
+                    ₱{parseFloat(selectedExpense.amount).toFixed(2)}
+                  </p>
+                </div>
+
+                {/* Category */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Category
+                  </p>
+
+                  <span
+                    className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(
+                      selectedExpense.category
+                    )}`}
+                  >
+                    {selectedExpense.category || 'Other'}
+                  </span>
+                </div>
+
+                {/* Merchant */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Merchant
+                  </p>
+                  <p className="font-medium">
+                    {selectedExpense.merchant || 'Not specified'}
+                  </p>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Date
+                  </p>
+                  <p className="font-medium">
+                    {new Date(selectedExpense.date).toLocaleDateString(
+                      'en-US',
+                      {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      }
+                    )}
+                  </p>
+                </div>
+
+
+                {/* ID */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Transaction ID
+                  </p>
+                  <p className="text-xs text-muted-foreground break-all">
+                    {selectedExpense.id}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
