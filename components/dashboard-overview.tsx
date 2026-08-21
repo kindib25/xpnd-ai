@@ -93,7 +93,7 @@ function DashboardOverviewComponent({
           </button>
         </div>
 
-        <h1 className="text-xl md:text-3xl font-bold">Good day, User!</h1>
+        <h1 className="text-xl md:text-3xl font-bold">Good day, {profile.full_name?.trim().split(/\s+/)[0]}!</h1>
         <p className="text-xs md:text-sm text-muted-foreground mt-1">
           Track smarter with AI-powered insights.
         </p>

@@ -3,6 +3,7 @@ import { TransactionsList } from '@/components/transactions-list'
 
 export default async function TransactionsPage() {
   const supabase = await createClient()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -16,15 +17,22 @@ export default async function TransactionsPage() {
     .order('date', { ascending: false })
 
   return (
-    <div className="w-full p-10 md:p-15">
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-xl md:text-3xl font-bold">Transactions</h1>
-        <p className="text-xs md:text-sm text-muted-foreground mt-1">Review and manage your expenses</p>
-      </div>
+    <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl">
+        <header className="mb-6 md:mb-8 mt-5 md:mt-10">
+          <h1 className="text-xl font-bold md:text-3xl">
+            Transactions
+          </h1>
 
-      <div className="max-w-4xl mx-auto">
-        <TransactionsList expenses={expenses || []} />
+          <p className="mt-1 text-xs text-muted-foreground md:text-sm">
+            Review and manage your expenses
+          </p>
+        </header>
+
+        <section className="w-full">
+          <TransactionsList expenses={expenses ?? []} />
+        </section>
       </div>
-    </div>
+    </main>
   )
 }
