@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Loading() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4">
       {/* Header */}
       <header className="mt-5 mb-6 md:mt-10 md:mb-8">
         <h1 className="text-xl font-bold md:text-3xl">Transactions</h1>

@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from '@/components/ui/sonner'
 
 export const geist = Geist({
   subsets: ["latin"],
@@ -56,6 +57,17 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
         {children}
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          offset="80px"
+          toastOptions={{
+            className:
+              'w-[calc(100vw-32px)] max-w-sm rounded-2xl shadow-lg md:w-auto md:min-w-[360px] md:max-w-md',
+          }}
+        />
+
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

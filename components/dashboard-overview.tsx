@@ -3,7 +3,21 @@
 import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, TrendingUp, Target, DollarSign, UserRound, Bell, Calendar, Calendars, Database, Layers, Icon } from 'lucide-react'
+import {
+  Plus,
+  TrendingUp,
+  Target,
+  DollarSign,
+  UserRound,
+  Bell,
+  Calendar,
+  Calendars,
+  Database,
+  Layers,
+  Icon,
+  AlertTriangle,
+  CircleAlert,
+} from 'lucide-react'
 import Link from 'next/link'
 import { ExpenseChart } from './expense-chart'
 import { BudgetOverview } from './budget-overview'
@@ -24,6 +38,19 @@ function DashboardOverviewComponent({
 }: DashboardOverviewProps) {
   const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
   const totalBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.limit_amount || 0), 0)
+
+  const budgetPercentage =
+    totalBudget > 0
+      ? Math.min((totalExpenses / totalBudget) * 100, 100)
+      : 0
+
+  const isOverBudget =
+    totalBudget > 0 && totalExpenses > totalBudget
+
+  const isApproachingBudget =
+    totalBudget > 0 &&
+    budgetPercentage >= 80 &&
+    !isOverBudget
 
 
   // Calculate today's spending
@@ -116,6 +143,40 @@ function DashboardOverviewComponent({
             </div>
           </div>
 
+          {/* Budget Alerts */}
+          {isOverBudget && (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-red-100"
+              role="alert"
+            >
+              <CircleAlert
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <p>
+                <span className="font-semibold">Budget exceeded.</span>{' '}
+                You are ₱{(totalExpenses - totalBudget).toFixed(0)} over your monthly
+                limit.
+              </p>
+            </div>
+          )}
+
+          {isApproachingBudget && (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-amber-300/30 bg-amber-400/10 p-3 text-sm text-amber-100"
+              role="status"
+            >
+              <AlertTriangle
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <p>
+                <span className="font-semibold">Approaching your limit.</span>{' '}
+                You have used {Math.round(budgetPercentage)}% of your monthly budget.
+              </p>
+            </div>
+          )}
+
           {/* Budget Progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs md:text-sm">
@@ -126,13 +187,13 @@ function DashboardOverviewComponent({
               <div
                 className="bg-gradient-to-r from-primary to-primary/80 h-full transition-all"
                 style={{
-                  width: `${totalBudget > 0 ? Math.min((totalExpenses / totalBudget) * 100, 100) : 0}%`,
+                  width: `${budgetPercentage}%`,
                 }}
               />
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs md:text-sm text-white/70">₱{Math.max(totalBudget - totalExpenses, 0).toFixed(0)} left</p>
-              <p className="text-xs md:text-sm font-medium">{totalBudget > 0 ? Math.round((totalExpenses / totalBudget) * 100) : 0}% used</p>
+              <p className="text-xs md:text-sm font-medium">{Math.round(budgetPercentage)}% used</p>
             </div>
           </div>
         </CardContent>

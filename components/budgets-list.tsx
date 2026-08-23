@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
-import { Trash2, Plus, Pencil, X } from 'lucide-react'
+import { Trash2, Plus, Pencil, X, AlertTriangle, CircleAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 const CATEGORIES = ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Travel', 'Personal Care']
 
@@ -45,6 +46,9 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
   const remaining = monthlyLimit - totalSpent
   const monthlyPercentage = monthlyLimit > 0 ? Math.min(100, (totalSpent / monthlyLimit) * 100) : 0
 
+  const isMonthlyOverBudget = monthlyLimit > 0 && totalSpent > monthlyLimit
+  const isMonthlyApproaching = monthlyLimit > 0 && monthlyPercentage >= 80 && !isMonthlyOverBudget
+
   const getBudgetProgress = (budget: any) => {
     const spent = expenses
       .filter((expense) => expense.category === budget.category && new Date(expense.date).toISOString().substring(0, 7) === monthYear)
@@ -56,7 +60,10 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
   const saveMonthlyBudget = async (event: React.FormEvent) => {
     event.preventDefault()
     const amount = Number(monthlyAmount)
-    if (!Number.isFinite(amount) || amount <= 0) return setError('Enter a monthly budget greater than zero.')
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error(`Monthly budget must be at least ${money(allocated)}.`)
+      return
+    }
     if (amount < allocated) return setError(`Monthly budget must be at least ${money(allocated)}.`)
     setIsLoading(true)
     setError('')
@@ -67,10 +74,11 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
       const { error: saveError } = await supabase.from('monthly_budgets').upsert({ user_id: user.id, month_year: monthYear, limit_amount: amount }, { onConflict: 'user_id,month_year' })
       if (saveError) throw saveError
       setEditingMonthly(false)
+      toast.success('Monthly budget updated successfully.')
       router.refresh()
     } catch (saveError) {
       console.error('[v0] Error saving monthly budget:', saveError)
-      setError('Could not save the monthly budget.')
+      toast.error('Could not save the monthly budget.')
     } finally {
       setIsLoading(false)
     }
@@ -79,9 +87,18 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
   const handleAddBudget = async (event: React.FormEvent) => {
     event.preventDefault()
     const amount = Number(newAmount)
-    if (!newCategory || !Number.isFinite(amount) || amount <= 0) return setError('Choose a category and enter a valid amount.')
-    if (!monthlyLimit) return setError('Set a monthly budget before adding categories.')
-    if (allocated + amount > monthlyLimit) return setError(`Category budgets cannot exceed ${money(monthlyLimit)}.`)
+    if (!newCategory || !Number.isFinite(amount) || amount <= 0) {
+      toast.error('Choose a category and enter a valid amount.')
+      return
+    }
+    if (!monthlyLimit) {
+      toast.error('Set a monthly budget before adding categories.')
+      return
+    }
+    if (allocated + amount > monthlyLimit) {
+      toast.error(`Category budgets cannot exceed ${money(monthlyLimit)}.`)
+      return
+    }
     setIsLoading(true)
     setError('')
     try {
@@ -93,23 +110,45 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
       setNewCategory('')
       setNewAmount('')
       setIsAdding(false)
+      toast.success('Category budget added successfully.')
       router.refresh()
     } catch (insertError) {
       console.error('[v0] Error adding category budget:', insertError)
-      setError('Could not add category budget. Check that the category is not already listed.')
+      toast.error('Could not add category budget. Check that the category is not already listed.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleDeleteBudget = async (id: string) => {
-    if (!confirm('Delete this budget?')) return
+  const handleDeleteBudget = (id: string, category: string) => {
+    toast.warning(`Delete ${category} budget?`, {
+      description: 'This action cannot be undone.',
+      action: {
+        label: 'Delete',
+        onClick: () => confirmDeleteBudget(id, category),
+      },
+      cancel: {
+        label: 'Cancel',
+        onClick: () => {},
+      },
+    })
+  }
+
+  const confirmDeleteBudget = async (id: string, category: string) => {
     const supabase = createClient()
-    const { error: deleteError } = await supabase.from('budgets').delete().eq('id', id)
+
+    const { error: deleteError } = await supabase
+      .from('budgets')
+      .delete()
+      .eq('id', id)
+
     if (deleteError) {
-      setError('Could not delete this budget.')
+      console.error('[v0] Error deleting budget:', deleteError)
+      toast.error(`Could not delete ${category} budget.`)
       return
     }
+
+    toast.success(`${category} budget deleted successfully.`)
     router.refresh()
   }
 
@@ -235,6 +274,39 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
               </p>
             </div>
           </div>
+
+          {/* Monthly Budget Alerts */}
+          {isMonthlyOverBudget && (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+              role="alert"
+            >
+              <CircleAlert
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <p>
+                <span className="font-semibold">Budget exceeded.</span>{' '}
+                You are {money(totalSpent - monthlyLimit)} over your monthly limit.
+              </p>
+            </div>
+          )}
+
+          {isMonthlyApproaching && (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300"
+              role="status"
+            >
+              <AlertTriangle
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <p>
+                <span className="font-semibold">Approaching your limit.</span>{' '}
+                You have used {Math.round(monthlyPercentage)}% of your monthly budget.
+              </p>
+            </div>
+          )}
 
           {/* Budget Progress */}
           <div className="space-y-2">
@@ -396,7 +468,7 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
                     )}
 
                     {/* Buttons */}
-                    <div className="flex justify-end gap-2 pt-2">      
+                    <div className="flex justify-end gap-2 pt-2">
                       <Button
                         type="submit"
                         disabled={
@@ -414,7 +486,60 @@ export function BudgetsList({ budgets, monthlyBudget, expenses, monthYear }: Bud
                 </div>
               </div>
             )}
-            {budgets.length === 0 ? <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-sm">No category budgets set yet.</div> : <div className="space-y-4">{budgets.map((budget) => { const progress = getBudgetProgress(budget); const isOverBudget = progress.spent > progress.limit; return <div key={budget.id} className="rounded-xl bg-card p-4 shadow-sm"><div className="flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"><span className="text-2xl">{budget.category.charAt(0)}</span></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><h3 className="truncate font-semibold">{budget.category}</h3><span className={isOverBudget ? 'text-destructive font-semibold' : 'font-semibold'}>{Math.round(progress.percentage)}%</span></div><div className="mt-1 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{money(progress.spent)} / {money(progress.limit)}</p><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDeleteBudget(budget.id)} aria-label={`Delete ${budget.category} budget`}><Trash2 className="w-4 h-4" /></Button></div><Progress value={progress.percentage} className={`mt-3 h-0 md:h-2 ${isOverBudget ? 'bg-red-100' : ''}`} /></div></div></div> })}</div>}
+            {budgets.length === 0 ?
+              <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-sm">
+                No category budgets set yet.
+              </div>
+              : <div className="space-y-4">{budgets.map((budget) => {
+                const progress = getBudgetProgress(budget);
+                const isOverBudget = progress.spent > progress.limit;
+                const isApproaching = progress.percentage >= 80 && !isOverBudget;
+
+                return <div key={budget.id} className="rounded-xl bg-card p-4 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                      <span className="text-2xl">{budget.category.charAt(0)}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="truncate font-semibold">{budget.category}</h3>
+                        <span
+                          className={
+                            isOverBudget
+                              ? 'text-destructive font-semibold'
+                              : isApproaching
+                                ? 'text-amber-600 dark:text-amber-300 font-semibold'
+                                : 'font-semibold'
+                          }
+                        >
+                          {Math.round(progress.percentage)}%</span></div><div className="mt-1 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{money(progress.spent)} / {money(progress.limit)}</p><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDeleteBudget(budget.id, budget.category)} aria-label={`Delete ${budget.category} budget`}><Trash2 className="w-4 h-4" /></Button></div><Progress value={progress.percentage} className={`mt-3 h-0 md:h-2 ${isOverBudget ? 'bg-red-100' : ''}`} />
+                      {isOverBudget && (
+                        <p
+                          className="mt-2 flex items-center gap-2 text-xs font-medium text-destructive"
+                          role="alert"
+                        >
+                          <CircleAlert
+                            className="size-3.5"
+                            aria-hidden="true"
+                          />
+                          Over by {money(progress.spent - progress.limit)}
+                        </p>
+                      )}
+
+                      {isApproaching && (
+                        <p
+                          className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-600 dark:text-amber-300"
+                          role="status"
+                        >
+                          <AlertTriangle
+                            className="size-3.5"
+                            aria-hidden="true"
+                          />
+                          Approaching this category limit
+                        </p>
+                      )}
+                    </div></div></div>
+              })}</div>}
           </CardContent>
         </Card>
       </section>
