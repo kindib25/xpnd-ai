@@ -137,6 +137,7 @@ export default function LoginPage() {
         <DashboardBackground />
 
         {/* Logo */}
+        <Link href="/landing_page">
         <div className="flex justify-center pt-[15%]">
           <img
             src="/xpnd-ai-logo-dark.svg"
@@ -144,6 +145,7 @@ export default function LoginPage() {
             className="h-auto w-[140px] md:w-[160px]"
           />
         </div>
+        </Link>
 
         {/* Heading */}
         <div className="mt-[5%] text-center">

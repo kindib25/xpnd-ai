@@ -92,13 +92,15 @@ export default function SignUpPage() {
         <DashboardBackground />
 
         {/* Logo */}
-        <div className="flex justify-center pt-[15%]">
-          <img
-            src="/xpnd-ai-logo-dark.svg"
-            alt="Xpnd AI"
-            className="h-auto w-[140px] md:w-[160px]"
-          />
-        </div>
+        <Link href="/landing_page">
+          <div className="flex justify-center pt-[15%]">
+            <img
+              src="/xpnd-ai-logo-dark.svg"
+              alt="Xpnd AI"
+              className="h-auto w-[140px] md:w-[160px]"
+            />
+          </div>
+        </Link>
 
         {/* Heading */}
         <div className="mt-[5%] text-center">
