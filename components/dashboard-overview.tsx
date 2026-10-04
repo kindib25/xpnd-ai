@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import {
   Card,
   CardContent,
@@ -44,6 +44,36 @@ function DashboardOverviewComponent({
   budgets,
   goals,
 }: DashboardOverviewProps) {
+  const [aiInsight, setAiInsight] = useState<string | null>(null)
+  const [isLoadingInsight, setIsLoadingInsight] = useState(false)
+  const [insightError, setInsightError] = useState<string | null>(null)
+
+  async function generateInsight() {
+    setIsLoadingInsight(true)
+    setInsightError(null)
+
+    try {
+      const response = await fetch('/api/ai-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expenses, budgets }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to generate an insight')
+      }
+
+      setAiInsight(data.insight)
+    } catch (error) {
+      console.error('[v0] Insight request failed:', error)
+      setInsightError('AI Insight is temporarily unavailable.')
+    } finally {
+      setIsLoadingInsight(false)
+    }
+  }
+
+  // Calculate total expenses
   const totalExpenses = expenses.reduce(
     (sum, exp) => sum + parseFloat(exp.amount || 0),
     0
@@ -58,9 +88,9 @@ function DashboardOverviewComponent({
   const budgetPercentage =
     totalBudget > 0
       ? Math.min(
-          (totalExpenses / totalBudget) * 100,
-          100
-        )
+        (totalExpenses / totalBudget) * 100,
+        100
+      )
       : 0
 
   const isOverBudget =
@@ -150,9 +180,9 @@ function DashboardOverviewComponent({
       ) =>
         amount > top.amount
           ? {
-              category,
-              amount,
-            }
+            category,
+            amount,
+          }
           : top,
       {
         category: 'N/A',
@@ -182,7 +212,7 @@ function DashboardOverviewComponent({
                   className="w-full h-full object-cover"
                 />
               </Link>
-              
+
             ) : (
               <UserRound
                 className="w-5 h-5 text-white"
@@ -335,7 +365,7 @@ function DashboardOverviewComponent({
                 ₱
                 {Math.max(
                   totalBudget -
-                    totalExpenses,
+                  totalExpenses,
                   0
                 ).toFixed(0)}{' '}
                 left
@@ -409,49 +439,155 @@ function DashboardOverviewComponent({
       {/* =========================
           AI INSIGHT
       ========================== */}
-      <Card className="mb-6 overflow-hidden rounded-2xl border-0">
+      <Card
+        className="
+    group relative mb-6 overflow-hidden rounded-[28px]
+    border-0 bg-transparent p-[2px]
+    shadow-[0_0_25px_rgba(105,69,255,0.15)]
+  "
+      >
+        {/* Neon gradient border */}
+        <div
+          className="
+      absolute inset-0 rounded-[28px]
+      bg-[linear-gradient(90deg,#7CFF3A_0%,#65E8FF_48%,#6945FF_100%)]
+      opacity-90
+    "
+        />
 
-        <div className="flex h-[130px]">
+        {/* Glow */}
+        <div
+          className="
+      absolute -inset-1 rounded-[30px]
+      bg-[linear-gradient(90deg,#7CFF3A,#65E8FF,#6945FF)]
+      opacity-25 blur-xl
+    "
+        />
 
-          <div className="flex w-[65%] flex-col justify-center bg-card px-5 py-4">
+        {/* Card content */}
+        <div
+          className="
+      relative flex min-h-[190px]
+      flex-col justify-between
+      gap-5
+      rounded-[26px]
+      bg-[#0D1626]
+      px-5 py-6
 
-            <h3 className="text-lg font-bold text-foreground">
-              AI Insight
-            </h3>
+      sm:px-6 sm:py-7
 
-            <p className="mt-2 text-sm leading-5 text-muted-foreground">
-              You spent{' '}
-              <span className="font-semibold text-foreground">
-                25% more on Food
-              </span>{' '}
-              compared to last month.
-            </p>
+      md:min-h-[190px]
+      md:flex-row
+      md:items-center
+      md:gap-8
+      md:px-8
 
-            <Button className="mt-4 h-9 w-fit rounded-md">
-              View Details
-            </Button>
+      lg:px-10
+    "
+        >
+          {/* Left side */}
+          <div className="min-w-0 flex-1">
+            {/* Heading */}
+            <div className="mb-3 flex items-center gap-2 md:gap-2.5">
+              <div
+                className="
+            flex h-9 w-9 shrink-0
+            items-center justify-center
+            rounded-md
+            bg-gradient-to-br
+            from-[#7A35FF]
+            to-[#5B24E8]
+            shadow-[0_0_18px_rgba(105,69,255,0.45)]
+            sm:h-10 sm:w-10
+          "
+              >
+                <span className="text-lg font-bold text-white sm:text-xl">
+                  AI
+                </span>
+              </div>
 
-          </div>
-
-          <div className="flex w-[35%] items-center justify-center bg-muted">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-background/50">
-
-              <Icon
-                name="image"
-                size="xl"
-                color="currentColor"
-                iconNode={[]}
-              />
-
+              <h3
+                className="
+            text-lg font-bold
+            tracking-tight text-white
+            sm:text-xl
+            md:text-2xl
+          "
+              >
+                Insight
+              </h3>
             </div>
 
+            {/* Insight text */}
+            <p
+              className="
+          line-clamp-3
+          max-w-3xl
+          text-sm
+          font-medium
+          leading-6
+          text-[#C5CCDB]
+          sm:line-clamp-2
+          md:text-base
+          md:leading-7
+        "
+            >
+              {isLoadingInsight
+                ? 'Analyzing your spending...'
+                : aiInsight ||
+                insightError ||
+                'Get a personalized spending pattern and recommendation.'}
+            </p>
           </div>
 
+          {/* Right side / Button */}
+          <div className="w-full shrink-0 md:w-auto">
+            <Button
+              className="
+          h-12
+          w-full
+          rounded-xl
+          border-0
+          bg-gradient-to-r
+          from-[#6930FF]
+          to-[#7538FF]
+          px-6
+          text-sm
+          font-bold
+          text-white
+
+          shadow-[0_0_20px_rgba(105,69,255,0.30)]
+
+          transition-all
+          duration-200
+
+          hover:scale-[1.02]
+          hover:from-[#7538FF]
+          hover:to-[#824AFF]
+          hover:shadow-[0_0_28px_rgba(105,69,255,0.45)]
+
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+          disabled:hover:scale-100
+
+          sm:h-14
+          sm:text-base
+          sm:px-8
+
+          md:min-w-[170px]
+        "
+              onClick={generateInsight}
+              disabled={isLoadingInsight || expenses.length === 0}
+            >
+              {isLoadingInsight
+                ? 'Loading...'
+                : aiInsight
+                  ? 'Refresh'
+                  : 'Get Insight'}
+            </Button>
+          </div>
         </div>
-
       </Card>
-
       {/* =========================
           ADD EXPENSE
       ========================== */}
