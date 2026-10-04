@@ -9,6 +9,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Loading() {
   return (
+    <div className="flex-1 px-8 py-6">
+         <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">
+            Settings
+          </h1>
+
+          <p className="mt-1 text-muted-foreground">
+            Manage your profile and preferences
+          </p>
+        </div>
     <div className="mx-auto w-full max-w-5xl space-y-5 md:space-y-6 xl:grid xl:grid-cols-[1fr_360px] xl:gap-6 xl:space-y-0">
 
       {/* =========================
@@ -145,6 +156,8 @@ export default function Loading() {
 
       </div>
 
+    </div>
+    </div>
     </div>
   )
 }

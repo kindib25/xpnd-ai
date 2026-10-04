@@ -213,7 +213,7 @@ export function AddExpenseForm({
   return (
     <div className="w-full space-y-4 md:space-y-6 max-w-2xl mx-auto">
       {/* NLP Input Card - Main Focus */}
-      <Card className="border-primary/10">
+      <Card className="border-primary/10 ">
         <CardContent className="pt-6 md:pt-8 pb-6 md:pb-6">
           <form onSubmit={handleSubmitInput} className="space-y-4 md:space-y-6">
             {/* Input Section */}
