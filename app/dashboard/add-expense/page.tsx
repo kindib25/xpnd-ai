@@ -12,7 +12,7 @@ export default function AddExpensePage() {
   return (
     <div className="w-full p-6 md:p-8 max-w-7xl mx-auto">
       {!isAILoading && !isPreview && (
-        <div className="mb-6 md:mb-8">
+        <div>
           {/* Mobile Header */}
           <div className="md:hidden">
             <div className="relative flex items-center justify-center h-10 mt-3">
@@ -23,29 +23,19 @@ export default function AddExpensePage() {
                 <ArrowLeft className="h-6 w-6" />
               </Link>
 
-              <h1 className="text-2xl font-bold">Add Expense</h1>
-            </div>
 
-            <p className="text-center text-xs text-white/70 mt-1">
-              Type naturally, let AI handle the rest
-            </p>
+            </div>
           </div>
 
           {/* Desktop Header */}
           <div className="hidden md:block">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-8 transition-colors"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
             >
               <ArrowLeft className="h-6 w-6" />
               <span className="font-medium text-lg">Back</span>
             </Link>
-
-            <h1 className="text-3xl font-bold">Add Expense</h1>
-
-            <p className="text-sm text-white/70 mt-1">
-              Type naturally, let AI handle the rest
-            </p>
           </div>
         </div>
       )}

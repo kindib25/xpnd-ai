@@ -5,24 +5,17 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, Send, AlertCircle } from 'lucide-react'
+import {
+  Loader2,
+  Send,
+  AlertCircle,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react'
 import { AIExtractionPreview } from './ai-extraction-preview'
 
 import AILoader from '@/components/ui/ai-loader'
 import AILoaderBackground from './ui/ai-loader-background'
-
-const EXPENSE_CATEGORIES = [
-  'Food & Dining',
-  'Transportation',
-  'Shopping',
-  'Entertainment',
-  'Utilities',
-  'Healthcare',
-  'Education',
-  'Travel',
-  'Personal Care',
-  'Other',
-]
 
 const EXAMPLE_EXPENSES = [
   'Spent 25 on jeep fare',
@@ -51,7 +44,10 @@ export function AddExpenseForm({
   onLoadingChange,
   onPreviewChange,
 }: AddExpenseFormProps) {
-  const [step, setStep] = useState<'input' | 'preview' | 'manual'>('input')
+  const [step, setStep] = useState<'input' | 'preview' | 'manual'>(
+    'input'
+  )
+
   const [input, setInput] = useState('')
   const [isParsingNLP, setIsParsingNLP] = useState(false)
   const [parsedExpense, setParsedExpense] =
@@ -62,7 +58,6 @@ export function AddExpenseForm({
     onPreviewChange?.(step === 'preview')
   }, [step, onPreviewChange])
 
-  // Form state
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
@@ -110,13 +105,13 @@ export function AddExpenseForm({
         category: data.expense.category || '',
         description: data.expense.description || '',
         merchant: data.expense.merchant || '',
-        date: data.expense.date || new Date().toISOString(),
+        date:
+          data.expense.date ||
+          new Date().toISOString(),
       }
 
-      // Store parsed expense
       setParsedExpense(expense)
 
-      // Store values in form state as well
       setAmount(expense.amount.toString())
       setCategory(expense.category)
       setDescription(expense.description)
@@ -141,7 +136,6 @@ export function AddExpenseForm({
     e: React.FormEvent
   ) => {
     e.preventDefault()
-
     await handleParseExpense(input)
   }
 
@@ -152,13 +146,6 @@ export function AddExpenseForm({
   const handleSubmit = async (
     updatedExpense?: ParsedExpense
   ) => {
-    /*
-      If the preview sends an edited expense,
-      use that.
-
-      Otherwise use the current form state.
-    */
-
     const expenseToSave: ParsedExpense = updatedExpense
       ? updatedExpense
       : {
@@ -169,7 +156,6 @@ export function AddExpenseForm({
           date,
         }
 
-    // Validate
     if (
       !expenseToSave.amount ||
       !expenseToSave.category ||
@@ -193,7 +179,6 @@ export function AddExpenseForm({
         throw new Error('Not authenticated')
       }
 
-      // Save the UPDATED expense
       const { error: insertError } =
         await supabase.from('expenses').insert({
           user_id: user.id,
@@ -210,7 +195,6 @@ export function AddExpenseForm({
         throw insertError
       }
 
-      // Reset form
       setInput('')
       setParsedExpense(null)
 
@@ -226,7 +210,6 @@ export function AddExpenseForm({
       setStep('input')
       onPreviewChange?.(false)
 
-      // Go back to dashboard
       router.push('/dashboard')
     } catch (err) {
       const errorMessage =
@@ -246,7 +229,7 @@ export function AddExpenseForm({
   }
 
   // ============================================
-  // NLP LOADING SCREEN
+  // AI LOADING
   // ============================================
 
   if (isParsingNLP) {
@@ -269,61 +252,107 @@ export function AddExpenseForm({
     return (
       <AIExtractionPreview
         expense={parsedExpense}
-
         onEdit={() => {
           setStep('input')
           onPreviewChange?.(false)
         }}
-
-        /*
-          IMPORTANT:
-          Receive the edited expense from
-          AIExtractionPreview and save it.
-        */
         onConfirm={(updatedExpense) => {
           handleSubmit(updatedExpense)
         }}
-
         isLoading={isSaving}
       />
     )
   }
 
   // ============================================
-  // NLP INPUT
+  // INPUT UI
   // ============================================
 
   return (
-    <div className="w-full space-y-4 md:space-y-6 max-w-2xl mx-auto">
+    <div className="w-full max-w-3xl mx-auto px-3 sm:px-0">
 
-      <Card className="border-primary/10">
-        <CardContent className="pt-6 md:pt-8 pb-6 md:pb-6">
+      {/* Header */}
+      <div className="text-center mb-6 md:mb-8">
+
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-4 rounded-full bg-primary/10 border border-primary/10 text-primary text-xs font-medium">
+          <Sparkles className="w-3.5 h-3.5" />
+          AI Expense Tracking
+        </div>
+
+        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
+          What did you spend on?
+        </h2>
+
+        <p className="mt-2 text-sm md:text-base text-muted-foreground max-w-lg mx-auto">
+          Just describe your expense naturally. Xpnd AI will
+          automatically extract the amount, category, and details.
+        </p>
+
+      </div>
+
+      {/* Main Input Card */}
+      <Card className="overflow-hidden border-primary/10 shadow-sm">
+
+        <CardContent className="p-4 sm:p-6 md:p-7">
 
           <form
             onSubmit={handleSubmitInput}
-            className="space-y-4 md:space-y-6"
+            className="space-y-4"
           >
 
-            {/* Input */}
-            <div>
-              <label className="block text-sm md:text-base font-medium mb-2 md:mb-3">
-                What did you spend on?
-              </label>
+            {/* Textarea container */}
+            <div className="relative">
 
               <textarea
-                placeholder="Describe your expense..."
+                autoFocus
+                placeholder="e.g. Spent 150 pesos for lunch"
                 value={input}
-                onChange={(e) =>
+                onChange={(e) => {
                   setInput(e.target.value)
-                }
+                  setError('')
+                }}
                 disabled={isParsingNLP}
-                className="w-full p-3 md:p-4 bg-muted rounded-lg border-0 text-base md:text-lg placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-                rows={3}
+                maxLength={500}
+                rows={5}
+                className="
+                  w-full
+                  min-h-[150px]
+                  md:min-h-[180px]
+                  resize-none
+                  rounded-2xl
+                  border
+                  border-border
+                  bg-muted/40
+                  px-4
+                  py-4
+                  pb-10
+                  text-base
+                  leading-relaxed
+                  placeholder:text-muted-foreground/60
+                  transition-all
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-primary/20
+                  focus:border-primary/40
+                  focus:bg-background
+                  disabled:opacity-60
+                "
               />
+
+              {/* Character count */}
+              <div className="absolute bottom-3 right-4 text-[11px] text-muted-foreground">
+                {input.length}/500
+              </div>
+
             </div>
 
-            {/* Submit */}
-            <div className="flex justify-end">
+            {/* Bottom action row */}
+            <div className="flex items-center justify-between gap-3">
+
+              <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI will analyze your expense</span>
+              </div>
 
               <Button
                 type="submit"
@@ -332,12 +361,26 @@ export function AddExpenseForm({
                   !input.trim()
                 }
                 size="lg"
-                className="rounded-full w-12 h-12 p-0 flex items-center justify-center cursor-pointer"
+                className="
+                  ml-auto
+                  rounded-xl
+                  px-5
+                  gap-2
+                  shadow-sm
+                  transition-all
+                  hover:shadow-md
+                "
               >
                 {isParsingNLP ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Analyzing...
+                  </>
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <>
+                    Analyze Expense
+                    <ArrowRight className="w-4 h-4" />
+                  </>
                 )}
               </Button>
 
@@ -346,24 +389,64 @@ export function AddExpenseForm({
           </form>
 
         </CardContent>
+
       </Card>
 
       {/* Examples */}
-      <div>
+      <div className="mt-6">
 
-        <p className="text-xs md:text-sm text-muted-foreground font-medium mb-2 md:mb-3">
-          Examples
-        </p>
+        <div className="flex items-center justify-between mb-3">
 
-        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-sm font-medium">
+              Try an example
+            </p>
+
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Click one to use it
+            </p>
+          </div>
+
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 
           {EXAMPLE_EXPENSES.map((example) => (
-            <div
+            <button
               key={example}
-              className="p-2 md:p-3 text-xs md:text-sm bg-muted rounded-2xl text-left border border-transparent"
+              type="button"
+              onClick={() => {
+                setInput(example)
+                setError('')
+              }}
+              className="
+                group
+                flex
+                items-center
+                justify-between
+                gap-3
+                text-left
+                px-3.5
+                py-3
+                rounded-xl
+                border
+                border-border/60
+                bg-muted/30
+                text-sm
+                transition-all
+                hover:bg-muted
+                hover:border-primary/20
+                hover:-translate-y-[1px]
+              "
             >
-              {example}
-            </div>
+
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors">
+                {example}
+              </span>
+
+              <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+
+            </button>
           ))}
 
         </div>
@@ -372,18 +455,33 @@ export function AddExpenseForm({
 
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-3 p-3 md:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3.5">
 
-          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
 
-          <div>
-            <p className="text-xs md:text-sm font-medium text-red-900 dark:text-red-100">
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+
+          </div>
+
+          <div className="min-w-0">
+
+            <p className="text-sm font-medium text-red-900 dark:text-red-100">
+              Something went wrong
+            </p>
+
+            <p className="mt-0.5 text-xs text-red-700 dark:text-red-300 break-words">
               {error}
             </p>
+
           </div>
 
         </div>
       )}
+
+      {/* Small helper text */}
+      <p className="text-center text-[11px] text-muted-foreground/60 mt-6">
+        Example: “Spent 150 pesos for lunch at Jollibee”
+      </p>
 
     </div>
   )

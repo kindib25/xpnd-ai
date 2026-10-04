@@ -3,7 +3,18 @@
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Edit2, Check, ChevronDown } from 'lucide-react'
+import {
+  ArrowLeft,
+  Edit2,
+  Check,
+  ChevronDown,
+  Sparkles,
+  CalendarDays,
+  Store,
+  FileText,
+  Tag,
+  Wallet,
+} from 'lucide-react'
 
 interface ParsedExpense {
   amount: number
@@ -41,7 +52,8 @@ export function AIExtractionPreview({
 }: AIExtractionPreviewProps) {
   const [isEditing, setIsEditing] = useState(false)
 
-  const [editedExpense, setEditedExpense] = useState<ParsedExpense>(expense)
+  const [editedExpense, setEditedExpense] =
+    useState<ParsedExpense>(expense)
 
   const formatDate = (dateStr: string) => {
     try {
@@ -86,245 +98,333 @@ export function AIExtractionPreview({
   }
 
   return (
-    <div className="w-full space-y-4 md:space-y-6 max-w-2xl mx-auto mt-3">
+    <div className="w-full max-w-2xl mx-auto px-3 sm:px-5 md:px-0 pb-[120px] md:pb-8">
+
       {/* Header */}
-      <div className="mb-4 md:mb-6">
-        {/* Mobile Header */}
-        <div className="md:hidden">
-          <div className="relative flex items-center justify-center h-10">
-            <button
-              onClick={isEditing ? handleCancelEdit : onEdit}
-              className="absolute left-0 p-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+      <div className="pt-2 sm:pt-4 md:pt-6 mb-5 md:mb-7">
+        <div className="relative flex items-center justify-center">
 
-            <h2 className="text-lg font-semibold">
-              {isEditing ? 'Edit Expense' : 'AI Extraction Preview'}
-            </h2>
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground">
-            {isEditing
-              ? 'Update the extracted details'
-              : 'Review before saving'}
-          </p>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden md:flex items-center gap-3">
+          {/* Back Button */}
           <button
+            type="button"
             onClick={isEditing ? handleCancelEdit : onEdit}
-            className="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+            aria-label="Go back"
+            className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background transition active:scale-95 hover:bg-muted"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-4 w-4" />
           </button>
 
-          <div className="min-w-0">
-            <h2 className="text-xl font-semibold">
-              {isEditing ? 'Edit Expense' : 'AI Extraction Preview'}
+          {/* Centered Title */}
+          <div className="px-12 text-center">
+            <h2 className="text-lg font-semibold tracking-tight sm:text-xl md:text-2xl">
+              {isEditing ? 'Edit Expense' : 'Review Expense'}
             </h2>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
               {isEditing
-                ? 'Update the extracted details'
-                : 'Review before saving'}
+                ? 'Make corrections before saving'
+                : 'Check what AI extracted'}
             </p>
           </div>
+
         </div>
       </div>
 
-      {/* Extracted Details Card */}
-      <Card>
-        <CardContent className="pt-4 md:pt-6 space-y-3 md:space-y-4">
+
+      {/* AI Status */}
+      {!isEditing && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/15 bg-primary/5 px-3.5 py-3 sm:px-4">
+
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              AI extraction complete
+            </p>
+
+            <p className="text-[11px] sm:text-xs text-muted-foreground">
+              Review the details before saving
+            </p>
+          </div>
+
+        </div>
+      )}
+
+      {/* Expense Card */}
+      <Card className="overflow-hidden rounded-2xl border-border/70 shadow-sm">
+        <CardContent className="p-0">
 
           {/* Amount */}
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
-            </div>
+          <div className="relative overflow-hidden bg-muted/30 px-4 py-6 sm:px-6 sm:py-7 md:px-7 md:py-9">
 
-            <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                Amount
-              </p>
+            <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
 
-              <p className="text-xl md:text-2xl font-bold mt-0.5 md:mt-1">
-                ₱{editedExpense.amount.toFixed(2)}
-              </p>
-            </div>
-          </div>
+            <div className="relative">
 
-          <hr className="border-muted" />
+              <div className="mb-2 flex items-center gap-2">
 
-          {/* Category */}
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
-            </div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Wallet className="h-3.5 w-3.5 text-primary" />
+                </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                Category
-              </p>
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">
+                  Amount
+                </span>
+
+              </div>
 
               {isEditing ? (
-                <div className="relative mt-1">
-                  <select
-                    value={editedExpense.category}
-                    onChange={(e) =>
-                      updateField('category', e.target.value)
-                    }
-                    className="w-full appearance-none rounded-lg border border-input bg-background px-3 py-2 pr-10 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {EXPENSE_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex max-w-full items-center gap-2">
 
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <span className="text-2xl font-semibold sm:text-3xl">
+                    ₱
+                  </span>
+
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={editedExpense.amount}
+                    onChange={(e) =>
+                      updateField(
+                        'amount',
+                        Number(e.target.value)
+                      )
+                    }
+                    className="min-w-0 w-full border-b-2 border-primary/40 bg-transparent px-0 py-1 text-3xl font-bold outline-none focus:border-primary sm:text-4xl"
+                  />
+
                 </div>
               ) : (
-                <p className="text-base md:text-lg font-semibold mt-0.5 md:mt-1 truncate">
-                  {editedExpense.category}
+                <p className="break-words text-4xl font-bold tracking-tight sm:text-5xl">
+                  ₱{editedExpense.amount.toFixed(2)}
                 </p>
               )}
+
             </div>
           </div>
 
-          <hr className="border-muted" />
+          {/* Details */}
+          <div className="divide-y divide-border/60">
 
-          {/* Description */}
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
-            </div>
+            {/* Category */}
+            <div className="flex gap-3 px-4 py-4 sm:gap-4 sm:px-5 md:px-6">
 
-            <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                Description
-              </p>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-10 sm:w-10">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+              </div>
 
-              {isEditing ? (
-                <textarea
-                  value={editedExpense.description}
-                  onChange={(e) =>
-                    updateField('description', e.target.value)
-                  }
-                  placeholder="Enter description"
-                  rows={2}
-                  className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-ring"
-                />
-              ) : (
-                <p className="text-base md:text-lg font-semibold mt-0.5 md:mt-1 line-clamp-2">
-                  {editedExpense.description || '—'}
+              <div className="min-w-0 flex-1">
+
+                <p className="mb-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                  Category
                 </p>
-              )}
+
+                {isEditing ? (
+                  <div className="relative">
+
+                    <select
+                      value={editedExpense.category}
+                      onChange={(e) =>
+                        updateField(
+                          'category',
+                          e.target.value
+                        )
+                      }
+                      className="min-h-[44px] w-full appearance-none rounded-xl border border-input bg-background px-3 py-2 pr-10 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    >
+                      {EXPENSE_CATEGORIES.map(
+                        (category) => (
+                          <option
+                            key={category}
+                            value={category}
+                          >
+                            {category}
+                          </option>
+                        )
+                      )}
+                    </select>
+
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                  </div>
+                ) : (
+                  <p className="truncate text-sm font-semibold sm:text-base">
+                    {editedExpense.category || '—'}
+                  </p>
+                )}
+
+              </div>
             </div>
-          </div>
 
-          <hr className="border-muted" />
+            {/* Merchant */}
+            <div className="flex gap-3 px-4 py-4 sm:gap-4 sm:px-5 md:px-6">
 
-          {/* Merchant */}
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
-            </div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-10 sm:w-10">
+                <Store className="h-4 w-4 text-muted-foreground" />
+              </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                Merchant
-              </p>
+              <div className="min-w-0 flex-1">
 
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedExpense.merchant}
-                  onChange={(e) =>
-                    updateField('merchant', e.target.value)
-                  }
-                  placeholder="Enter merchant"
-                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-ring"
-                />
-              ) : (
-                <p className="text-base md:text-lg font-semibold mt-0.5 md:mt-1 truncate">
-                  {editedExpense.merchant || '—'}
+                <p className="mb-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                  Merchant
                 </p>
-              )}
+
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedExpense.merchant}
+                    onChange={(e) =>
+                      updateField(
+                        'merchant',
+                        e.target.value
+                      )
+                    }
+                    placeholder="Enter merchant"
+                    className="min-h-[44px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                ) : (
+                  <p className="truncate text-sm font-semibold sm:text-base">
+                    {editedExpense.merchant || 'Not specified'}
+                  </p>
+                )}
+
+              </div>
             </div>
-          </div>
 
-          <hr className="border-muted" />
+            {/* Description */}
+            <div className="flex gap-3 px-4 py-4 sm:gap-4 sm:px-5 md:px-6">
 
-          {/* Date - Read Only */}
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="p-2 md:p-3 bg-muted rounded-lg flex-shrink-0">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-muted-foreground/20 rounded opacity-50" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-10 sm:w-10">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+
+                <p className="mb-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                  Description
+                </p>
+
+                {isEditing ? (
+                  <textarea
+                    value={editedExpense.description}
+                    onChange={(e) =>
+                      updateField(
+                        'description',
+                        e.target.value
+                      )
+                    }
+                    placeholder="Enter description"
+                    rows={3}
+                    className="min-h-[90px] w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                ) : (
+                  <p className="break-words text-sm font-semibold leading-relaxed sm:text-base">
+                    {editedExpense.description || 'Not specified'}
+                  </p>
+                )}
+
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                Date
-              </p>
+            {/* Date */}
+            <div className="flex gap-3 px-4 py-4 sm:gap-4 sm:px-5 md:px-6">
 
-              <p className="text-base md:text-lg font-semibold mt-0.5 md:mt-1">
-                {formatDate(editedExpense.date)}
-              </p>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-10 sm:w-10">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+
+                <p className="mb-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                  Date
+                </p>
+
+                <p className="text-sm font-semibold sm:text-base">
+                  {formatDate(editedExpense.date)}
+                </p>
+
+              </div>
             </div>
+
           </div>
         </CardContent>
       </Card>
 
-      {/* Edit Note */}
+      {/* Helper */}
       {!isEditing && (
-        <p className="text-xs text-muted-foreground text-center">
-          Edit details if needed
-        </p>
+        <div className="mt-4 px-3 text-center">
+          <p className="text-[11px] text-muted-foreground sm:text-xs">
+            Check the extracted details. You can edit anything before saving.
+          </p>
+        </div>
       )}
 
-      {/* Actions */}
-      <div className="grid grid-cols-2 gap-2 md:gap-3 fixed bottom-24 md:bottom-0 left-0 right-0 md:static p-4 md:p-0 bg-background md:bg-transparent">
-        {isEditing ? (
-          <>
-            <Button
-              variant="outline"
-              onClick={handleCancelEdit}
-              className="font-medium text-sm md:text-base"
-            >
-              Cancel
-            </Button>
+      {/* Action Bar */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-3 pt-3 backdrop-blur-xl md:static md:mt-6 md:border-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none">
 
-            <Button
-              onClick={handleSaveEdit}
-              className="font-medium text-sm md:text-base bg-primary hover:bg-primary/90"
-            >
-              <Check className="w-4 h-4 mr-2" />
-              Done
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              variant="outline"
-              onClick={handleEdit}
-              className="font-medium text-sm md:text-base"
-            >
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
+        <div className="mx-auto max-w-2xl pb-[env(safe-area-inset-bottom)]">
 
-            <Button
-              onClick={handleConfirm}
-              disabled={isLoading}
-              className="font-medium text-sm md:text-base bg-primary hover:bg-primary/90"
-            >
-              {isLoading ? 'Saving...' : 'Save'}
-            </Button>
-          </>
-        )}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+
+            {isEditing ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  className="h-11 rounded-xl text-sm font-medium sm:h-12"
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="h-11 gap-2 rounded-xl text-sm font-medium sm:h-12"
+                >
+                  <Check className="h-4 w-4" />
+                  Done
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleEdit}
+                  className="h-11 gap-2 rounded-xl text-sm font-medium sm:h-12"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Edit
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={isLoading}
+                  className="h-11 gap-2 rounded-xl text-sm font-medium sm:h-12"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Save Expense
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+
+          </div>
+        </div>
       </div>
+
     </div>
   )
 }
