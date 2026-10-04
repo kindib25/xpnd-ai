@@ -430,7 +430,7 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
                   {isEditing ? (
                     <Select
                       value={editCategory}
-                      onValueChange={setEditCategory}
+                      onValueChange={(value) => setEditCategory(value ?? '')}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select category" />

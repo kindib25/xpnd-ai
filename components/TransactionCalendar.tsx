@@ -81,28 +81,48 @@ export function TransactionCalendar({
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border-[#DDD9FF] bg-white shadow-sm">
       <CardContent className="p-3 sm:p-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full"
+            className="
+              h-8 w-8 rounded-full
+              text-[#21135F]
+              hover:bg-[#F0EDFF]
+              hover:text-[#5B3FEF]
+            "
             onClick={goToPreviousMonth}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          <h2 className="text-sm font-semibold">
+          <h2
+            className="
+              text-sm font-bold
+              bg-gradient-to-r
+              from-[#21135F]
+              via-[#5137D9]
+              to-[#7047F5]
+              bg-clip-text
+              text-transparent
+            "
+          >
             {monthName}
           </h2>
 
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full"
+            className="
+              h-8 w-8 rounded-full
+              text-[#21135F]
+              hover:bg-[#F0EDFF]
+              hover:text-[#5B3FEF]
+            "
             onClick={goToNextMonth}
           >
             <ChevronRight className="h-4 w-4" />
@@ -110,11 +130,24 @@ export function TransactionCalendar({
         </div>
 
         {/* Weekdays */}
-        <div className="grid grid-cols-7">
+        <div
+          className="
+            grid grid-cols-7
+            rounded-lg
+            bg-[#F7F5FF]
+            border border-[#E7E3FF]
+          "
+        >
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
             <div
               key={day}
-              className="py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground"
+              className="
+                py-2
+                text-center
+                text-[10px] sm:text-xs
+                font-semibold
+                text-[#4A3C87]
+              "
             >
               {day}
             </div>
@@ -122,7 +155,7 @@ export function TransactionCalendar({
         </div>
 
         {/* Calendar */}
-        <div className="grid grid-cols-7">
+        <div className="mt-1 grid grid-cols-7 overflow-hidden rounded-lg">
           {calendarDays.map((date, index) => {
             const dateKey = getDateKey(date)
             const amount = dailyTotals[dateKey] || 0
@@ -145,16 +178,20 @@ export function TransactionCalendar({
                   }
                 }}
                 className={`
-                  relative min-h-[62px] sm:min-h-[75px]
-                  border border-border/40
+                  relative
+                  min-h-[62px] sm:min-h-[75px]
+                  border border-[#E8E5F8]
+                  bg-white
                   p-1 sm:p-1.5
-                  transition-colors
                   text-left
+                  transition-all duration-150
+
                   ${
                     isCurrentMonth
-                      ? 'hover:bg-muted/50'
-                      : 'text-muted-foreground/40'
+                      ? 'hover:bg-[#F8F6FF] hover:border-[#C9C1FF]'
+                      : 'bg-[#FCFBFF] text-[#B7B1D2]'
                   }
+
                   ${
                     dayExpenses.length > 0
                       ? 'cursor-pointer'
@@ -162,15 +199,29 @@ export function TransactionCalendar({
                   }
                 `}
               >
+                {/* Date */}
                 <div className="flex justify-center">
                   <span
                     className={`
                       flex h-6 w-6 items-center justify-center
-                      rounded-full text-xs sm:text-sm
+                      rounded-full
+                      text-xs sm:text-sm
+                      font-medium
+                      transition-all
+
                       ${
                         isToday
-                          ? 'bg-primary text-primary-foreground font-bold'
-                          : ''
+                          ? `
+                            bg-gradient-to-br
+                            from-[#4530D8]
+                            to-[#7650F5]
+                            text-white
+                            font-bold
+                            shadow-sm
+                          `
+                          : isCurrentMonth
+                            ? 'text-[#21135F]'
+                            : 'text-[#B7B1D2]'
                       }
                     `}
                   >
@@ -178,9 +229,16 @@ export function TransactionCalendar({
                   </span>
                 </div>
 
+                {/* Expense Amount */}
                 {amount > 0 && isCurrentMonth && (
                   <div className="mt-1 text-center">
-                    <span className="text-[9px] sm:text-[11px] font-medium text-red-500 dark:text-red-400">
+                    <span
+                      className="
+                        text-[9px] sm:text-[11px]
+                        font-semibold
+                        text-[#4FAF24]
+                      "
+                    >
                       ₱
                       {amount.toLocaleString('en-PH', {
                         maximumFractionDigits: 0,
