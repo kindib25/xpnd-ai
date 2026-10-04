@@ -9,10 +9,12 @@ import { useEffect, useState } from 'react'
 import { getAuthRedirectUrl } from '@/lib/supabase/auth-redirect'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import DashboardBackground from '@/components/dashboard-background'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -132,37 +134,35 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-svh w-full  text-[#F5F7FF]">
+    <main className="min-h-svh w-full text-[#F5F7FF]">
       <div className="mx-auto flex min-h-screen w-full max-w-[428px] flex-col px-8">
         <DashboardBackground />
 
         {/* Logo */}
         <Link href="/landing_page">
-        <div className="flex justify-center pt-[15%]">
-          <img
-            src="/xpnd-ai-logo-dark.svg"
-            alt="Xpnd AI"
-            className="h-auto w-[140px] md:w-[160px]"
-          />
-        </div>
+          <div className="flex justify-center pt-[15%]">
+            <img
+              src="/xpnd-ai-logo-dark.svg"
+              alt="Xpnd AI"
+              className="h-auto w-[140px] md:w-[160px]"
+            />
+          </div>
         </Link>
 
         {/* Heading */}
         <div className="mt-[5%] text-center">
-          <h2 className="text-[18px] md:text-[24px] font-bold tracking-[-0.3px]">
+          <h2 className="text-[18px] font-bold tracking-[-0.3px] md:text-[24px]">
             Welcome to Xpnd AI
           </h2>
 
-          <p className="mt-2 text-[15px] md:text-[17px] font-medium text-[#9B9AAF]">
+          <p className="mt-2 text-[15px] font-medium text-[#9B9AAF] md:text-[17px]">
             Sign in to continue
           </p>
         </div>
 
         {/* Email / Password Form */}
-        <form
-          onSubmit={handleLogin}
-          className="mt-[45px] space-y-5"
-        >
+        <form onSubmit={handleLogin} className="mt-[45px] space-y-5">
+
           {/* Email */}
           <div>
             <label
@@ -204,27 +204,63 @@ export default function LoginPage() {
               Password
             </label>
 
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              className="
-                h-[56px]
-                rounded-[10px]
-                border-[#302C43]
-                bg-[#171522]
-                px-4
-                text-[16px]
-                text-[#F5F7FF]
-                placeholder:text-[#77738A]
-                focus-visible:border-[#7C5CFF]
-                focus-visible:ring-[#7C5CFF]/30
-              "
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="
+                  h-[56px]
+                  rounded-[10px]
+                  border-[#302C43]
+                  bg-[#171522]
+                  px-4
+                  pr-12
+                  text-[16px]
+                  text-[#F5F7FF]
+                  placeholder:text-[#77738A]
+                  focus-visible:border-[#7C5CFF]
+                  focus-visible:ring-[#7C5CFF]/30
+                "
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="
+                  absolute
+                  right-3
+                  top-1/2
+                  flex
+                  h-9
+                  w-9
+                  -translate-y-1/2
+                  items-center
+                  justify-center
+                  rounded-md
+                  text-[#77738A]
+                  transition-colors
+                  hover:text-[#F5F7FF]
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-[#7C5CFF]/40
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Error */}
@@ -239,24 +275,23 @@ export default function LoginPage() {
             type="submit"
             disabled={isLoading}
             className="
-    h-[58px]
-    w-full
-    rounded-[10px]
-    bg-gradient-to-r
-    from-[#B6FF3B]
-    to-[#7EEB2A]
-    text-[17px]
-    font-semibold
-    text-[#0D0D16]
-    shadow-[0_8px_25px_rgba(126,235,42,0.25)]
-    transition-all
-    hover:brightness-110
-    cursor-pointer
-  "
+              h-[58px]
+              w-full
+              cursor-pointer
+              rounded-[10px]
+              bg-gradient-to-r
+              from-[#B6FF3B]
+              to-[#7EEB2A]
+              text-[17px]
+              font-semibold
+              text-[#0D0D16]
+              shadow-[0_8px_25px_rgba(126,235,42,0.25)]
+              transition-all
+              hover:brightness-110
+            "
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
-
         </form>
 
         {/* Sign Up */}
@@ -311,7 +346,6 @@ export default function LoginPage() {
               hover:bg-[#1D1A2C]
             "
           >
-    
             <span className="text-[16px] font-semibold">
               Google
             </span>
@@ -335,7 +369,6 @@ export default function LoginPage() {
               hover:bg-[#1D1A2C]
             "
           >
-
             <span className="text-[16px] font-semibold">
               Apple
             </span>
@@ -352,7 +385,6 @@ export default function LoginPage() {
             Terms of Service and Privacy Policy
           </p>
         </div>
-
       </div>
     </main>
   )
