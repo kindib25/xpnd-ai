@@ -3,11 +3,20 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2, Search, Pencil, Save, X } from 'lucide-react'
+import {
+  Trash2,
+  Search,
+  Pencil,
+  Save,
+  X,
+  Wallet,
+  FileText,
+  Tag,
+  Store,
+  CalendarDays,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -45,23 +54,32 @@ interface TransactionsListProps {
 const CATEGORY_COLORS: Record<string, string> = {
   'Food & Dining':
     'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+
   Transportation:
     'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+
   Shopping:
     'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+
   Entertainment:
     'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400',
+
   Healthcare:
     'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+
   Education:
     'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+
   Travel:
     'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
+
   Utilities:
     'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400',
+
   'Personal Care':
     'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
-    Other:
+
+  Other:
     'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400',
 }
 
@@ -78,61 +96,141 @@ const CATEGORIES = [
   'Other',
 ]
 
-export function TransactionsList({ expenses }: TransactionsListProps) {
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+export function TransactionsList({
+  expenses,
+}: TransactionsListProps) {
+  const [isDeleting, setIsDeleting] =
+    useState<string | null>(null)
+
   const [isSaving, setIsSaving] = useState(false)
-  const [deleteExpense, setDeleteExpense] = useState<any | null>(null)
+
+  const [deleteExpense, setDeleteExpense] =
+    useState<any | null>(null)
 
   const [searchQuery, setSearchQuery] = useState('')
+
   const [currentPage, setCurrentPage] = useState(1)
 
-  const [selectedExpense, setSelectedExpense] = useState<any | null>(null)
+  const [selectedExpense, setSelectedExpense] =
+    useState<any | null>(null)
+
   const [isEditing, setIsEditing] = useState(false)
 
-  const [editDescription, setEditDescription] = useState('')
-  const [editCategory, setEditCategory] = useState('')
-  const [editMerchant, setEditMerchant] = useState('')
+  // Editable fields
+  const [editAmount, setEditAmount] = useState('')
+  const [editDescription, setEditDescription] =
+    useState('')
+  const [editCategory, setEditCategory] =
+    useState('')
+  const [editMerchant, setEditMerchant] =
+    useState('')
 
   const ITEMS_PER_PAGE = 5
 
   const router = useRouter()
 
-  // Populate the edit fields whenever a transaction is selected
+  // ============================================
+  // POPULATE EDIT FIELDS
+  // ============================================
+
   useEffect(() => {
     if (selectedExpense) {
-      setEditDescription(selectedExpense.description || '')
-      setEditCategory(selectedExpense.category || '')
-      setEditMerchant(selectedExpense.merchant || '')
+      setEditAmount(
+        String(selectedExpense.amount ?? '')
+      )
+
+      setEditDescription(
+        selectedExpense.description || ''
+      )
+
+      setEditCategory(
+        selectedExpense.category || ''
+      )
+
+      setEditMerchant(
+        selectedExpense.merchant || ''
+      )
     }
   }, [selectedExpense])
+
+  // ============================================
+  // SELECT EXPENSE
+  // ============================================
 
   const handleSelectExpense = (expense: any) => {
     setSelectedExpense(expense)
     setIsEditing(false)
   }
 
+  // ============================================
+  // EDIT
+  // ============================================
+
   const handleEdit = () => {
     if (!selectedExpense) return
 
-    setEditDescription(selectedExpense.description || '')
-    setEditCategory(selectedExpense.category || '')
-    setEditMerchant(selectedExpense.merchant || '')
+    setEditAmount(
+      String(selectedExpense.amount ?? '')
+    )
+
+    setEditDescription(
+      selectedExpense.description || ''
+    )
+
+    setEditCategory(
+      selectedExpense.category || ''
+    )
+
+    setEditMerchant(
+      selectedExpense.merchant || ''
+    )
 
     setIsEditing(true)
   }
 
+  // ============================================
+  // CANCEL EDIT
+  // ============================================
+
   const handleCancelEdit = () => {
     if (!selectedExpense) return
 
-    setEditDescription(selectedExpense.description || '')
-    setEditCategory(selectedExpense.category || '')
-    setEditMerchant(selectedExpense.merchant || '')
+    setEditAmount(
+      String(selectedExpense.amount ?? '')
+    )
+
+    setEditDescription(
+      selectedExpense.description || ''
+    )
+
+    setEditCategory(
+      selectedExpense.category || ''
+    )
+
+    setEditMerchant(
+      selectedExpense.merchant || ''
+    )
 
     setIsEditing(false)
   }
 
+  // ============================================
+  // SAVE
+  // ============================================
+
   const handleSave = async () => {
     if (!selectedExpense) return
+
+    const amount = Number(editAmount)
+
+    if (
+      !editAmount.trim() ||
+      isNaN(amount) ||
+      amount <= 0
+    ) {
+      toast.error('Please enter a valid amount.')
+      return
+    }
 
     if (!editDescription.trim()) {
       toast.error('Description cannot be empty.')
@@ -152,9 +250,11 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
       const { data, error } = await supabase
         .from('expenses')
         .update({
+          amount,
           description: editDescription.trim(),
           category: editCategory,
-          merchant: editMerchant.trim() || null,
+          merchant:
+            editMerchant.trim() || null,
         })
         .eq('id', selectedExpense.id)
         .select()
@@ -162,20 +262,31 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
 
       if (error) throw error
 
-      // Update the currently selected transaction immediately
       setSelectedExpense(data)
       setIsEditing(false)
 
-      toast.success('Transaction updated successfully.')
+      toast.success(
+        'Transaction updated successfully.'
+      )
 
       router.refresh()
     } catch (error) {
-      console.error('Failed to update expense:', error)
-      toast.error('Failed to update transaction.')
+      console.error(
+        'Failed to update expense:',
+        error
+      )
+
+      toast.error(
+        'Failed to update transaction.'
+      )
     } finally {
       setIsSaving(false)
     }
   }
+
+  // ============================================
+  // DELETE
+  // ============================================
 
   const handleDelete = (expense: any) => {
     setDeleteExpense(expense)
@@ -194,40 +305,64 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
 
       if (error) throw error
 
-      toast.success('Transaction deleted successfully.')
+      toast.success(
+        'Transaction deleted successfully.'
+      )
+
       setDeleteExpense(null)
       setSelectedExpense(null)
       setIsEditing(false)
 
       router.refresh()
     } catch (error) {
-      console.error('Failed to delete expense:', error)
-      toast.error('Failed to delete transaction.')
+      console.error(
+        'Failed to delete expense:',
+        error
+      )
+
+      toast.error(
+        'Failed to delete transaction.'
+      )
     } finally {
       setIsDeleting(null)
     }
   }
+
+  // ============================================
+  // FILTER
+  // ============================================
 
   const filteredExpenses = expenses.filter(
     (exp) =>
       exp.description
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      exp.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      exp.category
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase())
   )
 
-  const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE)
-
-  const paginatedExpenses = filteredExpenses.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const totalPages = Math.ceil(
+    filteredExpenses.length / ITEMS_PER_PAGE
   )
+
+  const paginatedExpenses =
+    filteredExpenses.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    )
 
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery])
 
-  const getCategoryColor = (category: string) => {
+  // ============================================
+  // CATEGORY COLOR
+  // ============================================
+
+  const getCategoryColor = (
+    category: string
+  ) => {
     return (
       CATEGORY_COLORS[category] ||
       'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400'
@@ -236,114 +371,161 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
 
   return (
     <div className="w-full space-y-5 md:space-y-6">
-      {/* Calendar Section */}
+
+      {/* ============================================
+          CALENDAR
+      ============================================ */}
+
       <section className="space-y-3">
-        <h2 className="text-lg md:text-xl font-semibold">
+        <h2 className="text-lg font-semibold md:text-xl">
           Transaction Calendar
         </h2>
 
         <TransactionCalendar
           expenses={expenses}
           onDateClick={(dayExpenses) => {
-            if (dayExpenses.length === 1) {
-              handleSelectExpense(dayExpenses[0])
-              return
+            if (dayExpenses.length > 0) {
+              handleSelectExpense(
+                dayExpenses[0]
+              )
             }
-
-            handleSelectExpense(dayExpenses[0])
           }}
         />
       </section>
 
-      {/* Transactions Section */}
+      {/* ============================================
+          TRANSACTIONS
+      ============================================ */}
+
       <section className="space-y-3">
-        <h2 className="text-lg md:text-xl font-semibold">
+        <h2 className="text-lg font-semibold md:text-xl">
           Transactions
         </h2>
 
         {/* Search */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
-            <Input
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 rounded-full text-sm md:text-base"
-            />
-          </div>
+          <Input
+            placeholder="Search transactions..."
+            value={searchQuery}
+            onChange={(e) =>
+              setSearchQuery(e.target.value)
+            }
+            className="h-11 rounded-full pl-10 text-sm md:text-base"
+          />
         </div>
 
-        {/* Transactions */}
-        <Card>
+        {/* Transaction List */}
+        <Card className="overflow-hidden">
           <CardContent className="p-0">
+
             {filteredExpenses.length === 0 ? (
-              <div className="text-center py-8 md:py-12 text-muted-foreground">
+              <div className="py-10 text-center text-muted-foreground md:py-12">
                 <p className="text-sm md:text-base">
                   No transactions yet
                 </p>
               </div>
             ) : (
               <div className="divide-y">
-                {paginatedExpenses.map((expense) => (
-                  <div
-                    key={expense.id}
-                    onClick={() => handleSelectExpense(expense)}
-                    className="p-3 md:p-4 hover:bg-muted/50 transition-colors flex items-center gap-2 md:gap-4 group cursor-pointer"
-                  >
-                    {/* Icon */}
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 text-base md:text-lg">
-                      {/* Icon Here */}
-                    </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 mr-8 md:mr-0">
-                      <h3 className="font-semibold text-xs md:text-base truncate">
-                        {expense.description || 'Expense'}
-                      </h3>
+                {paginatedExpenses.map(
+                  (expense) => (
+                    <div
+                      key={expense.id}
+                      onClick={() =>
+                        handleSelectExpense(
+                          expense
+                        )
+                      }
+                      className="
+                        group
+                        flex
+                        cursor-pointer
+                        items-center
+                        gap-2
+                        p-3
+                        transition-colors
+                        hover:bg-muted/50
+                        md:gap-4
+                        md:p-4
+                      "
+                    >
+                      {/* Icon */}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted md:h-12 md:w-12">
+                        <Wallet className="h-4 w-4 text-muted-foreground md:h-5 md:w-5" />
+                      </div>
 
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(expense.date).toLocaleDateString(
-                          'en-US',
-                          {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          }
+                      {/* Content */}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-xs font-semibold md:text-base">
+                          {expense.description ||
+                            'Expense'}
+                        </h3>
+
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(
+                            expense.date
+                          ).toLocaleDateString(
+                            'en-US',
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            }
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Category */}
+                      <span
+                        className={`
+                          hidden
+                          whitespace-nowrap
+                          rounded-full
+                          px-2
+                          py-1
+                          text-xs
+                          font-medium
+                          sm:inline-flex
+                          md:px-3
+                          ${getCategoryColor(
+                          expense.category
                         )}
+                        `}
+                      >
+                        {expense.category}
+                      </span>
+
+                      {/* Amount */}
+                      <p className="min-w-fit text-right text-sm font-semibold md:mx-5 md:text-base">
+                        ₱
+                        {parseFloat(
+                          expense.amount
+                        ).toFixed(0)}
                       </p>
                     </div>
+                  )
+                )}
 
-                    {/* Category */}
-                    <span
-                      className={`hidden sm:inline px-2 md:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getCategoryColor(
-                        expense.category
-                      )}`}
-                    >
-                      {expense.category}
-                    </span>
-
-                    {/* Amount */}
-                    <p className="font-semibold text-sm md:text-base text-right min-w-fit mx-0 md:mx-5">
-                      ₱{parseFloat(expense.amount).toFixed(0)}
-                    </p>
-                  </div>
-                ))}
               </div>
             )}
+
           </CardContent>
         </Card>
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between gap-3 pt-2">
+
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage === 1}
               onClick={() =>
-                setCurrentPage((prev) => prev - 1)
+                setCurrentPage(
+                  (prev) => prev - 1
+                )
               }
               className="rounded-lg"
             >
@@ -357,19 +539,27 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage === totalPages}
+              disabled={
+                currentPage === totalPages
+              }
               onClick={() =>
-                setCurrentPage((prev) => prev + 1)
+                setCurrentPage(
+                  (prev) => prev + 1
+                )
               }
               className="rounded-lg"
             >
               Next
             </Button>
+
           </div>
         )}
       </section>
 
-      {/* Transaction Details Dialog */}
+      {/* ============================================
+    TRANSACTION DETAILS DIALOG
+============================================ */}
+
       <Dialog
         open={!!selectedExpense}
         onOpenChange={(open) => {
@@ -379,175 +569,319 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
           }
         }}
       >
-        <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
+        <DialogContent
+          className="
+      w-[calc(100%-1rem)]
+      max-w-md
+      max-h-[calc(100dvh-1rem)]
+      overflow-y-auto
+      rounded-2xl
+      border-border/60
+      bg-background
+      p-0
+      gap-0
+      sm:max-h-[90vh]
+    "
+        >
           {selectedExpense && (
             <>
-              <DialogHeader>
-                <DialogTitle className="text-lg md:text-xl">
-                  Transaction Details
+              {/* ============================================
+            HEADER
+        ============================================ */}
+              <DialogHeader className="border-b border-border/60 bg-background px-4 py-4">
+                <DialogTitle className="text-base font-semibold text-foreground">
+                  {isEditing ? 'Edit Transaction' : 'Transaction Details'}
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-4 pt-2">
-                {/* Description - EDITABLE */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Description
-                  </p>
+              {/* ============================================
+            DETAILS
+        ============================================ */}
+              <div className="divide-y divide-border/60">
+
+                {/* Amount */}
+                <div className="bg-muted/30 px-4 py-5">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <Wallet className="h-4 w-4 text-primary" />
+                    </div>
+
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Amount
+                    </p>
+                  </div>
 
                   {isEditing ? (
-                    <Input
-                      value={editDescription}
-                      onChange={(e) =>
-                        setEditDescription(e.target.value)
-                      }
-                      placeholder="Enter description"
-                    />
+                    <div className="ml-11 flex items-center gap-2 border-b-2 border-primary/60">
+                      <span className="text-2xl font-semibold text-foreground">
+                        ₱
+                      </span>
+
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={editAmount}
+                        onChange={(e) =>
+                          setEditAmount(e.target.value)
+                        }
+                        placeholder="0.00"
+                        className="
+                    h-10
+                    border-0
+                    bg-transparent
+                    px-0
+                    text-2xl
+                    font-bold
+                    text-foreground
+                    shadow-none
+                    placeholder:text-muted-foreground
+                    focus-visible:ring-0
+                  "
+                      />
+                    </div>
                   ) : (
-                    <p className="font-semibold text-base">
-                      {selectedExpense.description || 'Expense'}
+                    <p className="ml-11 text-3xl font-bold tracking-tight text-foreground">
+                      ₱
+                      {parseFloat(
+                        selectedExpense.amount
+                      ).toFixed(2)}
                     </p>
                   )}
                 </div>
 
-                {/* Amount - READ ONLY */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Amount
-                  </p>
+                {/* Category */}
+                <div className="flex gap-3 bg-background px-4 py-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                  </div>
 
-                  <p className="text-2xl font-bold">
-                    ₱{parseFloat(selectedExpense.amount).toFixed(2)}
-                  </p>
-                </div>
-
-                {/* Category - EDITABLE */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Category
-                  </p>
-
-                  {isEditing ? (
-                    <Select
-                      value={editCategory}
-                      onValueChange={(value) => setEditCategory(value ?? '')}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {CATEGORIES.map((category) => (
-                          <SelectItem
-                            key={category}
-                            value={category}
-                          >
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(
-                        selectedExpense.category
-                      )}`}
-                    >
-                      {selectedExpense.category || 'Other'}
-                    </span>
-                  )}
-                </div>
-
-                {/* Merchant - EDITABLE */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Merchant
-                  </p>
-
-                  {isEditing ? (
-                    <Input
-                      value={editMerchant}
-                      onChange={(e) =>
-                        setEditMerchant(e.target.value)
-                      }
-                      placeholder="Enter merchant"
-                    />
-                  ) : (
-                    <p className="font-medium">
-                      {selectedExpense.merchant || 'Not specified'}
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                      Category
                     </p>
-                  )}
+
+                    {isEditing ? (
+                      <Select
+                        value={editCategory}
+                        onValueChange={(value) =>
+                          setEditCategory(value ?? '')
+                        }
+                      >
+                        <SelectTrigger
+                          className="
+                      h-10
+                      w-full
+                      rounded-xl
+                      border-border/70
+                      bg-muted/30
+                      text-foreground
+                      focus:ring-primary/20
+                    "
+                        >
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          {CATEGORIES.map((category) => (
+                            <SelectItem
+                              key={category}
+                              value={category}
+                            >
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span
+                        className={`
+                    inline-flex
+                    rounded-full
+                    px-2.5
+                    py-1
+                    text-xs
+                    font-semibold
+                    ${getCategoryColor(
+                          selectedExpense.category
+                        )}
+                  `}
+                      >
+                        {selectedExpense.category || 'Other'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Date - READ ONLY */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Date
-                  </p>
+                {/* Merchant */}
+                <div className="flex gap-3 bg-background px-4 py-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <Store className="h-4 w-4 text-muted-foreground" />
+                  </div>
 
-                  <p className="font-medium">
-                    {new Date(
-                      selectedExpense.date
-                    ).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                      Merchant
+                    </p>
+
+                    {isEditing ? (
+                      <Input
+                        value={editMerchant}
+                        onChange={(e) =>
+                          setEditMerchant(e.target.value)
+                        }
+                        placeholder="Enter merchant"
+                        className="
+                    h-10
+                    rounded-xl
+                    border-border/70
+                    bg-muted/30
+                    text-foreground
+                    placeholder:text-muted-foreground
+                    focus-visible:border-primary
+                    focus-visible:ring-primary/20
+                  "
+                      />
+                    ) : (
+                      <p className="break-words text-sm font-semibold text-foreground">
+                        {selectedExpense.merchant || 'Not specified'}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* ID - READ ONLY */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
+                {/* Description */}
+                <div className="flex gap-3 bg-background px-4 py-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                      Description
+                    </p>
+
+                    {isEditing ? (
+                      <Input
+                        value={editDescription}
+                        onChange={(e) =>
+                          setEditDescription(e.target.value)
+                        }
+                        placeholder="Enter description"
+                        className="
+                    h-10
+                    rounded-xl
+                    border-border/70
+                    bg-muted/30
+                    text-foreground
+                    placeholder:text-muted-foreground
+                    focus-visible:border-primary
+                    focus-visible:ring-primary/20
+                  "
+                      />
+                    ) : (
+                      <p className="break-words text-sm font-semibold text-foreground">
+                        {selectedExpense.description || 'Expense'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="flex gap-3 bg-background px-4 py-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                      Date
+                    </p>
+
+                    <p className="text-sm font-semibold text-foreground">
+                      {new Date(
+                        selectedExpense.date
+                      ).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Transaction ID */}
+                <div className="bg-muted/10 px-4 py-4">
+                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     Transaction ID
                   </p>
 
-                  <p className="text-xs text-muted-foreground break-all">
+                  <p className="break-all text-[11px] leading-relaxed text-muted-foreground">
                     {selectedExpense.id}
                   </p>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="pt-4 border-t space-y-2">
+              {/* ============================================
+            ACTIONS
+        ============================================ */}
+              <div className="border-t border-border/60 bg-muted/20 p-4">
                 {isEditing ? (
-                  <>
-                    <Button
-                      variant="default"
-                      className="w-full"
-                      disabled={isSaving}
-                      onClick={handleSave}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {isSaving
-                        ? 'Saving...'
-                        : 'Save Changes'}
-                    </Button>
-
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="
+                  h-11
+                  flex-1
+                  rounded-xl
+                  border-border/70
+                  bg-background
+                  text-foreground
+                  hover:bg-muted
+                "
                       disabled={isSaving}
                       onClick={handleCancelEdit}
                     >
-                      <X className="w-4 h-4 mr-2" />
+                      <X className="mr-2 h-4 w-4" />
                       Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleEdit}
-                    >
-                      <Pencil className="w-4 h-4 mr-2" />
-                      Edit Transaction
                     </Button>
 
                     <Button
-                      variant="default"
-                      className="w-full p-5 bg-red-600 text-white hover:bg-red-700"
+                      className="h-11 flex-1 rounded-xl"
+                      disabled={
+                        isSaving ||
+                        !editAmount ||
+                        Number(editAmount) <= 0
+                      }
+                      onClick={handleSave}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="
+                  h-11
+                  flex-1
+                  rounded-xl
+                  border-border/70
+                  bg-background
+                  text-foreground
+                  hover:bg-muted
+                "
+                      onClick={handleEdit}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+
+                    <Button
+                      variant="destructive"
+                      className="h-11 flex-1 rounded-xl"
                       disabled={
                         isDeleting === selectedExpense.id
                       }
@@ -555,20 +889,23 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
                         handleDelete(selectedExpense)
                       }
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
+                      <Trash2 className="mr-2 h-4 w-4" />
+
                       {isDeleting === selectedExpense.id
                         ? 'Deleting...'
-                        : 'Delete Transaction'}
+                        : 'Delete'}
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             </>
           )}
         </DialogContent>
       </Dialog>
+      {/* ============================================
+          DELETE CONFIRMATION
+      ============================================ */}
 
-      {/* Delete Confirmation */}
       <AlertDialog
         open={!!deleteExpense}
         onOpenChange={(open) => {
@@ -578,6 +915,7 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
         }}
       >
         <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
+
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete transaction?
@@ -586,8 +924,10 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
             <AlertDialogDescription>
               Are you sure you want to delete{' '}
               <span className="font-semibold text-foreground">
-                "{deleteExpense?.description ||
-                  'this transaction'}"
+                "
+                {deleteExpense?.description ||
+                  'this transaction'}
+                "
               </span>
               ? This action cannot be undone.
             </AlertDialogDescription>
@@ -606,15 +946,21 @@ export function TransactionsList({ expenses }: TransactionsListProps) {
               disabled={!!isDeleting}
               onClick={() => {
                 if (deleteExpense) {
-                  confirmDelete(deleteExpense.id)
+                  confirmDelete(
+                    deleteExpense.id
+                  )
                 }
               }}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting
+                ? 'Deleting...'
+                : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
+
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   )
 }
