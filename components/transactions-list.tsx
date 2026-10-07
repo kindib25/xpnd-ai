@@ -398,9 +398,6 @@ export function TransactionsList({
       ============================================ */}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold md:text-xl">
-          Transactions
-        </h2>
 
         {/* Search */}
         <div className="relative">
