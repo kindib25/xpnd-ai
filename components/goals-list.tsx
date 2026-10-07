@@ -60,6 +60,10 @@ export function GoalsList({
   const [isRecordingRemainder, setIsRecordingRemainder] =
     useState(false)
 
+  // Keeps the success notice visible after the remainder
+  // has been successfully added and the page is refreshed.
+  const [recordedRemainder, setRecordedRemainder] = useState(0)
+
   const [allocationDraft, setAllocationDraft] = useState<
     Record<string, string>
   >({})
@@ -74,13 +78,9 @@ export function GoalsList({
   /*
    * Automatically record previous budget remainders.
    *
-   * IMPORTANT:
    * The database column `savings_remainder_recorded`
-   * is now the source of truth.
-   *
-   * Once a monthly budget has been processed, it is marked
-   * as TRUE in the database. Reopening the app will therefore
-   * NOT add the same remainder again.
+   * is the source of truth for whether a budget remainder
+   * has already been transferred to savings.
    */
   useEffect(() => {
     if (remainder <= 0) return
@@ -164,33 +164,38 @@ export function GoalsList({
         )
 
         /*
-         * Calculate the remainder only for budgets that
-         * have NOT been recorded yet.
+         * Calculate the remainder only for budgets
+         * that have not been recorded yet.
          */
         const budgetsWithRemainder = budgets
-          .map((budget: {
-            id: string
-            month_year: string
-            limit_amount: number | string | null
-          }) => {
-            const limit = Number(
-              budget.limit_amount || 0
-            )
+          .map(
+            (budget: {
+              id: string
+              month_year: string
+              limit_amount: number | string | null
+            }) => {
+              const limit = Number(
+                budget.limit_amount || 0
+              )
 
-            const spent =
-              spentByMonth[budget.month_year] || 0
+              const spent =
+                spentByMonth[budget.month_year] || 0
 
-            const budgetRemainder = Math.max(
-              0,
-              limit - spent
-            )
+              const budgetRemainder = Math.max(
+                0,
+                limit - spent
+              )
 
-            return {
-              ...budget,
-              remainder: budgetRemainder,
+              return {
+                ...budget,
+                remainder: budgetRemainder,
+              }
             }
-          })
-          .filter((budget: { remainder: number }) => budget.remainder > 0)
+          )
+          .filter(
+            (budget: { remainder: number }) =>
+              budget.remainder > 0
+          )
 
         if (budgetsWithRemainder.length === 0) {
           return
@@ -200,8 +205,10 @@ export function GoalsList({
          * Calculate the amount that should be added to savings.
          */
         const amountToAdd = budgetsWithRemainder.reduce(
-          (total: number, budget: { remainder: number }) =>
-            total + budget.remainder,
+          (
+            total: number,
+            budget: { remainder: number }
+          ) => total + budget.remainder,
           0
         )
 
@@ -256,9 +263,6 @@ export function GoalsList({
 
         /*
          * Mark every processed monthly budget as recorded.
-         *
-         * This is the important part that prevents the
-         * remainder from being added again on the next visit.
          */
         const budgetIds = budgetsWithRemainder.map(
           (budget: { id: string }) => budget.id
@@ -288,6 +292,16 @@ export function GoalsList({
         setTotalSaved(updatedAmount)
         setSavedDraft(String(updatedAmount))
 
+        /*
+         * IMPORTANT:
+         * Store the successfully recorded remainder
+         * separately from the original `remainder` prop.
+         *
+         * This allows the success notice to remain visible
+         * even after router.refresh() changes the prop to 0.
+         */
+        setRecordedRemainder(amountToAdd)
+
         router.refresh()
       } catch (error) {
         console.error(
@@ -304,6 +318,9 @@ export function GoalsList({
 
   /*
    * Update local state if the profile value changes.
+   *
+   * Do not reset recordedRemainder here because the
+   * success notice should remain visible after refresh.
    */
   useEffect(() => {
     if (remainder <= 0) {
@@ -687,6 +704,11 @@ export function GoalsList({
                 </div>
               </div>
 
+              {/* =========================================
+                  BUDGET REMAINDER NOTICE
+              ========================================= */}
+
+              {/* Processing notice */}
               {isRecordingRemainder && (
                 <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
@@ -697,13 +719,16 @@ export function GoalsList({
                 </div>
               )}
 
-              {remainder > 0 &&
+              {/* Success notice */}
+              {recordedRemainder > 0 &&
                 !isRecordingRemainder && (
                   <div className="mt-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
                     <p className="text-xs leading-relaxed text-primary">
-                      {formatCurrency(remainder)} from
-                      your previous budget was added to
-                      savings.
+                      {formatCurrency(
+                        recordedRemainder
+                      )}{' '}
+                      from your previous budget was
+                      added to savings.
                     </p>
                   </div>
                 )}
@@ -825,10 +850,11 @@ export function GoalsList({
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {goals.length === 0
                     ? 'Start building your savings'
-                    : `${goals.length} ${goals.length === 1
-                      ? 'goal'
-                      : 'goals'
-                    }`}
+                    : `${goals.length} ${
+                        goals.length === 1
+                          ? 'goal'
+                          : 'goals'
+                      }`}
                 </p>
               </div>
             </div>
@@ -840,6 +866,7 @@ export function GoalsList({
                 className="shrink-0 rounded-xl"
               >
                 <Plus className="mr-1.5 h-4 w-4" />
+
                 <span className="hidden xs:inline sm:inline">
                   New Goal
                 </span>
@@ -1057,19 +1084,19 @@ export function GoalsList({
                 const progress =
                   target > 0
                     ? Math.min(
-                      100,
-                      (current / target) * 100
-                    )
+                        100,
+                        (current / target) * 100
+                      )
                     : 0
 
                 const daysLeft = goal.deadline
                   ? Math.ceil(
-                    (new Date(
-                      goal.deadline
-                    ).getTime() -
-                      Date.now()) /
-                    86400000
-                  )
+                      (new Date(
+                        goal.deadline
+                      ).getTime() -
+                        Date.now()) /
+                        86400000
+                    )
                   : null
 
                 const remaining = Math.max(
