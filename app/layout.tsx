@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { PwaRegister } from '@/components/pwa-register'
 import './globals.css'
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from '@/components/ui/sonner'
@@ -15,25 +16,26 @@ export const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Xpnd - Smart Expense Tracking',
+  title: 'Xpnd AI',
   description: 'Track, analyze, and optimize your expenses with AI-powered insights. Smart budgeting made simple.',
   generator: 'v0.app',
+  manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/xpnd-ai-icon.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/xpnd-ai-icon.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/xpnd-ai-icon.png',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/xpnd-ai-icon.png',
   },
 }
 
@@ -67,7 +69,7 @@ export default function RootLayout({
               'w-[calc(100vw-32px)] max-w-sm rounded-2xl shadow-lg md:w-auto md:min-w-[360px] md:max-w-md',
           }}
         />
-
+        <PwaRegister />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
