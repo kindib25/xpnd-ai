@@ -44,7 +44,7 @@ export default async function GoalsPage() {
   }, 0)
 
   return (
-    <div className="flex-1 p-8">
+    <div className="w-full p-4 md:p-8 max-w-7xl mx-auto flex-1">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Savings Goals</h1>
         <p className="text-muted-foreground mt-1">Track your savings and financial goals</p>

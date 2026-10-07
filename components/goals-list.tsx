@@ -12,6 +12,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Trash2,
   Plus,
   PiggyBank,
@@ -120,13 +128,12 @@ export function GoalsList({
           throw updateError || new Error('Profile was not updated')
         }
 
-        setTotalSaved(
-          Number(updatedProfile.total_saved_amount || 0)
+        const updatedAmount = Number(
+          updatedProfile.total_saved_amount || 0
         )
 
-        setSavedDraft(
-          String(Number(updatedProfile.total_saved_amount || 0))
-        )
+        setTotalSaved(updatedAmount)
+        setSavedDraft(String(updatedAmount))
 
         sessionStorage.setItem(remainderKey, 'true')
 
@@ -172,6 +179,17 @@ export function GoalsList({
     })}`
   }
 
+  /*
+   * Open edit dialog.
+   */
+  const openEditSavedDialog = () => {
+    setSavedDraft(String(totalSaved))
+    setIsEditingSaved(true)
+  }
+
+  /*
+   * Save total saved amount.
+   */
   const handleSaveTotal = async () => {
     const amount = Number(savedDraft)
 
@@ -223,6 +241,9 @@ export function GoalsList({
     }
   }
 
+  /*
+   * Allocate savings to a goal.
+   */
   const handleAllocate = async (goal: any) => {
     const amount = Number(allocationDraft[goal.id])
 
@@ -330,6 +351,9 @@ export function GoalsList({
     }
   }
 
+  /*
+   * Add new savings goal.
+   */
   const handleAddGoal = async (
     e: React.FormEvent
   ) => {
@@ -349,6 +373,13 @@ export function GoalsList({
 
     if (!Number.isFinite(current) || current < 0) {
       alert('Enter a valid current amount')
+      return
+    }
+
+    if (current > target) {
+      alert(
+        'Already saved amount cannot be greater than the target amount'
+      )
       return
     }
 
@@ -397,6 +428,9 @@ export function GoalsList({
     }
   }
 
+  /*
+   * Delete goal.
+   */
   const handleDeleteGoal = async (id: string) => {
     if (!confirm('Delete this goal?')) {
       return
@@ -463,89 +497,32 @@ export function GoalsList({
                   </div>
                 </div>
 
-                {!isEditingSaved && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 shrink-0 rounded-xl"
-                    onClick={() =>
-                      setIsEditingSaved(true)
-                    }
-                    disabled={isRecordingRemainder}
-                    aria-label="Edit total savings"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 rounded-xl"
+                  onClick={openEditSavedDialog}
+                  disabled={isRecordingRemainder}
+                  aria-label="Edit total savings"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Amount */}
-              {!isEditingSaved ? (
-                <div className="mt-5">
-                  <p className="break-all text-3xl font-bold tracking-tight sm:text-4xl">
-                    {formatCurrency(totalSaved)}
+              <div className="mt-5">
+                <p className="break-all text-3xl font-bold tracking-tight sm:text-4xl">
+                  {formatCurrency(totalSaved)}
+                </p>
+
+                <div className="mt-2 flex items-center gap-2">
+                  <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+
+                  <p className="text-xs text-muted-foreground">
+                    Allocate this amount toward your goals
                   </p>
-
-                  <div className="mt-2 flex items-center gap-2">
-                    <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-
-                    <p className="text-xs text-muted-foreground">
-                      Allocate this amount toward your goals
-                    </p>
-                  </div>
                 </div>
-              ) : (
-                <div className="mt-5 space-y-3">
-                  <Label htmlFor="total-saved">
-                    Total saved amount
-                  </Label>
-
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Input
-                      id="total-saved"
-                      aria-label="Total saved amount"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={savedDraft}
-                      onChange={(e) =>
-                        setSavedDraft(e.target.value)
-                      }
-                      disabled={isLoading}
-                      className="h-11 rounded-xl"
-                      autoFocus
-                    />
-
-                    <div className="flex gap-2">
-                      <Button
-                        size="icon"
-                        className="h-11 w-11 shrink-0 rounded-xl"
-                        onClick={handleSaveTotal}
-                        disabled={isLoading}
-                        aria-label="Save amount"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-11 w-11 shrink-0 rounded-xl"
-                        onClick={() => {
-                          setSavedDraft(
-                            String(totalSaved)
-                          )
-                          setIsEditingSaved(false)
-                        }}
-                        disabled={isLoading}
-                        aria-label="Cancel editing"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
 
               {/* Budget remainder notice */}
               {isRecordingRemainder && (
@@ -572,6 +549,98 @@ export function GoalsList({
           </div>
         </CardContent>
       </Card>
+
+      {/* =========================================
+          EDIT TOTAL SAVED AMOUNT DIALOG
+      ========================================= */}
+      <Dialog
+        open={isEditingSaved}
+        onOpenChange={(open) => {
+          if (!isLoading) {
+            setIsEditingSaved(open)
+
+            if (!open) {
+              setSavedDraft(String(totalSaved))
+            }
+          }
+        }}
+      >
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-3xl">
+          <DialogHeader>
+            <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
+              <PiggyBank className="h-5 w-5 text-primary" />
+            </div>
+
+            <DialogTitle className="text-xl">
+              Edit total savings
+            </DialogTitle>
+
+            <DialogDescription>
+              Update the amount of money currently available
+              for your savings goals.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Label htmlFor="dialog-total-saved">
+              Total saved amount
+            </Label>
+
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                ₱
+              </span>
+
+              <Input
+                id="dialog-total-saved"
+                type="number"
+                min="0"
+                step="0.01"
+                value={savedDraft}
+                onChange={(e) =>
+                  setSavedDraft(e.target.value)
+                }
+                disabled={isLoading}
+                className="h-12 rounded-xl pl-8 text-base"
+                autoFocus
+              />
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Current amount:{' '}
+              <span className="font-medium text-foreground">
+                {formatCurrency(totalSaved)}
+              </span>
+            </p>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setSavedDraft(String(totalSaved))
+                setIsEditingSaved(false)
+              }}
+              disabled={isLoading}
+              className="h-11 w-full rounded-xl sm:w-auto"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleSaveTotal}
+              disabled={isLoading}
+              className="h-11 w-full rounded-xl sm:w-auto"
+            >
+              <Check className="mr-2 h-4 w-4" />
+              {isLoading ? 'Saving...' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* =========================================
           GOALS
