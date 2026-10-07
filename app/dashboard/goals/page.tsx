@@ -1,8 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { GoalsList } from '@/components/goals-list'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ChevronDown } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function GoalsPage() {
   const supabase = await createClient()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -10,22 +19,31 @@ export default async function GoalsPage() {
   if (!user) return null
 
   const currentMonth = new Date().toISOString().substring(0, 7)
-  const [{ data: goals }, { data: profile }, { data: monthlyBudgets }, { data: expenses }] = await Promise.all([
+
+  const [
+    { data: goals },
+    { data: profile },
+    { data: monthlyBudgets },
+    { data: expenses },
+  ] = await Promise.all([
     supabase
       .from('savings_goals')
       .select('*')
       .eq('user_id', user.id)
       .order('deadline', { ascending: true }),
+
     supabase
       .from('profiles')
       .select('total_saved_amount')
       .eq('id', user.id)
       .single(),
+
     supabase
       .from('monthly_budgets')
       .select('month_year, limit_amount')
       .eq('user_id', user.id)
       .lt('month_year', currentMonth),
+
     supabase
       .from('expenses')
       .select('date, amount')
@@ -33,28 +51,207 @@ export default async function GoalsPage() {
       .lt('date', `${currentMonth}-01`),
   ])
 
-  const spentByMonth = (expenses || []).reduce<Record<string, number>>((totals, expense) => {
-    const month = String(expense.date).substring(0, 7)
-    totals[month] = (totals[month] || 0) + Number(expense.amount || 0)
-    return totals
-  }, {})
-  const previousBudgetRemainder = (monthlyBudgets || []).reduce((total, budget) => {
-    const remainder = Number(budget.limit_amount || 0) - (spentByMonth[budget.month_year] || 0)
-    return total + Math.max(0, remainder)
-  }, 0)
+  const spentByMonth = (expenses || []).reduce<Record<string, number>>(
+    (totals, expense) => {
+      const month = String(expense.date).substring(0, 7)
+
+      totals[month] =
+        (totals[month] || 0) + Number(expense.amount || 0)
+
+      return totals
+    },
+    {}
+  )
+
+  const previousBudgetRemainder = (monthlyBudgets || []).reduce(
+    (total, budget) => {
+      const remainder =
+        Number(budget.limit_amount || 0) -
+        (spentByMonth[budget.month_year] || 0)
+
+      return total + Math.max(0, remainder)
+    },
+    0
+  )
 
   return (
-    <div className="w-full p-4 md:p-8 max-w-7xl mx-auto flex-1">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Savings Goals</h1>
-        <p className="text-muted-foreground mt-1">Track your savings and financial goals</p>
-      </div>
+    <div className="mx-auto flex w-full max-w-7xl flex-1 p-4 md:p-8">
+      <div className="w-full">
+        {/* Page Header */}
+        <div className="mb-8">
+          {/* Page Navigation Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="
+                group
+                -ml-2
+                inline-flex
+                items-center
+                gap-2
+                rounded-xl
+                px-2
+                py-1
+                text-3xl
+                font-bold
+                tracking-tight
+                text-foreground
+                transition-all
+                duration-200
+                hover:bg-muted/60
+                focus:outline-none
+                focus:ring-2
+                focus:ring-primary/20
+                md:text-4xl
+              "
+            >
+              <span>Savings Goals</span>
 
-      <GoalsList
-        goals={goals || []}
-        profile={profile}
-        previousBudgetRemainder={previousBudgetRemainder}
-      />
+              <ChevronDown
+                className="
+                  mt-1
+                  h-5
+                  w-5
+                  text-muted-foreground
+                  transition-transform
+                  duration-200
+                  group-data-[state=open]:rotate-180
+                  md:h-6
+                  md:w-6
+                "
+              />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="start"
+              sideOffset={10}
+              className="
+                w-[calc(100vw-32px)]
+                max-w-64
+                rounded-2xl
+                border-border/60
+                bg-background/95
+                p-2
+                shadow-xl
+                backdrop-blur-xl
+              "
+            >
+              {/* Budget */}
+              <DropdownMenuItem
+                className="
+                  cursor-pointer
+                  rounded-xl
+                  p-2
+                  focus:bg-muted
+                "
+              >
+                <Link
+                  href="/dashboard/budgets"
+                  className="
+                    flex
+                    w-full
+                    items-center
+                    gap-3
+                    rounded-xl
+                    px-2
+                    py-2
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      h-10
+                      w-10
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-primary/10
+                      text-sm
+                      font-bold
+                      text-primary
+                    "
+                  >
+                    $
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      Budget
+                    </p>
+
+                    <p className="text-xs text-muted-foreground">
+                      Manage your spending
+                    </p>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+
+              {/* Savings Goals */}
+              <DropdownMenuItem
+                className="
+                  cursor-pointer
+                  rounded-xl
+                  p-2
+                  focus:bg-muted
+                "
+              >
+                <Link
+                  href="/dashboard/goals"
+                  className="
+                    flex
+                    w-full
+                    items-center
+                    gap-3
+                    rounded-xl
+                    bg-muted/60
+                    px-2
+                    py-2
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      h-10
+                      w-10
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-emerald-500/10
+                      text-sm
+                      font-bold
+                      text-emerald-500
+                    "
+                  >
+                    ₱
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      Savings Goals
+                    </p>
+
+                    <p className="text-xs text-muted-foreground">
+                      Track your savings
+                    </p>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <p className="mt-1 text-sm text-muted-foreground md:text-base">
+            Track your savings and financial goals
+          </p>
+        </div>
+
+        {/* Goals Content */}
+        <GoalsList
+          goals={goals || []}
+          profile={profile}
+          previousBudgetRemainder={previousBudgetRemainder}
+        />
+      </div>
     </div>
   )
 }
