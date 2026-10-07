@@ -72,16 +72,18 @@ export function GoalsList({
   })
 
   /*
-   * Record the previous budget remainder into total_saved_amount.
+   * Automatically record previous budget remainders.
+   *
+   * IMPORTANT:
+   * The database column `savings_remainder_recorded`
+   * is now the source of truth.
+   *
+   * Once a monthly budget has been processed, it is marked
+   * as TRUE in the database. Reopening the app will therefore
+   * NOT add the same remainder again.
    */
   useEffect(() => {
     if (remainder <= 0) return
-
-    const remainderKey = `budget-remainder-recorded-${remainder}`
-
-    if (sessionStorage.getItem(remainderKey)) {
-      return
-    }
 
     const recordRemainder = async () => {
       setIsRecordingRemainder(true)
@@ -97,12 +99,127 @@ export function GoalsList({
           throw new Error('Not authenticated')
         }
 
-        const { data: latestProfile, error: profileFetchError } =
+        /*
+         * Get all previous monthly budgets that have not
+         * yet had their remainder transferred to savings.
+         */
+        const { data: budgets, error: budgetsError } =
           await supabase
-            .from('profiles')
-            .select('total_saved_amount')
-            .eq('id', user.id)
-            .single()
+            .from('monthly_budgets')
+            .select(
+              'id, month_year, limit_amount, savings_remainder_recorded'
+            )
+            .eq('user_id', user.id)
+            .eq('savings_remainder_recorded', false)
+            .lt(
+              'month_year',
+              new Date().toISOString().substring(0, 7)
+            )
+
+        if (budgetsError) {
+          throw budgetsError
+        }
+
+        if (!budgets || budgets.length === 0) {
+          return
+        }
+
+        /*
+         * Get expenses from previous months.
+         */
+        const { data: expenses, error: expensesError } =
+          await supabase
+            .from('expenses')
+            .select('date, amount')
+            .eq('user_id', user.id)
+            .lt(
+              'date',
+              `${new Date().toISOString().substring(0, 7)}-01`
+            )
+
+        if (expensesError) {
+          throw expensesError
+        }
+
+        /*
+         * Calculate total spending for each month.
+         */
+        const spentByMonth = (expenses || []).reduce(
+          (
+            totals: Record<string, number>,
+            expense: {
+              date: string
+              amount: number | string
+            }
+          ) => {
+            const month = String(expense.date).substring(0, 7)
+
+            totals[month] =
+              (totals[month] || 0) +
+              Number(expense.amount || 0)
+
+            return totals
+          },
+          {}
+        )
+
+        /*
+         * Calculate the remainder only for budgets that
+         * have NOT been recorded yet.
+         */
+        const budgetsWithRemainder = budgets
+          .map((budget: {
+            id: string
+            month_year: string
+            limit_amount: number | string | null
+          }) => {
+            const limit = Number(
+              budget.limit_amount || 0
+            )
+
+            const spent =
+              spentByMonth[budget.month_year] || 0
+
+            const budgetRemainder = Math.max(
+              0,
+              limit - spent
+            )
+
+            return {
+              ...budget,
+              remainder: budgetRemainder,
+            }
+          })
+          .filter((budget: { remainder: number }) => budget.remainder > 0)
+
+        if (budgetsWithRemainder.length === 0) {
+          return
+        }
+
+        /*
+         * Calculate the amount that should be added to savings.
+         */
+        const amountToAdd = budgetsWithRemainder.reduce(
+          (total: number, budget: { remainder: number }) =>
+            total + budget.remainder,
+          0
+        )
+
+        if (amountToAdd <= 0) {
+          return
+        }
+
+        /*
+         * Get the latest profile value from Supabase.
+         */
+        const {
+          data: latestProfile,
+          error: profileFetchError,
+        } = await supabase
+          .from('profiles')
+          .select('total_saved_amount')
+          .eq('id', user.id)
+          .single()
 
         if (profileFetchError) {
           throw profileFetchError
@@ -112,30 +229,64 @@ export function GoalsList({
           latestProfile?.total_saved_amount || 0
         )
 
-        const newTotalSaved = currentSaved + remainder
+        const newTotalSaved =
+          currentSaved + amountToAdd
 
-        const { data: updatedProfile, error: updateError } =
-          await supabase
-            .from('profiles')
-            .update({
-              total_saved_amount: newTotalSaved,
-            })
-            .eq('id', user.id)
-            .select('id, total_saved_amount')
-            .single()
+        /*
+         * Update total saved amount.
+         */
+        const {
+          data: updatedProfile,
+          error: updateError,
+        } = await supabase
+          .from('profiles')
+          .update({
+            total_saved_amount: newTotalSaved,
+          })
+          .eq('id', user.id)
+          .select('id, total_saved_amount')
+          .single()
 
         if (updateError || !updatedProfile) {
-          throw updateError || new Error('Profile was not updated')
+          throw (
+            updateError ||
+            new Error('Profile was not updated')
+          )
         }
 
+        /*
+         * Mark every processed monthly budget as recorded.
+         *
+         * This is the important part that prevents the
+         * remainder from being added again on the next visit.
+         */
+        const budgetIds = budgetsWithRemainder.map(
+          (budget: { id: string }) => budget.id
+        )
+
+        const {
+          error: markBudgetsError,
+        } = await supabase
+          .from('monthly_budgets')
+          .update({
+            savings_remainder_recorded: true,
+          })
+          .in('id', budgetIds)
+          .eq('user_id', user.id)
+
+        if (markBudgetsError) {
+          throw markBudgetsError
+        }
+
+        /*
+         * Update local UI.
+         */
         const updatedAmount = Number(
           updatedProfile.total_saved_amount || 0
         )
 
         setTotalSaved(updatedAmount)
         setSavedDraft(String(updatedAmount))
-
-        sessionStorage.setItem(remainderKey, 'true')
 
         router.refresh()
       } catch (error) {
@@ -211,7 +362,10 @@ export function GoalsList({
         throw new Error('Not authenticated')
       }
 
-      const { data: updatedProfile, error } = await supabase
+      const {
+        data: updatedProfile,
+        error,
+      } = await supabase
         .from('profiles')
         .update({
           total_saved_amount: amount,
@@ -221,7 +375,10 @@ export function GoalsList({
         .single()
 
       if (error || !updatedProfile) {
-        throw error || new Error('Profile was not updated')
+        throw (
+          error ||
+          new Error('Profile was not updated')
+        )
       }
 
       const updatedAmount = Number(
@@ -245,7 +402,9 @@ export function GoalsList({
    * Allocate savings to a goal.
    */
   const handleAllocate = async (goal: any) => {
-    const amount = Number(allocationDraft[goal.id])
+    const amount = Number(
+      allocationDraft[goal.id]
+    )
 
     if (!Number.isFinite(amount) || amount <= 0) {
       alert('Enter an amount greater than zero')
@@ -297,19 +456,22 @@ export function GoalsList({
         throw new Error('Not authenticated')
       }
 
-      const { error: goalError } = await supabase
-        .from('savings_goals')
-        .update({
-          current_amount: currentAmount + amount,
-        })
-        .eq('id', goal.id)
-        .eq('user_id', user.id)
+      const { error: goalError } =
+        await supabase
+          .from('savings_goals')
+          .update({
+            current_amount:
+              currentAmount + amount,
+          })
+          .eq('id', goal.id)
+          .eq('user_id', user.id)
 
       if (goalError) {
         throw goalError
       }
 
-      const nextTotal = totalSaved - amount
+      const nextTotal =
+        totalSaved - amount
 
       const {
         data: updatedProfile,
@@ -364,7 +526,9 @@ export function GoalsList({
     }
 
     const target = Number(newGoal.target)
-    const current = Number(newGoal.current || 0)
+    const current = Number(
+      newGoal.current || 0
+    )
 
     if (!Number.isFinite(target) || target <= 0) {
       alert('Enter a valid target amount')
@@ -396,15 +560,17 @@ export function GoalsList({
         throw new Error('Not authenticated')
       }
 
-      const { error } = await supabase
-        .from('savings_goals')
-        .insert({
-          user_id: user.id,
-          name: newGoal.name,
-          target_amount: target,
-          current_amount: current,
-          deadline: newGoal.deadline || null,
-        })
+      const { error } =
+        await supabase
+          .from('savings_goals')
+          .insert({
+            user_id: user.id,
+            name: newGoal.name,
+            target_amount: target,
+            current_amount: current,
+            deadline:
+              newGoal.deadline || null,
+          })
 
       if (error) {
         throw error
@@ -431,7 +597,9 @@ export function GoalsList({
   /*
    * Delete goal.
    */
-  const handleDeleteGoal = async (id: string) => {
+  const handleDeleteGoal = async (
+    id: string
+  ) => {
     if (!confirm('Delete this goal?')) {
       return
     }
@@ -447,11 +615,12 @@ export function GoalsList({
         throw new Error('Not authenticated')
       }
 
-      const { error } = await supabase
-        .from('savings_goals')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
+      const { error } =
+        await supabase
+          .from('savings_goals')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id)
 
       if (error) {
         throw error
@@ -466,20 +635,15 @@ export function GoalsList({
 
   return (
     <div className="w-full space-y-5 sm:space-y-6">
-
       {/* =========================================
           AVAILABLE SAVINGS
       ========================================= */}
       <Card className="overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
         <CardContent className="p-0">
           <div className="relative overflow-hidden">
-
-            {/* Decorative glow */}
             <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
 
             <div className="relative p-5 sm:p-6">
-
-              {/* Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
@@ -509,7 +673,6 @@ export function GoalsList({
                 </Button>
               </div>
 
-              {/* Amount */}
               <div className="mt-5">
                 <p className="break-all text-3xl font-bold tracking-tight sm:text-4xl">
                   {formatCurrency(totalSaved)}
@@ -524,7 +687,6 @@ export function GoalsList({
                 </div>
               </div>
 
-              {/* Budget remainder notice */}
               {isRecordingRemainder && (
                 <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
@@ -636,7 +798,9 @@ export function GoalsList({
               className="h-11 w-full rounded-xl sm:w-auto"
             >
               <Check className="mr-2 h-4 w-4" />
-              {isLoading ? 'Saving...' : 'Save changes'}
+              {isLoading
+                ? 'Saving...'
+                : 'Save changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -646,11 +810,8 @@ export function GoalsList({
           GOALS
       ========================================= */}
       <Card className="overflow-hidden rounded-3xl border bg-card shadow-sm">
-
-        {/* Goals header */}
         <CardHeader className="space-y-4 p-5 pb-4 sm:p-6 sm:pb-5">
           <div className="flex items-center justify-between gap-3">
-
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                 <Target className="h-5 w-5 text-primary" />
@@ -664,11 +825,10 @@ export function GoalsList({
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {goals.length === 0
                     ? 'Start building your savings'
-                    : `${goals.length} ${
-                        goals.length === 1
-                          ? 'goal'
-                          : 'goals'
-                      }`}
+                    : `${goals.length} ${goals.length === 1
+                      ? 'goal'
+                      : 'goals'
+                    }`}
                 </p>
               </div>
             </div>
@@ -683,6 +843,7 @@ export function GoalsList({
                 <span className="hidden xs:inline sm:inline">
                   New Goal
                 </span>
+
                 <span className="xs:hidden sm:hidden">
                   Add
                 </span>
@@ -692,10 +853,7 @@ export function GoalsList({
         </CardHeader>
 
         <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
-
-          {/* =====================================
-              ADD GOAL FORM
-          ===================================== */}
+          {/* ADD GOAL FORM */}
           {isAdding && (
             <form
               onSubmit={handleAddGoal}
@@ -718,8 +876,6 @@ export function GoalsList({
               </div>
 
               <div className="space-y-4 p-4 sm:p-5">
-
-                {/* Goal name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="goal-name">
                     Goal name
@@ -740,9 +896,7 @@ export function GoalsList({
                   />
                 </div>
 
-                {/* Amounts */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
                   <div className="space-y-1.5">
                     <Label htmlFor="goal-target">
                       Target amount
@@ -802,7 +956,6 @@ export function GoalsList({
                   </div>
                 </div>
 
-                {/* Deadline */}
                 <div className="space-y-1.5">
                   <Label htmlFor="goal-deadline">
                     Deadline
@@ -826,13 +979,13 @@ export function GoalsList({
                   />
                 </div>
 
-                {/* Form buttons */}
                 <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       setIsAdding(false)
+
                       setNewGoal({
                         name: '',
                         target: '',
@@ -863,9 +1016,7 @@ export function GoalsList({
             </form>
           )}
 
-          {/* =====================================
-              EMPTY STATE
-          ===================================== */}
+          {/* EMPTY STATE */}
           {goals.length === 0 ? (
             <div className="rounded-2xl border border-dashed bg-muted/20 px-5 py-10 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
@@ -906,19 +1057,19 @@ export function GoalsList({
                 const progress =
                   target > 0
                     ? Math.min(
-                        100,
-                        (current / target) * 100
-                      )
+                      100,
+                      (current / target) * 100
+                    )
                     : 0
 
                 const daysLeft = goal.deadline
                   ? Math.ceil(
-                      (new Date(
-                        goal.deadline
-                      ).getTime() -
-                        Date.now()) /
-                        86400000
-                    )
+                    (new Date(
+                      goal.deadline
+                    ).getTime() -
+                      Date.now()) /
+                    86400000
+                  )
                   : null
 
                 const remaining = Math.max(
@@ -938,10 +1089,7 @@ export function GoalsList({
                     className="group overflow-hidden rounded-2xl border bg-background transition-colors hover:bg-muted/20"
                   >
                     <div className="p-4 sm:p-5">
-
-                      {/* Goal heading */}
                       <div className="flex items-start justify-between gap-3">
-
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
@@ -985,7 +1133,6 @@ export function GoalsList({
                         </Button>
                       </div>
 
-                      {/* Progress */}
                       <div className="mt-4">
                         <div className="mb-2 flex items-center justify-between gap-3">
                           <span className="text-xs font-medium text-muted-foreground">
@@ -1003,9 +1150,7 @@ export function GoalsList({
                         />
                       </div>
 
-                      {/* Stats */}
                       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-
                         <div className="rounded-xl bg-muted/40 px-3 py-2.5">
                           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                             Remaining
@@ -1053,7 +1198,6 @@ export function GoalsList({
                         </div>
                       </div>
 
-                      {/* Allocation */}
                       {!isComplete && (
                         <div className="mt-4 border-t pt-4">
                           <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -1096,23 +1240,19 @@ export function GoalsList({
                                 )}
                                 step="0.01"
                                 placeholder="Enter amount"
-                                value={
-                                  allocationValue
-                                }
+                                value={allocationValue}
                                 onChange={(e) =>
                                   setAllocationDraft(
                                     (draft) => ({
                                       ...draft,
                                       [goal.id]:
-                                        e.target
-                                          .value,
+                                        e.target.value,
                                     })
                                   )
                                 }
                                 disabled={
                                   isLoading ||
-                                  totalSaved <=
-                                    0
+                                  totalSaved <= 0
                                 }
                                 className="h-11 rounded-xl pl-8"
                               />
@@ -1126,10 +1266,8 @@ export function GoalsList({
                               }
                               disabled={
                                 isLoading ||
-                                totalSaved <=
-                                  0 ||
-                                remaining <=
-                                  0 ||
+                                totalSaved <= 0 ||
+                                remaining <= 0 ||
                                 !allocationValue
                               }
                               className="h-11 w-full rounded-xl sm:w-auto sm:min-w-[130px]"
@@ -1141,7 +1279,6 @@ export function GoalsList({
                         </div>
                       )}
 
-                      {/* Completed */}
                       {isComplete && (
                         <div className="mt-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5">
                           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">

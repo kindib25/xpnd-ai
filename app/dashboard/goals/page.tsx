@@ -33,7 +33,9 @@ export default async function GoalsPage() {
 
     supabase
       .from('monthly_budgets')
-      .select('month_year, limit_amount')
+      .select(
+        'id, month_year, limit_amount, savings_remainder_recorded'
+      )
       .eq('user_id', user.id)
       .lt('month_year', currentMonth),
 
@@ -44,38 +46,51 @@ export default async function GoalsPage() {
       .lt('date', `${currentMonth}-01`),
   ])
 
-  const spentByMonth = (expenses || []).reduce<Record<string, number>>(
-    (totals, expense) => {
-      const month = String(expense.date).substring(0, 7)
+  /*
+   * Calculate total expenses per month.
+   */
+  const spentByMonth = (expenses || []).reduce<
+    Record<string, number>
+  >((totals, expense) => {
+    const month = String(expense.date).substring(0, 7)
 
-      totals[month] =
-        (totals[month] || 0) + Number(expense.amount || 0)
+    totals[month] =
+      (totals[month] || 0) +
+      Number(expense.amount || 0)
 
-      return totals
-    },
-    {}
-  )
+    return totals
+  }, {})
 
-  const previousBudgetRemainder = (monthlyBudgets || []).reduce(
-    (total, budget) => {
-      const remainder =
-        Number(budget.limit_amount || 0) -
-        (spentByMonth[budget.month_year] || 0)
+  /*
+   * IMPORTANT:
+   * Only calculate remainder for monthly budgets
+   * that have NOT been recorded yet.
+   *
+   * Once savings_remainder_recorded becomes TRUE,
+   * that month's remainder will no longer be included.
+   */
+  const previousBudgetRemainder = (
+    monthlyBudgets || []
+  ).reduce((total, budget) => {
+    // Already transferred to savings
+    if (budget.savings_remainder_recorded) {
+      return total
+    }
 
-      return total + Math.max(0, remainder)
-    },
-    0
-  )
+    const remainder =
+      Number(budget.limit_amount || 0) -
+      (spentByMonth[budget.month_year] || 0)
+
+    return total + Math.max(0, remainder)
+  }, 0)
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-1 p-4 md:p-8">
       <div className="w-full">
         {/* Page Header */}
         <div className="mb-8">
-          {/* Page Navigation */}
           <FinancePageNavigation />
 
-          {/* Page Description */}
           <p className="mt-2 ml-2 text-sm text-muted-foreground md:text-base">
             Track your savings and financial goals
           </p>
