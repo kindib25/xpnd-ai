@@ -1,20 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   Home,
-  PlusSquare,
   ReceiptText,
   Wallet,
-  Target,
   Settings,
   LogOut,
   ChartNoAxesCombined,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -33,13 +30,9 @@ const navItems = [
     label: 'Finances',
     href: '/dashboard/budgets',
     icon: Wallet,
+    activePaths: ['/dashboard/budgets', '/dashboard/goals'],
   },
-  /*{
-    label: 'Goals',
-    href: '/dashboard/goals',
-    icon: Target,
-  },*/
-  { 
+  {
     label: 'Analytics',
     href: '/dashboard/analytics',
     icon: ChartNoAxesCombined,
@@ -62,31 +55,53 @@ export function Navigation({ variant = 'sidebar' }: NavigationProps) {
 
   const handleLogout = async () => {
     const supabase = createClient()
+
     setIsLoggingOut(true)
+
     await supabase.auth.signOut()
+
     router.push('/auth/login')
+  }
+
+  const isItemActive = (item: (typeof navItems)[number]) => {
+    // Dashboard should only be active on exactly /dashboard
+    if (item.href === '/dashboard') {
+      return pathname === '/dashboard'
+    }
+
+    // Finances can have multiple pages
+    if ('activePaths' in item && item.activePaths) {
+      return item.activePaths.some(
+        (path) =>
+          pathname === path ||
+          pathname.startsWith(path + '/')
+      )
+    }
+
+    // Normal navigation items
+    return (
+      pathname === item.href ||
+      pathname.startsWith(item.href + '/')
+    )
   }
 
   // Mobile Bottom Navigation
   if (variant === 'mobile') {
     return (
       <nav className="flex items-center justify-around h-20 px-2">
-        {navItems.slice(0, 6).map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon
-          const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname === item.href || pathname.startsWith(item.href + "/")
+          const isActive = isItemActive(item)
 
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center justify-center py-2 px-3 flex-1 transition-colors",
+                'flex items-center justify-center py-2 px-3 flex-1 transition-colors',
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Icon className="w-6 h-6" />
@@ -113,18 +128,19 @@ export function Navigation({ variant = 'sidebar' }: NavigationProps) {
       <nav className="flex-1 overflow-y-auto p-4 space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname === item.href || pathname.startsWith(item.href + "/")
-          return (
-            <Link key={item.href} href={item.href} className={cn(
-              "flex items-center gap-3 px-4 py-4 rounded-sm text-xl font-medium transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground hover:bg-muted"
-            )}>
+          const isActive = isItemActive(item)
 
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 px-4 py-4 rounded-sm text-xl font-medium transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
+              )}
+            >
               <Icon className="w-5 h-5" />
               <span>{item.label}</span>
             </Link>

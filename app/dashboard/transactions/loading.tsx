@@ -19,9 +19,8 @@ export default function Loading() {
 
         <Skeleton className="h-6 w-48 md:h-7 md:w-56" />
 
-        <Card>
-          <CardContent className="p-4 md:p-6">
-
+        <Card className="bg-white">
+          <CardContent className="bg-white p-4 md:p-6">
             {/* Calendar Header */}
             <div className="mb-5 flex items-center justify-between">
               <Skeleton className="h-8 w-8 rounded-md" />
@@ -34,10 +33,7 @@ export default function Loading() {
             {/* Calendar Weekdays */}
             <div className="mb-3 grid grid-cols-7 gap-1 md:gap-2">
               {Array.from({ length: 7 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex justify-center"
-                >
+                <div key={index} className="flex justify-center">
                   <Skeleton className="h-4 w-8" />
                 </div>
               ))}
@@ -52,9 +48,9 @@ export default function Loading() {
                 />
               ))}
             </div>
-
           </CardContent>
         </Card>
+
 
       </section>
 
