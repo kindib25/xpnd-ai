@@ -10,23 +10,25 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 export function FinancePageNavigation() {
   const pathname = usePathname()
 
-  const isBudgetPage = pathname === "/dashboard/budgets"
-  const isGoalsPage = pathname === "/dashboard/goals"
+  const isBudgetPage = pathname.startsWith("/dashboard/budgets")
+  const isGoalsPage = pathname.startsWith("/dashboard/goals")
 
   const currentTitle = isGoalsPage ? "Savings Goals" : "Budget"
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
+    <Sheet>
+      {/* Page Title Trigger */}
+      <SheetTrigger
         className="
           group
           -ml-2
@@ -41,14 +43,14 @@ export function FinancePageNavigation() {
           tracking-tight
           text-foreground
           outline-none
-          transition-all
+          transition-colors
           duration-200
           focus-visible:ring-2
           focus-visible:ring-primary/30
           md:text-4xl
         "
       >
-        <span>{currentTitle}</span>
+        <span className="cursor-pointer">{currentTitle}</span>
 
         <ChevronDown
           className="
@@ -62,170 +64,176 @@ export function FinancePageNavigation() {
             group-data-[state=open]:text-foreground
             md:h-6
             md:w-6
+            cursor-pointer
           "
         />
-      </DropdownMenuTrigger>
+      </SheetTrigger>
 
-      <DropdownMenuContent
-        align="start"
-        sideOffset={12}
+      {/* Bottom Sheet */}
+      <SheetContent
+        side="bottom"
         className="
-          w-[calc(100vw-32px)]
-          max-w-[320px]
-          overflow-hidden
-          rounded-2xl
-          border
+          rounded-t-3xl
           border-white/[0.06]
           bg-[#0E141C]/95
-          p-1.5
-          shadow-[0_24px_60px_-15px_rgba(0,0,0,0.85)]
-          ring-1
-          ring-black/40
+          px-4
+          pb-8
+          pt-5
+          shadow-[0_-24px_60px_-15px_rgba(0,0,0,0.85)]
           backdrop-blur-xl
         "
       >
-        {/* Header */}
-        <div className="px-3 pb-1.5 pt-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
-            Manage finances
-          </p>
-        </div>
+        {/* Drag indicator */}
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/15" />
 
-        {/* Budget */}
-        <DropdownMenuItem
-          className={`
-            cursor-pointer
-            rounded-xl
-            p-0
-            outline-none
-            focus:outline-none
-            data-[highlighted]:bg-transparent
-            data-[highlighted]:text-inherit
-            ${
-              isBudgetPage
-                ? "bg-primary/[0.08]"
-                : "bg-transparent"
-            }
-          `}
-        >
+        <SheetHeader className="mb-5 text-left">
+          <SheetTitle className="text-lg font-semibold text-white">
+            Manage finances
+          </SheetTitle>
+
+          <p className="text-sm text-white/40">
+            Choose what you want to manage
+          </p>
+        </SheetHeader>
+
+        <div className="space-y-2">
+          {/* Budget */}
           <Link
             href="/dashboard/budgets"
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 outline-none"
+            className={`
+              flex
+              w-full
+              items-center
+              gap-3
+              rounded-2xl
+              border
+              px-4
+              py-3.5
+              outline-none
+              transition-colors
+              ${
+                isBudgetPage
+                  ? "border-primary/20 bg-primary/[0.08]"
+                  : "border-white/[0.05] bg-white/[0.02]"
+              }
+            `}
           >
+            {/* Icon */}
             <div
               className={`
-                flex h-9 w-9 shrink-0 items-center justify-center rounded-lg
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
                 ${
                   isBudgetPage
                     ? "bg-primary/15 text-primary"
-                    : "bg-white/[0.05] text-white/60"
+                    : "bg-white/[0.05] text-white/50"
                 }
               `}
             >
-              <PiggyBank className="h-[18px] w-[18px]" />
+              <PiggyBank className="h-[19px] w-[19px]" />
             </div>
 
+            {/* Text */}
             <div className="min-w-0 flex-1">
               <p
-                className={`text-sm font-medium ${
-                  isBudgetPage ? "text-white" : "text-white/90"
-                }`}
+                className={`
+                  text-sm
+                  font-medium
+                  ${
+                    isBudgetPage
+                      ? "text-white"
+                      : "text-white/85"
+                  }
+                `}
               >
                 Budget
               </p>
 
-              <p className="mt-0.5 truncate text-xs text-white/40">
+              <p className="mt-0.5 text-xs text-white/35">
                 Manage your spending
               </p>
             </div>
 
+            {/* Active indicator */}
             {isBudgetPage && (
               <Check className="h-4 w-4 shrink-0 text-primary" />
             )}
-
-            {!isBudgetPage && (
-              <ChevronDown
-                className="
-                  h-4
-                  w-4
-                  shrink-0
-                  -rotate-90
-                  text-white/25
-                "
-              />
-            )}
           </Link>
-        </DropdownMenuItem>
 
-        {/* Divider */}
-        <div className="mx-3 my-1.5 h-px bg-white/[0.05]" />
-
-        {/* Savings Goals */}
-        <DropdownMenuItem
-          className={`
-            cursor-pointer
-            rounded-xl
-            p-0
-            outline-none
-            focus:outline-none
-            data-[highlighted]:bg-transparent
-            data-[highlighted]:text-inherit
-            ${
-              isGoalsPage
-                ? "bg-primary/[0.08]"
-                : "bg-transparent"
-            }
-          `}
-        >
+          {/* Savings Goals */}
           <Link
             href="/dashboard/goals"
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 outline-none"
+            className={`
+              flex
+              w-full
+              items-center
+              gap-3
+              rounded-2xl
+              border
+              px-4
+              py-3.5
+              outline-none
+              transition-colors
+              ${
+                isGoalsPage
+                  ? "border-primary/20 bg-primary/[0.08]"
+                  : "border-white/[0.05] bg-white/[0.02]"
+              }
+            `}
           >
+            {/* Icon */}
             <div
               className={`
-                flex h-9 w-9 shrink-0 items-center justify-center rounded-lg
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
                 ${
                   isGoalsPage
                     ? "bg-primary/15 text-primary"
-                    : "bg-white/[0.05] text-white/60"
+                    : "bg-white/[0.05] text-white/50"
                 }
               `}
             >
-              <Target className="h-[18px] w-[18px]" />
+              <Target className="h-[19px] w-[19px]" />
             </div>
 
+            {/* Text */}
             <div className="min-w-0 flex-1">
               <p
-                className={`text-sm font-medium ${
-                  isGoalsPage ? "text-white" : "text-white/90"
-                }`}
+                className={`
+                  text-sm
+                  font-medium
+                  ${
+                    isGoalsPage
+                      ? "text-white"
+                      : "text-white/85"
+                  }
+                `}
               >
                 Savings Goals
               </p>
 
-              <p className="mt-0.5 truncate text-xs text-white/40">
+              <p className="mt-0.5 text-xs text-white/35">
                 Track your savings
               </p>
             </div>
 
+            {/* Active indicator */}
             {isGoalsPage && (
               <Check className="h-4 w-4 shrink-0 text-primary" />
             )}
-
-            {!isGoalsPage && (
-              <ChevronDown
-                className="
-                  h-4
-                  w-4
-                  shrink-0
-                  -rotate-90
-                  text-white/25
-                "
-              />
-            )}
           </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }

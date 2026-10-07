@@ -30,7 +30,7 @@ const navItems = [
     icon: ReceiptText,
   },
   {
-    label: 'Budgets',
+    label: 'Finances',
     href: '/dashboard/budgets',
     icon: Wallet,
   },
