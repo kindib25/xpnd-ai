@@ -2,7 +2,7 @@
 
 import {
   Check,
-  ChevronDown,
+  Menu,
   PiggyBank,
   Target,
 } from "lucide-react"
@@ -30,42 +30,48 @@ export function FinancePageNavigation() {
       {/* Page Title Trigger */}
       <SheetTrigger
         className="
-          group
-          -ml-2
-          inline-flex
-          items-center
-          gap-2
-          rounded-xl
-          px-2
-          py-1
-          text-3xl
-          font-bold
-          tracking-tight
-          text-foreground
-          outline-none
-          transition-colors
-          duration-200
-          focus-visible:ring-2
-          focus-visible:ring-primary/30
-          md:text-4xl
-        "
+    group
+    -ml-2
+    inline-flex
+    items-center
+    gap-2
+    rounded-2xl
+    border
+    border-white/30
+    bg-white/[0.03]
+    px-6
+    py-4
+    text-3xl
+    font-bold
+    tracking-tight
+    text-foreground
+    outline-none
+    transition-all
+    duration-200
+    hover:border-white/[0.14]
+    hover:bg-white/[0.05]
+    focus-visible:ring-2
+    focus-visible:ring-primary/30
+    md:text-4xl
+    cursor-pointer
+  "
       >
-        <span className="cursor-pointer">{currentTitle}</span>
+        <span>{currentTitle}</span>
 
-        <ChevronDown
+        <Menu
           className="
-            mt-1
-            h-5
-            w-5
-            text-muted-foreground
-            transition-transform
-            duration-200
-            group-data-[state=open]:rotate-180
-            group-data-[state=open]:text-foreground
-            md:h-6
-            md:w-6
-            cursor-pointer
-          "
+      h-5
+      w-5
+      ml-2
+      text-muted-foreground
+      transition-transform
+      duration-200
+      group-data-[state=open]:rotate-180
+      group-data-[state=open]:text-foreground
+      md:h-6
+      md:w-6
+      cursor-pointer
+    "
         />
       </SheetTrigger>
 
@@ -111,10 +117,9 @@ export function FinancePageNavigation() {
               py-3.5
               outline-none
               transition-colors
-              ${
-                isBudgetPage
-                  ? "border-primary/20 bg-primary/[0.08]"
-                  : "border-white/[0.05] bg-white/[0.02]"
+              ${isBudgetPage
+                ? "border-primary/20 bg-primary/[0.08]"
+                : "border-white/[0.05] bg-white/[0.02]"
               }
             `}
           >
@@ -128,10 +133,9 @@ export function FinancePageNavigation() {
                 items-center
                 justify-center
                 rounded-xl
-                ${
-                  isBudgetPage
-                    ? "bg-primary/15 text-primary"
-                    : "bg-white/[0.05] text-white/50"
+                ${isBudgetPage
+                  ? "bg-primary/15 text-primary"
+                  : "bg-white/[0.05] text-white/50"
                 }
               `}
             >
@@ -144,10 +148,9 @@ export function FinancePageNavigation() {
                 className={`
                   text-sm
                   font-medium
-                  ${
-                    isBudgetPage
-                      ? "text-white"
-                      : "text-white/85"
+                  ${isBudgetPage
+                    ? "text-white"
+                    : "text-white/85"
                   }
                 `}
               >
@@ -179,10 +182,9 @@ export function FinancePageNavigation() {
               py-3.5
               outline-none
               transition-colors
-              ${
-                isGoalsPage
-                  ? "border-primary/20 bg-primary/[0.08]"
-                  : "border-white/[0.05] bg-white/[0.02]"
+              ${isGoalsPage
+                ? "border-primary/20 bg-primary/[0.08]"
+                : "border-white/[0.05] bg-white/[0.02]"
               }
             `}
           >
@@ -196,10 +198,9 @@ export function FinancePageNavigation() {
                 items-center
                 justify-center
                 rounded-xl
-                ${
-                  isGoalsPage
-                    ? "bg-primary/15 text-primary"
-                    : "bg-white/[0.05] text-white/50"
+                ${isGoalsPage
+                  ? "bg-primary/15 text-primary"
+                  : "bg-white/[0.05] text-white/50"
                 }
               `}
             >
@@ -212,10 +213,9 @@ export function FinancePageNavigation() {
                 className={`
                   text-sm
                   font-medium
-                  ${
-                    isGoalsPage
-                      ? "text-white"
-                      : "text-white/85"
+                  ${isGoalsPage
+                    ? "text-white"
+                    : "text-white/85"
                   }
                 `}
               >

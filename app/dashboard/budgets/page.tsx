@@ -44,7 +44,7 @@ export default async function BudgetsPage() {
         <FinancePageNavigation />
 
         {/* Page Description */}
-        <p className="mt-1 text-sm text-muted-foreground md:text-base">
+        <p className="mt-2 ml-2 text-sm text-muted-foreground md:text-base">
           Stay on track with your budget.
         </p>
       </div>

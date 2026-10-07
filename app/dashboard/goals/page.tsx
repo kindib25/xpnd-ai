@@ -76,7 +76,7 @@ export default async function GoalsPage() {
           <FinancePageNavigation />
 
           {/* Page Description */}
-          <p className="mt-1 text-sm text-muted-foreground md:text-base">
+          <p className="mt-2 ml-2 text-sm text-muted-foreground md:text-base">
             Track your savings and financial goals
           </p>
         </div>
