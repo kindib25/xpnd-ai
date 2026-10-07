@@ -43,7 +43,6 @@ export function FinancePageNavigation() {
           outline-none
           transition-all
           duration-200
-          md:hover:bg-white/[0.04]
           focus-visible:ring-2
           focus-visible:ring-primary/30
           md:text-4xl
@@ -99,12 +98,13 @@ export function FinancePageNavigation() {
             rounded-xl
             p-0
             outline-none
-            transition-colors
-            duration-200
+            focus:outline-none
+            data-[highlighted]:bg-transparent
+            data-[highlighted]:text-inherit
             ${
               isBudgetPage
-                ? "bg-primary/[0.08] md:hover:bg-primary/[0.14] md:focus:bg-primary/[0.14]"
-                : "md:hover:bg-white/[0.05] md:focus:bg-white/[0.05]"
+                ? "bg-primary/[0.08]"
+                : "bg-transparent"
             }
           `}
         >
@@ -151,9 +151,6 @@ export function FinancePageNavigation() {
                   shrink-0
                   -rotate-90
                   text-white/25
-                  transition-all
-                  duration-200
-                  md:group-hover/item:translate-x-0.5
                 "
               />
             )}
@@ -170,12 +167,13 @@ export function FinancePageNavigation() {
             rounded-xl
             p-0
             outline-none
-            transition-colors
-            duration-200
+            focus:outline-none
+            data-[highlighted]:bg-transparent
+            data-[highlighted]:text-inherit
             ${
               isGoalsPage
-                ? "bg-primary/[0.08] md:hover:bg-primary/[0.14] md:focus:bg-primary/[0.14]"
-                : "md:hover:bg-white/[0.05] md:focus:bg-white/[0.05]"
+                ? "bg-primary/[0.08]"
+                : "bg-transparent"
             }
           `}
         >
@@ -222,8 +220,6 @@ export function FinancePageNavigation() {
                   shrink-0
                   -rotate-90
                   text-white/25
-                  transition-all
-                  duration-200
                 "
               />
             )}
