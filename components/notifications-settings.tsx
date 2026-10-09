@@ -1,8 +1,7 @@
-
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Bell, BellOff, Clock3, Send } from 'lucide-react'
+import { Bell, BellOff } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -10,34 +9,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 
-type Reminder = {
-  id: string
-  title: string
-  body: string
-  reminder_time: string
-  enabled: boolean
-}
-
-const DEFAULTS = [
+const DEFAULT_REMINDERS = [
   {
-    title: 'Record your expenses before sleep',
-    body: "Take a moment to record today's expenses.",
-    reminder_time: '20:00',
+    title: 'Before You Sleep',
+    body: "Record today's expenses before calling it a night!",
+    reminder_time: '21:00',
   },
   {
-    title: 'Budget limit warning',
-    body: 'You are approaching your budget limit.',
-    reminder_time: '10:00',
-  },
-  {
-    title: 'Savings goal reminder',
-    body: 'Check in on your savings goals.',
+    title: 'Track Your Expenses',
+    body: "Don't forget to log your expenses today!",
     reminder_time: '09:00',
+  },
+  {
+    title: 'Stay on Budget',
+    body: 'Keep track of your spending and stay on budget.',
+    reminder_time: '12:00',
   },
 ]
 
@@ -45,11 +33,8 @@ export function NotificationsSettings() {
   const [enabled, setEnabled] = useState(false)
   const [permission, setPermission] =
     useState<NotificationPermission>('default')
-  const [reminders, setReminders] = useState<Reminder[]>([])
   const [busy, setBusy] = useState(true)
-  const [sending, setSending] = useState(false)
   const [toggling, setToggling] = useState(false)
-  const [adding, setAdding] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
   const getSubscription = useCallback(async () => {
@@ -75,7 +60,9 @@ export function NotificationsSettings() {
     const response = await fetch('/api/push/test')
 
     if (!response.ok) {
-      throw new Error('Unable to load push notification settings.')
+      throw new Error(
+        'Unable to load push notification settings.',
+      )
     }
 
     const { publicKey } = await response.json()
@@ -86,7 +73,10 @@ export function NotificationsSettings() {
       )
     }
 
-    const padding = '='.repeat((4 - (publicKey.length % 4)) % 4)
+    const padding = '='.repeat(
+      (4 - (publicKey.length % 4)) % 4,
+    )
+
     const base64 = publicKey
       .replace(/-/g, '+')
       .replace(/_/g, '/') + padding
@@ -105,6 +95,7 @@ export function NotificationsSettings() {
   const saveSubscription = useCallback(
     async (subscription: PushSubscription) => {
       const supabase = createClient()
+
       const {
         data: { user },
         error: authError,
@@ -112,13 +103,17 @@ export function NotificationsSettings() {
 
       if (authError || !user) {
         throw new Error(
-          'Your session has expired. Sign in again to enable notifications.',
+          'Your session has expired. Sign in again.',
         )
       }
 
       const json = subscription.toJSON()
 
-      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+      if (
+        !json.endpoint ||
+        !json.keys?.p256dh ||
+        !json.keys?.auth
+      ) {
         throw new Error(
           'The browser returned an incomplete push subscription.',
         )
@@ -142,6 +137,74 @@ export function NotificationsSettings() {
     [],
   )
 
+  // Automatically create or synchronize the three default reminders.
+  const syncDefaultReminders = useCallback(async () => {
+    const supabase = createClient()
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      throw new Error(
+        'Please sign in to manage notifications.',
+      )
+    }
+
+    const { data: existing, error } = await supabase
+      .from('notification_reminders')
+      .select('id,title')
+      .eq('user_id', user.id)
+
+    if (error) throw error
+
+    const existingReminders = existing ?? []
+
+    for (const reminder of DEFAULT_REMINDERS) {
+      // Match existing reminders even if their titles have
+      // an old suffix or different capitalization.
+      const normalizedTitle = reminder.title.toLowerCase()
+
+      const match = existingReminders.find(
+        (item: { id: string; title: string }) => {
+        const title = item.title
+          .toLowerCase()
+          .replace(/\s*\|+\s*$/, '')
+          .trim()
+
+        return title === normalizedTitle
+        },
+      )
+
+      if (match) {
+        const { error: updateError } = await supabase
+          .from('notification_reminders')
+          .update({
+            title: reminder.title,
+            body: reminder.body,
+            reminder_time: reminder.reminder_time,
+            enabled: true,
+            last_sent_on: null,
+          })
+          .eq('id', match.id)
+          .eq('user_id', user.id)
+
+        if (updateError) throw updateError
+      } else {
+        const { error: insertError } = await supabase
+          .from('notification_reminders')
+          .insert({
+            ...reminder,
+            user_id: user.id,
+            enabled: true,
+          })
+
+        if (insertError) throw insertError
+      }
+    }
+  }, [])
+
   useEffect(() => {
     let cancelled = false
 
@@ -161,27 +224,22 @@ export function NotificationsSettings() {
         } = await supabase.auth.getUser()
 
         if (authError || !user) {
-          throw new Error('Please sign in to manage your reminders.')
+          throw new Error(
+            'Please sign in to manage notifications.',
+          )
         }
 
-        const { data, error } = await supabase
-          .from('notification_reminders')
-          .select('id,title,body,reminder_time,enabled')
-          .eq('user_id', user.id)
-          .order('created_at')
-
-        if (error) throw error
-
-        if (cancelled) return
-
-        setReminders(data ?? [])
+        // Ensure reminders have their automatic schedules.
+        await syncDefaultReminders()
 
         if (
           'Notification' in window &&
           Notification.permission === 'granted' &&
           'serviceWorker' in navigator
         ) {
-          const registration = await navigator.serviceWorker.ready
+          const registration =
+            await navigator.serviceWorker.ready
+
           const subscription =
             await registration.pushManager.getSubscription()
 
@@ -207,7 +265,7 @@ export function NotificationsSettings() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [syncDefaultReminders])
 
   const enableNotifications = async (next: boolean) => {
     if (toggling) return
@@ -226,30 +284,34 @@ export function NotificationsSettings() {
 
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser()
 
-      if (!user) {
-        throw new Error('Sign in again to manage notifications.')
+      if (authError || !user) {
+        throw new Error(
+          'Sign in again to manage notifications.',
+        )
       }
 
       if (!next) {
         if ('serviceWorker' in navigator) {
-          const registration = await navigator.serviceWorker.ready
+          const registration =
+            await navigator.serviceWorker.ready
+
           const subscription =
             await registration.pushManager.getSubscription()
 
           if (subscription) {
-            const endpoint = subscription.endpoint
-
             const { error } = await supabase
               .from('push_subscriptions')
               .delete()
               .eq('user_id', user.id)
-              .eq('endpoint', endpoint)
+              .eq('endpoint', subscription.endpoint)
 
             if (error) throw error
 
-            const unsubscribed = await subscription.unsubscribe()
+            const unsubscribed =
+              await subscription.unsubscribe()
 
             if (!unsubscribed) {
               throw new Error(
@@ -260,25 +322,32 @@ export function NotificationsSettings() {
         }
 
         setEnabled(false)
-        setMessage('Notifications disabled on this device.')
+        setMessage(
+          'Push notifications disabled on this device.',
+        )
         return
       }
 
-      const result = await Notification.requestPermission()
+      const result =
+        await Notification.requestPermission()
+
       setPermission(result)
 
       if (result !== 'granted') {
         throw new Error(
-          'Allow notifications in your browser or phone settings to continue.',
+          'Allow notifications in your browser settings to continue.',
         )
       }
+
+      // Keep all three reminders enabled with their default times.
+      await syncDefaultReminders()
 
       const subscription = await getSubscription()
       await saveSubscription(subscription)
 
       setEnabled(true)
       setMessage(
-        'Notifications enabled on this device. Scheduled reminders require the server scheduler to be running.',
+        'Push notifications enabled. Your three reminders are scheduled automatically.',
       )
     } catch (error) {
       setMessage(
@@ -291,201 +360,29 @@ export function NotificationsSettings() {
     }
   }
 
-  const sendTest = async () => {
-    if (sending) return
-
-    setSending(true)
-    setMessage(null)
-
-    try {
-      if (
-        !('Notification' in window) ||
-        Notification.permission !== 'granted'
-      ) {
-        throw new Error(
-          'Enable browser notifications before sending a test.',
-        )
-      }
-
-      const subscription = await getSubscription()
-      await saveSubscription(subscription)
-
-      const response = await fetch('/api/push/test', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(
-          result.error || 'Unable to send test notification.',
-        )
-      }
-
-      setEnabled(true)
-      setMessage('Test notification sent.')
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to send test notification.',
-      )
-    } finally {
-      setSending(false)
-    }
-  }
-
-  const updateReminder = async (
-    id: string,
-    patch: Partial<
-      Pick<Reminder, 'reminder_time' | 'enabled'>
-    >,
-  ) => {
-    const previous = reminders
-    const reminder = previous.find((item) => item.id === id)
-
-    if (!reminder) return
-
-    setMessage(null)
-
-    const timeChanged =
-      patch.reminder_time !== undefined &&
-      patch.reminder_time.slice(0, 5) !==
-        reminder.reminder_time.slice(0, 5)
-
-    const next = previous.map((item) =>
-      item.id === id ? { ...item, ...patch } : item,
-    )
-
-    setReminders(next)
-
-    try {
-      const supabase = createClient()
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        throw new Error('Please sign in again.')
-      }
-
-      const databasePatch = {
-        ...patch,
-        ...(timeChanged ? { last_sent_on: null } : {}),
-      }
-
-      const { data, error } = await supabase
-        .from('notification_reminders')
-        .update(databasePatch)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select('id')
-
-      if (error) throw error
-
-      if (!data?.length) {
-        throw new Error(
-          'Reminder was not saved. Check your access and try again.',
-        )
-      }
-
-      if (timeChanged) {
-        setMessage(
-          'Reminder time updated. It can be sent again at the new scheduled time.',
-        )
-      }
-    } catch (error) {
-      setReminders(previous)
-
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to save this reminder.',
-      )
-    }
-  }
-
-  const addDefaults = async () => {
-    if (adding) return
-
-    setAdding(true)
-    setMessage(null)
-
-    try {
-      const supabase = createClient()
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        throw new Error('Sign in again to create reminders.')
-      }
-
-      const { data: existing, error: existingError } =
-        await supabase
-          .from('notification_reminders')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1)
-
-      if (existingError) throw existingError
-
-      if (existing?.length) {
-        throw new Error(
-          'You already have reminders. Refresh the page to load them.',
-        )
-      }
-
-      const { data, error } = await supabase
-        .from('notification_reminders')
-        .insert(
-          DEFAULTS.map((reminder) => ({
-            ...reminder,
-            user_id: user.id,
-            enabled: true,
-          })),
-        )
-        .select('id,title,body,reminder_time,enabled')
-
-      if (error) throw error
-
-      setReminders(data ?? [])
-      setMessage('Recommended reminders created.')
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to create reminders.',
-      )
-    } finally {
-      setAdding(false)
-    }
-  }
-
   if (busy) return null
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bell className="size-4" aria-hidden="true" />
-          Notifications &amp; Reminders
+          <Bell
+            className="size-4"
+            aria-hidden="true"
+          />
+          Notifications
         </CardTitle>
+
         <CardDescription>
-          Get timely reminders on your device, even when Xpnd AI is closed.
+          Receive reminders about your expenses, budget,
+          and savings goals.
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-5">
-        <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-primary/10 p-2 text-primary">
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-full bg-primary/10 p-2 text-primary">
               {enabled ? (
                 <Bell className="size-4" />
               ) : (
@@ -493,8 +390,11 @@ export function NotificationsSettings() {
               )}
             </div>
 
-            <div>
-              <p className="font-medium">Push notifications</p>
+            <div className="min-w-0">
+              <p className="font-medium">
+                Push notifications
+              </p>
+
               <p className="text-sm text-muted-foreground">
                 {permission === 'denied'
                   ? 'Blocked in browser settings'
@@ -508,89 +408,25 @@ export function NotificationsSettings() {
           <input
             type="checkbox"
             checked={enabled}
-            disabled={toggling || permission === 'denied'}
+            disabled={
+              toggling ||
+              permission === 'denied'
+            }
             onChange={(event) =>
-              void enableNotifications(event.target.checked)
+              void enableNotifications(
+                event.target.checked,
+              )
             }
             aria-label="Enable push notifications"
-            className="size-5 accent-primary"
+            className="size-5 shrink-0 accent-primary"
           />
         </div>
 
-        <div className="space-y-3">
-          {reminders.length === 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void addDefaults()}
-              disabled={adding}
-            >
-              {adding ? 'Adding reminders...' : 'Add recommended reminders'}
-            </Button>
-          ) : (
-            reminders.map((reminder) => (
-              <div
-                key={reminder.id}
-                className="flex items-center gap-3 rounded-xl border p-3"
-              >
-                <Clock3 className="size-4 shrink-0 text-muted-foreground" />
-
-                <div className="min-w-0 flex-1">
-                  <Label
-                    htmlFor={`reminder-${reminder.id}`}
-                    className="truncate"
-                  >
-                    {reminder.title}
-                  </Label>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {reminder.body}
-                  </p>
-                </div>
-
-                <Input
-                  id={`reminder-${reminder.id}`}
-                  type="time"
-                  value={reminder.reminder_time.slice(0, 5)}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    if (!value) return
-
-                    void updateReminder(reminder.id, {
-                      reminder_time: value,
-                    })
-                  }}
-                  className="w-[112px]"
-                  aria-label={`Time for ${reminder.title}`}
-                />
-
-                <input
-                  type="checkbox"
-                  checked={reminder.enabled}
-                  onChange={(event) =>
-                    void updateReminder(reminder.id, {
-                      enabled: event.target.checked,
-                    })
-                  }
-                  aria-label={`Enable ${reminder.title}`}
-                  className="size-5 accent-primary"
-                />
-              </div>
-            ))
-          )}
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void sendTest()}
-          disabled={sending || toggling}
-        >
-          <Send className="mr-2 size-4" />
-          {sending ? 'Sending...' : 'Send test notification'}
-        </Button>
-
         {message && (
-          <p className="text-sm text-muted-foreground" role="status">
+          <p
+            className="break-words text-sm text-muted-foreground"
+            role="status"
+          >
             {message}
           </p>
         )}

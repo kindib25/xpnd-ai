@@ -25,5 +25,25 @@ Again, before proceeding to the next test, clear first the push_notification_eve
     - temporarily replace it with if (true)
     - run the curl for test
 
+
+
+for auto nofications and reminders:
+
+Before You Sleep |  -  9 PM
+Track Your Expenses | - 9 AM
+Stay on Budget | - 12 PM
+
+
+run this in the terminal:
+
+$headers = @{
+  Authorization = "Bearer 155ba4305976567ceac40c7e3aa6b979fdea0793b330173f9c3d38f0d502ad23"
+}
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3000/api/push/dispatch" `
+  -Headers $headers `
+  -Method Get
+
 THE END OF STORY
 
