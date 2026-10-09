@@ -31,6 +31,13 @@ type NotificationMessage = {
   eventKey?: string
 }
 
+type Expense = {
+  user_id: string
+  amount: number | string
+  category: string | null
+  date: string
+}
+
 function getManilaDateTime() {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: TIME_ZONE,
@@ -72,6 +79,7 @@ function getPushStatusCode(error: unknown): number | undefined {
 
 function peso(amount: number) {
   return `₱${amount.toLocaleString('en-PH', {
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}`
 }
@@ -91,6 +99,42 @@ function getWeekStart(today: string) {
   const date = new Date(`${today}T12:00:00Z`)
   date.setUTCDate(date.getUTCDate() - 6)
   return date.toISOString().slice(0, 10)
+}
+
+function getBudgetAlert(
+  spent: number,
+  limit: number,
+  budgetName: string,
+) {
+  if (limit <= 0) return null
+
+  const percentage = (spent / limit) * 100
+
+  // Send the highest threshold reached.
+  const threshold = percentage >= 100 ? 100 : percentage >= 80 ? 80 : 0
+
+  if (!threshold) return null
+
+  const remaining = limit - spent
+
+  if (threshold === 100) {
+    const body =
+      spent > limit
+        ? `You've reached your ${budgetName} budget and are ${peso(spent - limit)} over the limit. Total spent: ${peso(spent)} of ${peso(limit)}.`
+        : `You've reached 100% of your ${budgetName} budget. You've spent ${peso(spent)} of ${peso(limit)}.`
+
+    return {
+      threshold,
+      title: 'Budget limit reached',
+      body,
+    }
+  }
+
+  return {
+    threshold,
+    title: 'Budget limit warning',
+    body: `You've used ${percentage.toFixed(0)}% of your ${budgetName} budget. You've spent ${peso(spent)} of ${peso(limit)}, with ${peso(Math.max(remaining, 0))} remaining.`,
+  }
 }
 
 export async function GET(request: Request) {
@@ -165,7 +209,7 @@ export async function GET(request: Request) {
     weekday,
   })
 
-  // Claims a one-time event so frequent cron runs don't duplicate it.
+  // Prevent repeated delivery of the same notification event.
   async function claimEvent(eventKey: string) {
     const { error } = await supabase
       .from('push_notification_events')
@@ -173,7 +217,6 @@ export async function GET(request: Request) {
 
     if (!error) return true
 
-    // PostgreSQL unique violation means another run already claimed it.
     if (error.code === '23505') return false
 
     console.error(`[Push:${requestId}] Event claim failed:`, {
@@ -292,7 +335,6 @@ export async function GET(request: Request) {
       if (delivered === 0) {
         failed++
 
-        // Permit retry on the next cron run if every delivery failed.
         if (message.eventKey && eventClaimed) {
           await releaseEvent(message.eventKey)
         }
@@ -347,7 +389,6 @@ export async function GET(request: Request) {
 
   for (const reminder of dueReminders) {
     try {
-      // Claim the reminder before sending, preventing concurrent duplicate runs.
       const { data: claimed, error: claimError } = await supabase
         .from('notification_reminders')
         .update({ last_sent_on: today })
@@ -374,7 +415,6 @@ export async function GET(request: Request) {
         tag: `reminder-${reminder.id}`,
       })
 
-      // Restore the previous marker if no device accepted the push.
       if (!delivered) {
         const { error: resetError } = await supabase
           .from('notification_reminders')
@@ -401,10 +441,10 @@ export async function GET(request: Request) {
     }
   }
 
-  // 2. Monthly budget alerts: notify once at 80% and once at 100%.
+  // 2. Overall monthly budget alerts: 80% and 100%.
   const [
-    { data: budgets, error: budgetError },
-    { data: monthlyExpenses, error: expenseError },
+    { data: monthlyBudgets, error: monthlyBudgetError },
+    { data: monthlyExpenses, error: monthlyExpenseError },
   ] = await Promise.all([
     supabase
       .from('monthly_budgets')
@@ -413,53 +453,46 @@ export async function GET(request: Request) {
 
     supabase
       .from('expenses')
-      .select('user_id,amount,date')
+      .select('user_id,amount,category,date')
       .gte('date', monthStart)
       .lt('date', nextMonth),
   ])
 
-  if (budgetError) {
-    console.error(`[Push:${requestId}] Could not load budgets:`, budgetError)
+  const expenses = (monthlyExpenses ?? []) as Expense[]
+
+  if (monthlyBudgetError) {
+    console.error(
+      `[Push:${requestId}] Could not load overall budgets:`,
+      monthlyBudgetError,
+    )
     failed++
-  } else if (expenseError) {
+  } else if (monthlyExpenseError) {
     console.error(
       `[Push:${requestId}] Could not load monthly expenses:`,
-      expenseError,
+      monthlyExpenseError,
     )
     failed++
   } else {
-    for (const budget of budgets ?? []) {
+    for (const budget of monthlyBudgets ?? []) {
       const limit = Number(budget.limit_amount || 0)
       if (limit <= 0) continue
 
-      const spent = (monthlyExpenses ?? [])
+      const spent = expenses
         .filter((expense) => expense.user_id === budget.user_id)
-        .reduce(
-          (total, expense) => total + Number(expense.amount || 0),
-          0,
-        )
+        .reduce((total, expense) => total + Number(expense.amount || 0), 0)
 
-      const percentage = (spent / limit) * 100
-      const remaining = limit - spent
+      const alert = getBudgetAlert(spent, limit, 'monthly')
 
-      // Send only the highest reached threshold, avoiding two alerts
-      // at once when spending jumps directly above 100%.
-      const threshold = percentage >= 100 ? 100 : percentage >= 80 ? 80 : 0
-      if (!threshold) continue
+      if (!alert) continue
 
       const eventKey =
-        `budget:${budget.user_id}:${currentMonth}:${threshold}`
-
-      const body =
-        threshold === 100
-          ? `You've used 100% of your ${peso(limit)} monthly budget. You are ${peso(Math.abs(remaining))} over budget.`
-          : `You've used ${percentage.toFixed(0)}% of your ${peso(limit)} monthly budget. You have ${peso(Math.max(remaining, 0))} remaining.`
+        `budget:${budget.user_id}:${currentMonth}:${alert.threshold}`
 
       await sendMessage({
         userId: budget.user_id,
-        title: threshold === 100 ? 'Monthly budget reached' : 'Budget limit warning',
-        body,
-        tag: `budget-alert-${currentMonth}-${threshold}`,
+        title: alert.title,
+        body: alert.body,
+        tag: `monthly-budget-${currentMonth}-${alert.threshold}`,
         eventKey,
       })
 
@@ -467,8 +500,70 @@ export async function GET(request: Request) {
     }
   }
 
-  // 3. Daily savings goal reminder: choose one goal per user.
-  // Once sent, the event key prevents repeats for that user today.
+  // 3. Category budget alerts: 80% and 100%.
+  // Category budgets are stored in `budgets`, not `monthly_budgets`.
+  const { data: categoryBudgets, error: categoryBudgetError } =
+    await supabase
+      .from('budgets')
+      .select('id,user_id,category,budget_amount,month_year')
+      .eq('month_year', currentMonth)
+
+  if (categoryBudgetError) {
+    console.error(
+      `[Push:${requestId}] Could not load category budgets:`,
+      categoryBudgetError,
+    )
+    failed++
+  } else if (monthlyExpenseError) {
+    // Do not calculate category spending using incomplete expense data.
+    console.error(
+      `[Push:${requestId}] Category alerts skipped because expenses failed to load.`,
+    )
+  } else {
+    for (const budget of categoryBudgets ?? []) {
+      const limit = Number(budget.budget_amount || 0)
+      const category = String(budget.category || '').trim()
+
+      if (limit <= 0 || !category) continue
+
+      // Match the exact category and the budget owner's expenses.
+      const spent = expenses
+        .filter(
+          (expense) =>
+            expense.user_id === budget.user_id &&
+            expense.category === category,
+        )
+        .reduce((total, expense) => total + Number(expense.amount || 0), 0)
+
+      const alert = getBudgetAlert(
+        spent,
+        limit,
+        `${category}`,
+      )
+
+      if (!alert) continue
+
+      // Encode category to keep the event key unambiguous.
+      const encodedCategory = encodeURIComponent(category)
+      const eventKey =
+        `category-budget:${budget.user_id}:${currentMonth}:${encodedCategory}:${alert.threshold}`
+
+      await sendMessage({
+        userId: budget.user_id,
+        title:
+          alert.threshold === 100
+            ? `${category} budget reached`
+            : `${category} budget warning`,
+        body: alert.body,
+        tag: `category-budget-${encodedCategory}-${currentMonth}-${alert.threshold}`,
+        eventKey,
+      })
+
+      messagesCreated++
+    }
+  }
+
+  // 4. Daily savings goal reminder: choose one goal per user after 9 AM.
   if (time >= '09:00') {
     const { data: goals, error: goalError } = await supabase
       .from('savings_goals')
@@ -480,7 +575,7 @@ export async function GET(request: Request) {
       console.error(`[Push:${requestId}] Could not load savings goals:`, goalError)
       failed++
     } else {
-      const goalsByUser = new Map<string, typeof goals>()
+      const goalsByUser = new Map<string, NonNullable<typeof goals>>()
 
       for (const goal of goals ?? []) {
         const userGoals = goalsByUser.get(goal.user_id) ?? []
@@ -493,7 +588,6 @@ export async function GET(request: Request) {
 
         const eventKey = `savings-goal:${userId}:${today}`
 
-        // Don't select/send a goal if today's reminder was already recorded.
         const { data: existingEvent, error: existingError } = await supabase
           .from('push_notification_events')
           .select('event_key')
@@ -532,8 +626,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // 4. Weekly summary: Sunday after 8 PM Manila time.
-  // Each user gets at most one summary for that Sunday.
+  // 5. Weekly summary: Sunday after 8 PM Manila time.
   if (weekday === 'Sun' && time >= '20:00') {
     const weekStart = getWeekStart(today)
 
@@ -541,7 +634,7 @@ export async function GET(request: Request) {
       .from('expenses')
       .select('user_id,amount,category,date')
       .gte('date', weekStart)
-      .lt('date', `${today}T23:59:59.999`)
+      .lt('date', nextDay(today))
 
     if (weeklyError) {
       console.error(
@@ -555,7 +648,7 @@ export async function GET(request: Request) {
         { total: number; categories: Map<string, number> }
       >()
 
-      for (const expense of weeklyExpenses ?? []) {
+      for (const expense of (weeklyExpenses ?? []) as Expense[]) {
         const current = summaries.get(expense.user_id) ?? {
           total: 0,
           categories: new Map<string, number>(),
@@ -608,4 +701,10 @@ export async function GET(request: Request) {
   console.log(`[Push:${requestId}] Dispatch summary:`, result)
 
   return NextResponse.json(result)
+}
+
+function nextDay(today: string) {
+  const date = new Date(`${today}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + 1)
+  return date.toISOString().slice(0, 10)
 }
