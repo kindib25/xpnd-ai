@@ -318,7 +318,7 @@ export async function GET(request: Request) {
               },
             },
             JSON.stringify({
-              title: reminder.title || 'Xpnd AI',
+              title: 'Xpnd AI',
               body: reminder.body,
               tag: `reminder-${reminder.id}`,
               url: '/dashboard',
