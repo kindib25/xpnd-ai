@@ -34,8 +34,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('push', (event) => {
   let payload = {
-    title: 'Record your expenses',
-    body: 'Take a moment to record today expenses.',
+    title: 'Xpnd AI',
+    body: 'You have a reminder from Xpnd AI.',
     tag: 'xpnd-reminder',
     url: '/dashboard',
   }
@@ -65,9 +65,9 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.registration.showNotification(
-      String(payload.title || 'Record your expenses'),
+      String(payload.title || 'Xpnd AI'),
       {
-        body: String(payload.body || 'Take a moment to record today expenses.'),
+        body: String(payload.body || 'You have a reminder from Xpnd AI.'),
         icon: '/xpnd-ai-icon.png',
         badge: '/xpnd-ai-icon.png',
         tag: String(payload.tag || 'xpnd-reminder'),
