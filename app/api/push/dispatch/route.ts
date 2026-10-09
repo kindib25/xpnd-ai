@@ -62,7 +62,12 @@ function getManilaDateTime() {
 }
 
 function isDue(reminderTime: string, currentTime: string) {
-  return reminderTime.slice(0, 5) <= currentTime
+  const scheduledTime = reminderTime.slice(0, 5)
+
+  return (
+    /^\d{2}:\d{2}$/.test(scheduledTime) &&
+    scheduledTime <= currentTime
+  )
 }
 
 function getPushStatusCode(error: unknown): number | undefined {
@@ -98,6 +103,14 @@ function getMonthBounds(today: string) {
 function getWeekStart(today: string) {
   const date = new Date(`${today}T12:00:00Z`)
   date.setUTCDate(date.getUTCDate() - 6)
+
+  return date.toISOString().slice(0, 10)
+}
+
+function nextDay(today: string) {
+  const date = new Date(`${today}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + 1)
+
   return date.toISOString().slice(0, 10)
 }
 
@@ -110,8 +123,8 @@ function getBudgetAlert(
 
   const percentage = (spent / limit) * 100
 
-  // Send the highest threshold reached.
-  const threshold = percentage >= 100 ? 100 : percentage >= 80 ? 80 : 0
+  const threshold =
+    percentage >= 100 ? 100 : percentage >= 80 ? 80 : 0
 
   if (!threshold) return null
 
@@ -167,7 +180,10 @@ export async function GET(request: Request) {
     !vapidPrivateKey
   ) {
     return NextResponse.json(
-      { error: 'Push notification service is not configured.', requestId },
+      {
+        error: 'Push notification service is not configured.',
+        requestId,
+      },
       { status: 500 },
     )
   }
@@ -186,7 +202,10 @@ export async function GET(request: Request) {
       vapidPrivateKey,
     )
   } catch (error) {
-    console.error(`[Push:${requestId}] VAPID configuration failed:`, error)
+    console.error(
+      `[Push:${requestId}] VAPID configuration failed:`,
+      error,
+    )
 
     return NextResponse.json(
       { error: 'VAPID configuration failed.', requestId },
@@ -209,7 +228,8 @@ export async function GET(request: Request) {
     weekday,
   })
 
-  // Prevent repeated delivery of the same notification event.
+  // Atomically reserve a notification event.
+  // A unique constraint on event_key is required.
   async function claimEvent(eventKey: string) {
     const { error } = await supabase
       .from('push_notification_events')
@@ -224,7 +244,9 @@ export async function GET(request: Request) {
       error: error.message,
     })
 
-    throw new Error(`Could not claim notification event: ${eventKey}`)
+    throw new Error(
+      `Could not claim notification event: ${eventKey}`,
+    )
   }
 
   async function releaseEvent(eventKey: string) {
@@ -234,10 +256,13 @@ export async function GET(request: Request) {
       .eq('event_key', eventKey)
 
     if (error) {
-      console.error(`[Push:${requestId}] Could not release event:`, {
-        eventKey,
-        error: error.message,
-      })
+      console.error(
+        `[Push:${requestId}] Could not release event:`,
+        {
+          eventKey,
+          error: error.message,
+        },
+      )
     }
   }
 
@@ -309,12 +334,17 @@ export async function GET(request: Request) {
 
           const statusCode = getPushStatusCode(error)
 
-          console.error(`[Push:${requestId}] Delivery failed:`, {
-            subscriptionId: subscription.id,
-            statusCode,
-            message:
-              error instanceof Error ? error.message : String(error),
-          })
+          console.error(
+            `[Push:${requestId}] Delivery failed:`,
+            {
+              subscriptionId: subscription.id,
+              statusCode,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : String(error),
+            },
+          )
 
           if (statusCode === 404 || statusCode === 410) {
             const { error: deleteError } = await supabase
@@ -352,11 +382,17 @@ export async function GET(request: Request) {
     } catch (error) {
       failed++
 
-      console.error(`[Push:${requestId}] Notification processing failed:`, {
-        eventKey: message.eventKey,
-        userId: message.userId,
-        error: error instanceof Error ? error.message : String(error),
-      })
+      console.error(
+        `[Push:${requestId}] Notification processing failed:`,
+        {
+          eventKey: message.eventKey,
+          userId: message.userId,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        },
+      )
 
       if (message.eventKey && eventClaimed) {
         await releaseEvent(message.eventKey)
@@ -366,15 +402,22 @@ export async function GET(request: Request) {
     }
   }
 
-  // 1. Scheduled reminders: respect each user's selected time.
-  const { data: reminders, error: reminderError } = await supabase
+  // 1. Scheduled reminders.
+  // Each reminder can be claimed once per Manila calendar day.
+  const {
+    data: reminders,
+    error: reminderError,
+  } = await supabase
     .from('notification_reminders')
     .select('id,user_id,title,body,reminder_time,last_sent_on')
     .eq('enabled', true)
-    .or(`last_sent_on.is.null,last_sent_on.neq.${today}`)
+    .or(`last_sent_on.is.null,last_sent_on.lt.${today}`)
 
   if (reminderError) {
-    console.error(`[Push:${requestId}] Could not load reminders:`, reminderError)
+    console.error(
+      `[Push:${requestId}] Could not load reminders:`,
+      reminderError,
+    )
 
     return NextResponse.json(
       { error: 'Unable to load reminders.', requestId },
@@ -383,23 +426,39 @@ export async function GET(request: Request) {
   }
 
   const enabledReminders = (reminders ?? []) as Reminder[]
+
   const dueReminders = enabledReminders.filter((reminder) =>
     isDue(reminder.reminder_time, time),
   )
 
   for (const reminder of dueReminders) {
+    const reminderEventKey =
+      `reminder:${reminder.id}:${today}`
+
     try {
-      const { data: claimed, error: claimError } = await supabase
+      // Atomically claim this reminder for today.
+      // Only one overlapping cron execution can update it.
+      const {
+        data: claimed,
+        error: claimError,
+      } = await supabase
         .from('notification_reminders')
         .update({ last_sent_on: today })
         .eq('id', reminder.id)
+        .eq('user_id', reminder.user_id)
         .eq('enabled', true)
-        .or(`last_sent_on.is.null,last_sent_on.neq.${today}`)
+        .lte('reminder_time', time)
+        .or(`last_sent_on.is.null,last_sent_on.lt.${today}`)
         .select('id')
 
       if (claimError) {
         failed++
-        console.error(`[Push:${requestId}] Reminder claim failed:`, claimError)
+
+        console.error(
+          `[Push:${requestId}] Reminder claim failed:`,
+          claimError,
+        )
+
         continue
       }
 
@@ -408,35 +467,29 @@ export async function GET(request: Request) {
         continue
       }
 
-      const delivered = await sendMessage({
+      // The daily event key also prevents a repeat if another
+      // part of the app accidentally resets last_sent_on.
+      await sendMessage({
         userId: reminder.user_id,
         title: reminder.title || 'Xpnd AI Reminder',
         body: reminder.body || 'You have a scheduled reminder.',
-        tag: `reminder-${reminder.id}`,
+        tag: `reminder-${reminder.id}-${today}`,
+        eventKey: reminderEventKey,
       })
-
-      if (!delivered) {
-        const { error: resetError } = await supabase
-          .from('notification_reminders')
-          .update({ last_sent_on: reminder.last_sent_on })
-          .eq('id', reminder.id)
-          .eq('last_sent_on', today)
-
-        if (resetError) {
-          console.error(
-            `[Push:${requestId}] Could not reset reminder marker:`,
-            resetError.message,
-          )
-        }
-      }
 
       messagesCreated++
     } catch (error) {
       failed++
+
       console.error(
         `[Push:${requestId}] Reminder processing failed:`,
-        reminder.id,
-        error,
+        {
+          reminderId: reminder.id,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        },
       )
     }
   }
@@ -465,23 +518,36 @@ export async function GET(request: Request) {
       `[Push:${requestId}] Could not load overall budgets:`,
       monthlyBudgetError,
     )
+
     failed++
   } else if (monthlyExpenseError) {
     console.error(
       `[Push:${requestId}] Could not load monthly expenses:`,
       monthlyExpenseError,
     )
+
     failed++
   } else {
     for (const budget of monthlyBudgets ?? []) {
       const limit = Number(budget.limit_amount || 0)
+
       if (limit <= 0) continue
 
       const spent = expenses
-        .filter((expense) => expense.user_id === budget.user_id)
-        .reduce((total, expense) => total + Number(expense.amount || 0), 0)
+        .filter(
+          (expense) => expense.user_id === budget.user_id,
+        )
+        .reduce(
+          (total, expense) =>
+            total + Number(expense.amount || 0),
+          0,
+        )
 
-      const alert = getBudgetAlert(spent, limit, 'monthly')
+      const alert = getBudgetAlert(
+        spent,
+        limit,
+        'monthly',
+      )
 
       if (!alert) continue
 
@@ -501,21 +567,22 @@ export async function GET(request: Request) {
   }
 
   // 3. Category budget alerts: 80% and 100%.
-  // Category budgets are stored in `budgets`, not `monthly_budgets`.
-  const { data: categoryBudgets, error: categoryBudgetError } =
-    await supabase
-      .from('budgets')
-      .select('id,user_id,category,budget_amount,month_year')
-      .eq('month_year', currentMonth)
+  const {
+    data: categoryBudgets,
+    error: categoryBudgetError,
+  } = await supabase
+    .from('budgets')
+    .select('id,user_id,category,budget_amount,month_year')
+    .eq('month_year', currentMonth)
 
   if (categoryBudgetError) {
     console.error(
       `[Push:${requestId}] Could not load category budgets:`,
       categoryBudgetError,
     )
+
     failed++
   } else if (monthlyExpenseError) {
-    // Do not calculate category spending using incomplete expense data.
     console.error(
       `[Push:${requestId}] Category alerts skipped because expenses failed to load.`,
     )
@@ -526,25 +593,29 @@ export async function GET(request: Request) {
 
       if (limit <= 0 || !category) continue
 
-      // Match the exact category and the budget owner's expenses.
       const spent = expenses
         .filter(
           (expense) =>
             expense.user_id === budget.user_id &&
             expense.category === category,
         )
-        .reduce((total, expense) => total + Number(expense.amount || 0), 0)
+        .reduce(
+          (total, expense) =>
+            total + Number(expense.amount || 0),
+          0,
+        )
 
       const alert = getBudgetAlert(
         spent,
         limit,
-        `${category}`,
+        category,
       )
 
       if (!alert) continue
 
-      // Encode category to keep the event key unambiguous.
-      const encodedCategory = encodeURIComponent(category)
+      const encodedCategory =
+        encodeURIComponent(category)
+
       const eventKey =
         `category-budget:${budget.user_id}:${currentMonth}:${encodedCategory}:${alert.threshold}`
 
@@ -563,22 +634,34 @@ export async function GET(request: Request) {
     }
   }
 
-  // 4. Daily savings goal reminder: choose one goal per user after 9 AM.
+  // 4. Daily savings goal reminder: one goal per user after 9 AM.
   if (time >= '09:00') {
-    const { data: goals, error: goalError } = await supabase
+    const {
+      data: goals,
+      error: goalError,
+    } = await supabase
       .from('savings_goals')
       .select('user_id,name,current_amount,target_amount')
       .not('target_amount', 'is', null)
       .gt('target_amount', 0)
 
     if (goalError) {
-      console.error(`[Push:${requestId}] Could not load savings goals:`, goalError)
+      console.error(
+        `[Push:${requestId}] Could not load savings goals:`,
+        goalError,
+      )
+
       failed++
     } else {
-      const goalsByUser = new Map<string, NonNullable<typeof goals>>()
+      const goalsByUser = new Map<
+        string,
+        NonNullable<typeof goals>
+      >()
 
       for (const goal of goals ?? []) {
-        const userGoals = goalsByUser.get(goal.user_id) ?? []
+        const userGoals =
+          goalsByUser.get(goal.user_id) ?? []
+
         userGoals.push(goal)
         goalsByUser.set(goal.user_id, userGoals)
       }
@@ -586,9 +669,13 @@ export async function GET(request: Request) {
       for (const [userId, userGoals] of goalsByUser) {
         if (!userGoals.length) continue
 
-        const eventKey = `savings-goal:${userId}:${today}`
+        const eventKey =
+          `savings-goal:${userId}:${today}`
 
-        const { data: existingEvent, error: existingError } = await supabase
+        const {
+          data: existingEvent,
+          error: existingError,
+        } = await supabase
           .from('push_notification_events')
           .select('event_key')
           .eq('event_key', eventKey)
@@ -596,10 +683,12 @@ export async function GET(request: Request) {
 
         if (existingError) {
           failed++
+
           console.error(
             `[Push:${requestId}] Could not check savings event:`,
             existingError.message,
           )
+
           continue
         }
 
@@ -608,10 +697,16 @@ export async function GET(request: Request) {
           continue
         }
 
-        const goal = userGoals[Math.floor(Math.random() * userGoals.length)]
+        const goal =
+          userGoals[
+            Math.floor(Math.random() * userGoals.length)
+          ]
+
         const target = Number(goal.target_amount || 0)
         const current = Number(goal.current_amount || 0)
-        const progress = Math.round((current / target) * 100)
+        const progress = Math.round(
+          (current / target) * 100,
+        )
 
         await sendMessage({
           userId,
@@ -630,7 +725,10 @@ export async function GET(request: Request) {
   if (weekday === 'Sun' && time >= '20:00') {
     const weekStart = getWeekStart(today)
 
-    const { data: weeklyExpenses, error: weeklyError } = await supabase
+    const {
+      data: weeklyExpenses,
+      error: weeklyError,
+    } = await supabase
       .from('expenses')
       .select('user_id,amount,category,date')
       .gte('date', weekStart)
@@ -641,11 +739,15 @@ export async function GET(request: Request) {
         `[Push:${requestId}] Could not load weekly expenses:`,
         weeklyError,
       )
+
       failed++
     } else {
       const summaries = new Map<
         string,
-        { total: number; categories: Map<string, number> }
+        {
+          total: number
+          categories: Map<string, number>
+        }
       >()
 
       for (const expense of (weeklyExpenses ?? []) as Expense[]) {
@@ -655,9 +757,11 @@ export async function GET(request: Request) {
         }
 
         const amount = Number(expense.amount || 0)
-        const category = expense.category || 'Uncategorized'
+        const category =
+          expense.category || 'Uncategorized'
 
         current.total += amount
+
         current.categories.set(
           category,
           (current.categories.get(category) ?? 0) + amount,
@@ -667,8 +771,10 @@ export async function GET(request: Request) {
       }
 
       for (const [userId, summary] of summaries) {
-        const highestCategory = [...summary.categories.entries()]
-          .sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'No category'
+        const highestCategory =
+          [...summary.categories.entries()]
+            .sort((a, b) => b[1] - a[1])[0]?.[0] ??
+          'No category'
 
         await sendMessage({
           userId,
@@ -698,13 +804,10 @@ export async function GET(request: Request) {
     durationMs: Date.now() - startedAt,
   }
 
-  console.log(`[Push:${requestId}] Dispatch summary:`, result)
+  console.log(
+    `[Push:${requestId}] Dispatch summary:`,
+    result,
+  )
 
   return NextResponse.json(result)
-}
-
-function nextDay(today: string) {
-  const date = new Date(`${today}T12:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + 1)
-  return date.toISOString().slice(0, 10)
 }
