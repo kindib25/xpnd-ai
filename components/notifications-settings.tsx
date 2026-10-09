@@ -352,6 +352,11 @@ export function NotificationsSettings() {
 
     setMessage(null)
 
+    const timeChanged =
+      patch.reminder_time !== undefined &&
+      patch.reminder_time.slice(0, 5) !==
+        reminder.reminder_time.slice(0, 5)
+
     const next = previous.map((item) =>
       item.id === id ? { ...item, ...patch } : item,
     )
@@ -360,15 +365,23 @@ export function NotificationsSettings() {
 
     try {
       const supabase = createClient()
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) throw new Error('Please sign in again.')
+      if (!user) {
+        throw new Error('Please sign in again.')
+      }
+
+      const databasePatch = {
+        ...patch,
+        ...(timeChanged ? { last_sent_on: null } : {}),
+      }
 
       const { data, error } = await supabase
         .from('notification_reminders')
-        .update(patch)
+        .update(databasePatch)
         .eq('id', id)
         .eq('user_id', user.id)
         .select('id')
@@ -380,8 +393,15 @@ export function NotificationsSettings() {
           'Reminder was not saved. Check your access and try again.',
         )
       }
+
+      if (timeChanged) {
+        setMessage(
+          'Reminder time updated. It can be sent again at the new scheduled time.',
+        )
+      }
     } catch (error) {
       setReminders(previous)
+
       setMessage(
         error instanceof Error
           ? error.message
@@ -398,6 +418,7 @@ export function NotificationsSettings() {
 
     try {
       const supabase = createClient()
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -530,11 +551,14 @@ export function NotificationsSettings() {
                   id={`reminder-${reminder.id}`}
                   type="time"
                   value={reminder.reminder_time.slice(0, 5)}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const value = event.target.value
+                    if (!value) return
+
                     void updateReminder(reminder.id, {
-                      reminder_time: event.target.value,
+                      reminder_time: value,
                     })
-                  }
+                  }}
                   className="w-[112px]"
                   aria-label={`Time for ${reminder.title}`}
                 />
