@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { NotificationsSettings } from '@/components/notifications-settings'
+
 import {
   Card,
   CardContent,
@@ -50,9 +52,9 @@ export function SettingsForm({
 
   const [fullName, setFullName] = useState(
     profile?.full_name ||
-      metadata.full_name ||
-      metadata.name ||
-      ''
+    metadata.full_name ||
+    metadata.name ||
+    ''
   )
 
   const [avatarUrl, setAvatarUrl] = useState(
@@ -557,7 +559,12 @@ export function SettingsForm({
           </CardContent>
 
         </Card>
+        <div className="mt-5 md:mt-6">
+          <NotificationsSettings />
+        </div>
       </div>
+
+
 
       {/* =========================
           RIGHT COLUMN
