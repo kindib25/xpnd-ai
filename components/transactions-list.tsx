@@ -51,36 +51,58 @@ interface TransactionsListProps {
   expenses: any[]
 }
 
+// ---------------------------------------------------------------------------
+// Glass design tokens — shared recipe so the material can't drift
+// ---------------------------------------------------------------------------
+const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]'
+
+const GLASS_SURFACE_DEEP =
+  'relative overflow-hidden rounded-[26px] border border-white/[0.14] bg-[#151922]/70 backdrop-blur-2xl ' +
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_20px_60px_-35px_rgba(0,0,0,0.85)]'
+
+const GLASS_INSET =
+  'relative overflow-hidden rounded-xl border border-white/[0.10] bg-white/[0.035] ' +
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl'
+
+const HAIRLINE =
+  'pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70'
+
+const HAIRLINE_SM =
+  'pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70'
+
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13161a]'
+
+const INPUT_GLASS =
+  'h-10 rounded-xl border border-white/[0.14] bg-white/[0.045] text-white placeholder:text-white/35 ' +
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl ' +
+  'transition-[border-color,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ' +
+  'hover:border-white/[0.20] hover:bg-white/[0.06] ' +
+  'focus-visible:border-[#9ee82d]/50 focus-visible:ring-2 focus-visible:ring-[#9ee82d]/30 focus-visible:ring-offset-0 ' +
+  'disabled:cursor-not-allowed disabled:opacity-50'
+
+// Category chips — translucent fills + bright text work on any glass surface
 const CATEGORY_COLORS: Record<string, string> = {
   'Food & Dining':
-    'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
-
+    'bg-orange-500/15 text-orange-300 border-orange-400/25',
   Transportation:
-    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-
+    'bg-sky-500/15 text-sky-300 border-sky-400/25',
   Shopping:
-    'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
-
+    'bg-purple-500/15 text-purple-300 border-purple-400/25',
   Entertainment:
-    'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400',
-
+    'bg-pink-500/15 text-pink-300 border-pink-400/25',
   Healthcare:
-    'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-
+    'bg-red-500/15 text-red-300 border-red-400/25',
   Education:
-    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-
+    'bg-emerald-500/15 text-emerald-300 border-emerald-400/25',
   Travel:
-    'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
-
+    'bg-cyan-500/15 text-cyan-300 border-cyan-400/25',
   Utilities:
-    'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400',
-
+    'bg-slate-500/15 text-slate-300 border-slate-400/25',
   'Personal Care':
-    'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
-
+    'bg-indigo-500/15 text-indigo-300 border-indigo-400/25',
   Other:
-    'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400',
+    'bg-white/[0.06] text-white/70 border-white/[0.14]',
 }
 
 const CATEGORIES = [
@@ -365,599 +387,677 @@ export function TransactionsList({
   ) => {
     return (
       CATEGORY_COLORS[category] ||
-      'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400'
+      CATEGORY_COLORS.Other
     )
   }
 
   return (
-    <div className="w-full space-y-5 md:space-y-6">
-
-      {/* ============================================
-          CALENDAR
-      ============================================ */}
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold md:text-xl">
-          Transaction Calendar
-        </h2>
-
-        <TransactionCalendar
-          expenses={expenses}
-          onDateClick={(dayExpenses) => {
-            if (dayExpenses.length > 0) {
-              handleSelectExpense(
-                dayExpenses[0]
-              )
-            }
+    <>
+      {/* =========================================================
+          AMBIENT BACKGROUND — fixed, out of content flow.
+          Colour orbs give the backdrop-blur something to bite on.
+      ========================================================== */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
           }}
         />
-      </section>
+      </div>
 
-      {/* ============================================
-          TRANSACTIONS
-      ============================================ */}
+      <div className="relative w-full space-y-5 text-white md:space-y-6">
 
-      <section className="space-y-3">
+        {/* ============================================
+            CALENDAR
+        ============================================ */}
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <section className="space-y-3">
 
-          <Input
-            placeholder="Search transactions..."
-            value={searchQuery}
-            onChange={(e) =>
-              setSearchQuery(e.target.value)
-            }
-            className="h-11 rounded-full pl-10 text-sm md:text-base"
+          <TransactionCalendar
+            expenses={expenses}
+            onDateClick={(dayExpenses) => {
+              if (dayExpenses.length > 0) {
+                handleSelectExpense(
+                  dayExpenses[0]
+                )
+              }
+            }}
           />
-        </div>
+        </section>
 
-        {/* Transaction List */}
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
+        {/* ============================================
+            TRANSACTIONS
+        ============================================ */}
 
-            {filteredExpenses.length === 0 ? (
-              <div className="py-10 text-center text-muted-foreground md:py-12">
-                <p className="text-sm md:text-base">
-                  No transactions yet
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y">
+        <section className="space-y-3">
 
-                {paginatedExpenses.map(
-                  (expense) => (
-                    <div
-                      key={expense.id}
-                      onClick={() =>
-                        handleSelectExpense(
-                          expense
-                        )
-                      }
-                      className="
-                        group
-                        flex
-                        cursor-pointer
-                        items-center
-                        gap-2
-                        p-3
-                        transition-colors
-                        hover:bg-muted/50
-                        md:gap-4
-                        md:p-4
-                      "
-                    >
-                      {/* Icon */}
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted md:h-12 md:w-12">
-                        <Wallet className="h-4 w-4 text-muted-foreground md:h-5 md:w-5" />
-                      </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
 
-                      {/* Content */}
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-xs font-semibold md:text-base">
-                          {expense.description ||
-                            'Expense'}
-                        </h3>
+            <Input
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`focus-visible:ring-2 focus-visible:ring-[#97e431] focus-visible:ring-offset-0 h-11 rounded-full border border-white/[0.14] bg-white/[0.055] pl-10 text-sm text-white placeholder:text-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-[border-color,background-color] duration-300 ${EASE} hover:border-white/[0.20] hover:bg-white/[0.075] md:text-base`}
+            />
+          </div>
 
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(
-                            expense.date
-                          ).toLocaleDateString(
-                            'en-US',
-                            {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            }
-                          )}
-                        </p>
-                      </div>
+          {/* Transaction List */}
+          <Card className={GLASS_SURFACE_DEEP}>
+            <div aria-hidden="true" className={HAIRLINE} />
+            <CardContent className="relative z-10 p-0">
 
-                      {/* Category */}
-                      <span
+              {filteredExpenses.length === 0 ? (
+                <div className="py-10 text-center text-white/55 md:py-12">
+                  <p className="text-sm md:text-base">
+                    No transactions yet
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.06]">
+
+                  {paginatedExpenses.map(
+                    (expense) => (
+                      <div
+                        key={expense.id}
+                        onClick={() =>
+                          handleSelectExpense(
+                            expense
+                          )
+                        }
                         className={`
-                          hidden
-                          whitespace-nowrap
-                          rounded-full
-                          px-2
-                          py-1
-                          text-xs
-                          font-medium
-                          sm:inline-flex
-                          md:px-3
-                          ${getCategoryColor(
-                          expense.category
-                        )}
+                          group
+                          flex
+                          cursor-pointer
+                          items-center
+                          gap-2
+                          p-3
+                          transition-[background-color]
+                          duration-300
+                          ${EASE}
+                          hover:bg-white/[0.055]
+                          md:gap-4
+                          md:p-4
                         `}
                       >
-                        {expense.category}
-                      </span>
+                        {/* Icon */}
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl md:h-12 md:w-12">
+                          <Wallet className="h-4 w-4 text-white/60 md:h-5 md:w-5" />
+                        </div>
 
-                      {/* Amount */}
-                      <p className="min-w-fit text-right text-sm font-semibold md:mx-5 md:text-base">
-                        ₱
-                        {parseFloat(
-                          expense.amount
-                        ).toFixed(0)}
-                      </p>
-                    </div>
-                  )
-                )}
+                        {/* Content */}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-xs font-semibold text-white/95 md:text-base">
+                            {expense.description ||
+                              'Expense'}
+                          </h3>
 
-              </div>
-            )}
+                          <p className="text-xs text-white/55">
+                            {new Date(
+                              expense.date
+                            ).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              }
+                            )}
+                          </p>
+                        </div>
 
-          </CardContent>
-        </Card>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-3 pt-2">
-
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() =>
-                setCurrentPage(
-                  (prev) => prev - 1
-                )
-              }
-              className="rounded-lg"
-            >
-              Previous
-            </Button>
-
-            <div className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={
-                currentPage === totalPages
-              }
-              onClick={() =>
-                setCurrentPage(
-                  (prev) => prev + 1
-                )
-              }
-              className="rounded-lg"
-            >
-              Next
-            </Button>
-
-          </div>
-        )}
-      </section>
-
-      {/* ============================================
-    TRANSACTION DETAILS DIALOG
-============================================ */}
-
-      <Dialog
-        open={!!selectedExpense}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedExpense(null)
-            setIsEditing(false)
-          }
-        }}
-      >
-        <DialogContent
-          className="
-      w-[calc(100%-1rem)]
-      max-w-md
-      max-h-[calc(100dvh-1rem)]
-      overflow-y-auto
-      rounded-2xl
-      border-border/60
-      bg-background
-      p-0
-      gap-0
-      sm:max-h-[90vh]
-    "
-        >
-          {selectedExpense && (
-            <>
-              {/* ============================================
-            HEADER
-        ============================================ */}
-              <DialogHeader className="border-b border-border/60 bg-background px-4 py-4">
-                <DialogTitle className="text-base font-semibold text-foreground">
-                  {isEditing ? 'Edit Transaction' : 'Transaction Details'}
-                </DialogTitle>
-              </DialogHeader>
-
-              {/* ============================================
-            DETAILS
-        ============================================ */}
-              <div className="divide-y divide-border/60">
-
-                {/* Amount */}
-                <div className="bg-muted/30 px-4 py-5">
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <Wallet className="h-4 w-4 text-primary" />
-                    </div>
-
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Amount
-                    </p>
-                  </div>
-
-                  {isEditing ? (
-                    <div className="ml-11 flex items-center gap-2 border-b-2 border-primary/60">
-                      <span className="text-2xl font-semibold text-foreground">
-                        ₱
-                      </span>
-
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        step="0.01"
-                        value={editAmount}
-                        onChange={(e) =>
-                          setEditAmount(e.target.value)
-                        }
-                        placeholder="0.00"
-                        className="
-                    h-10
-                    border-0
-                    bg-transparent
-                    px-0
-                    text-2xl
-                    font-bold
-                    text-foreground
-                    shadow-none
-                    placeholder:text-muted-foreground
-                    focus-visible:ring-0
-                  "
-                      />
-                    </div>
-                  ) : (
-                    <p className="ml-11 text-3xl font-bold tracking-tight text-foreground">
-                      ₱
-                      {parseFloat(
-                        selectedExpense.amount
-                      ).toFixed(2)}
-                    </p>
-                  )}
-                </div>
-
-                {/* Category */}
-                <div className="flex gap-3 bg-background px-4 py-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      Category
-                    </p>
-
-                    {isEditing ? (
-                      <Select
-                        value={editCategory}
-                        onValueChange={(value) =>
-                          setEditCategory(value ?? '')
-                        }
-                      >
-                        <SelectTrigger
-                          className="
-                      h-10
-                      w-full
-                      rounded-xl
-                      border-border/70
-                      bg-muted/30
-                      text-foreground
-                      focus:ring-primary/20
-                    "
+                        {/* Category */}
+                        <span
+                          className={`
+                            hidden
+                            whitespace-nowrap
+                            rounded-full
+                            border
+                            px-2
+                            py-1
+                            text-xs
+                            font-medium
+                            shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+                            backdrop-blur-xl
+                            sm:inline-flex
+                            md:px-3
+                            ${getCategoryColor(
+                            expense.category
+                          )}
+                          `}
                         >
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
+                          {expense.category}
+                        </span>
 
-                        <SelectContent>
-                          {CATEGORIES.map((category) => (
-                            <SelectItem
-                              key={category}
-                              value={category}
-                            >
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span
-                        className={`
-                    inline-flex
-                    rounded-full
-                    px-2.5
-                    py-1
-                    text-xs
-                    font-semibold
-                    ${getCategoryColor(
-                          selectedExpense.category
-                        )}
-                  `}
-                      >
-                        {selectedExpense.category || 'Other'}
-                      </span>
-                    )}
-                  </div>
+                        {/* Amount */}
+                        <p className="min-w-fit text-right text-sm font-semibold tabular-nums text-white/95 md:mx-5 md:text-base">
+                          ₱
+                          {parseFloat(
+                            expense.amount
+                          ).toFixed(0)}
+                        </p>
+                      </div>
+                    )
+                  )}
+
                 </div>
+              )}
 
-                {/* Merchant */}
-                <div className="flex gap-3 bg-background px-4 py-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <Store className="h-4 w-4 text-muted-foreground" />
-                  </div>
+            </CardContent>
+          </Card>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      Merchant
-                    </p>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3 pt-2">
 
-                    {isEditing ? (
-                      <Input
-                        value={editMerchant}
-                        onChange={(e) =>
-                          setEditMerchant(e.target.value)
-                        }
-                        placeholder="Enter merchant"
-                        className="
-                    h-10
-                    rounded-xl
-                    border-border/70
-                    bg-muted/30
-                    text-foreground
-                    placeholder:text-muted-foreground
-                    focus-visible:border-primary
-                    focus-visible:ring-primary/20
-                  "
-                      />
-                    ) : (
-                      <p className="break-words text-sm font-semibold text-foreground">
-                        {selectedExpense.merchant || 'Not specified'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="flex gap-3 bg-background px-4 py-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      Description
-                    </p>
-
-                    {isEditing ? (
-                      <Input
-                        value={editDescription}
-                        onChange={(e) =>
-                          setEditDescription(e.target.value)
-                        }
-                        placeholder="Enter description"
-                        className="
-                    h-10
-                    rounded-xl
-                    border-border/70
-                    bg-muted/30
-                    text-foreground
-                    placeholder:text-muted-foreground
-                    focus-visible:border-primary
-                    focus-visible:ring-primary/20
-                  "
-                      />
-                    ) : (
-                      <p className="break-words text-sm font-semibold text-foreground">
-                        {selectedExpense.description || 'Expense'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Date */}
-                <div className="flex gap-3 bg-background px-4 py-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      Date
-                    </p>
-
-                    <p className="text-sm font-semibold text-foreground">
-                      {new Date(
-                        selectedExpense.date
-                      ).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Transaction ID */}
-                <div className="bg-muted/10 px-4 py-4">
-                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    Transaction ID
-                  </p>
-
-                  <p className="break-all text-[11px] leading-relaxed text-muted-foreground">
-                    {selectedExpense.id}
-                  </p>
-                </div>
-              </div>
-
-              {/* ============================================
-            ACTIONS
-        ============================================ */}
-              <div className="border-t border-border/60 bg-muted/20 p-4">
-                {isEditing ? (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="
-                  h-11
-                  flex-1
-                  rounded-xl
-                  border-border/70
-                  bg-background
-                  text-foreground
-                  hover:bg-muted
-                "
-                      disabled={isSaving}
-                      onClick={handleCancelEdit}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
-
-                    <Button
-                      className="h-11 flex-1 rounded-xl"
-                      disabled={
-                        isSaving ||
-                        !editAmount ||
-                        Number(editAmount) <= 0
-                      }
-                      onClick={handleSave}
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      {isSaving ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="
-                  h-11
-                  flex-1
-                  rounded-xl
-                  border-border/70
-                  bg-background
-                  text-foreground
-                  hover:bg-muted
-                "
-                      onClick={handleEdit}
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-
-                    <Button
-                      variant="destructive"
-                      className="h-11 flex-1 rounded-xl"
-                      disabled={
-                        isDeleting === selectedExpense.id
-                      }
-                      onClick={() =>
-                        handleDelete(selectedExpense)
-                      }
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-
-                      {isDeleting === selectedExpense.id
-                        ? 'Deleting...'
-                        : 'Delete'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-      {/* ============================================
-          DELETE CONFIRMATION
-      ============================================ */}
-
-      <AlertDialog
-        open={!!deleteExpense}
-        onOpenChange={(open) => {
-          if (!open && !isDeleting) {
-            setDeleteExpense(null)
-          }
-        }}
-      >
-        <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
-
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete transaction?
-            </AlertDialogTitle>
-
-            <AlertDialogDescription>
-              Are you sure you want to delete{' '}
-              <span className="font-semibold text-foreground">
-                "
-                {deleteExpense?.description ||
-                  'this transaction'}
-                "
-              </span>
-              ? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className="rounded-xl"
-              disabled={!!isDeleting}
-            >
-              Cancel
-            </AlertDialogCancel>
-
-            <AlertDialogAction
-              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={!!isDeleting}
-              onClick={() => {
-                if (deleteExpense) {
-                  confirmDelete(
-                    deleteExpense.id
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) => prev - 1
                   )
                 }
-              }}
-            >
-              {isDeleting
-                ? 'Deleting...'
-                : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+                className={`
+                  ${FOCUS_RING}
+                  rounded-xl border border-white/[0.14] bg-white/[0.045]
+                  text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
+                  transition-[background-color,border-color] duration-300 ${EASE}
+                  hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                  disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-white/[0.045]
+                `}
+              >
+                Previous
+              </Button>
 
-        </AlertDialogContent>
-      </AlertDialog>
+              <div className="text-sm text-white/55">
+                Page {currentPage} of {totalPages}
+              </div>
 
-    </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={
+                  currentPage === totalPages
+                }
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) => prev + 1
+                  )
+                }
+                className={`
+                  ${FOCUS_RING}
+                  rounded-xl border border-white/[0.14] bg-white/[0.045]
+                  text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
+                  transition-[background-color,border-color] duration-300 ${EASE}
+                  hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                  disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-white/[0.045]
+                `}
+              >
+                Next
+              </Button>
+
+            </div>
+          )}
+        </section>
+
+        {/* ============================================
+            TRANSACTION DETAILS DIALOG
+        ============================================ */}
+
+        <Dialog
+          open={!!selectedExpense}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedExpense(null)
+              setIsEditing(false)
+            }
+          }}
+        >
+          <DialogContent
+            className="
+              w-[calc(100%-1rem)]
+              max-w-md
+              max-h-[calc(100dvh-1rem)]
+              overflow-y-auto
+              gap-0
+              rounded-[26px]
+              border border-white/[0.14]
+              bg-[#151922]/90
+              p-0
+              text-white
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-40px_rgba(0,0,0,0.95)]
+              backdrop-blur-2xl
+              sm:max-h-[90vh]
+            "
+          >
+            {selectedExpense && (
+              <>
+                {/* HEADER */}
+                <DialogHeader className="relative border-b border-white/[0.06] px-4 py-4">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+                  />
+                  <DialogTitle className="text-base font-semibold text-white">
+                    {isEditing ? 'Edit Transaction' : 'Transaction Details'}
+                  </DialogTitle>
+                </DialogHeader>
+
+                {/* DETAILS */}
+                <div className="divide-y divide-white/[0.06]">
+
+                  {/* Amount */}
+                  <div className="bg-white/[0.025] px-4 py-5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#9ee82d]/25 bg-[#9ee82d]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        <Wallet className="h-4 w-4 text-[#c8ff75]" />
+                      </div>
+
+                      <p className="text-[11px] font-medium uppercase tracking-wider text-white/50">
+                        Amount
+                      </p>
+                    </div>
+
+                    {isEditing ? (
+                      <div className="ml-11 flex items-center gap-2 border-b-2 border-[#9ee82d]/60">
+                        <span className="text-2xl font-semibold text-white">
+                          ₱
+                        </span>
+
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="0.01"
+                          value={editAmount}
+                          onChange={(e) =>
+                            setEditAmount(e.target.value)
+                          }
+                          placeholder="0.00"
+                          className="
+                            h-10
+                            border-0
+                            bg-transparent
+                            px-0
+                            text-2xl
+                            font-bold
+                            text-white
+                            shadow-none
+                            placeholder:text-white/30
+                            focus-visible:ring-0
+                          "
+                        />
+                      </div>
+                    ) : (
+                      <p className="ml-11 text-3xl font-bold tracking-tight tabular-nums text-white">
+                        ₱
+                        {parseFloat(
+                          selectedExpense.amount
+                        ).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Category */}
+                  <div className="flex gap-3 px-4 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <Tag className="h-4 w-4 text-white/60" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-[11px] font-medium text-white/50">
+                        Category
+                      </p>
+
+                      {isEditing ? (
+                        <Select
+                          value={editCategory}
+                          onValueChange={(value) =>
+                            setEditCategory(value ?? '')
+                          }
+                        >
+                          <SelectTrigger
+                            className="
+                              h-10
+                              w-full
+                              rounded-xl
+                              border border-white/[0.14]
+                              bg-white/[0.045]
+                              text-white
+                              shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+                              backdrop-blur-xl
+                              transition-[border-color,background-color] duration-300
+                              ease-[cubic-bezier(0.16,1,0.3,1)]
+                              hover:border-white/[0.20]
+                              focus:border-[#9ee82d]/50
+                              focus:ring-2 focus:ring-[#9ee82d]/30
+                            "
+                          >
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+
+                          <SelectContent className="rounded-xl border border-white/[0.14] bg-[#151922]/95 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_20px_60px_-30px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+                            {CATEGORIES.map((category) => (
+                              <SelectItem
+                                key={category}
+                                value={category}
+                                className="focus:bg-primary focus:text-white"
+                              >
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span
+                          className={`
+                            inline-flex
+                            rounded-full
+                            border
+                            px-2.5
+                            py-1
+                            text-xs
+                            font-semibold
+                            shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+                            backdrop-blur-xl
+                            ${getCategoryColor(
+                            selectedExpense.category
+                          )}
+                          `}
+                        >
+                          {selectedExpense.category || 'Other'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Merchant */}
+                  <div className="flex gap-3 px-4 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <Store className="h-4 w-4 text-white/60" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-[11px] font-medium text-white/50">
+                        Merchant
+                      </p>
+
+                      {isEditing ? (
+                        <Input
+                          value={editMerchant}
+                          onChange={(e) =>
+                            setEditMerchant(e.target.value)
+                          }
+                          placeholder="Enter merchant"
+                          className={INPUT_GLASS}
+                        />
+                      ) : (
+                        <p className="break-words text-sm font-semibold text-white/95">
+                          {selectedExpense.merchant || 'Not specified'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="flex gap-3 px-4 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <FileText className="h-4 w-4 text-white/60" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-[11px] font-medium text-white/50">
+                        Description
+                      </p>
+
+                      {isEditing ? (
+                        <Input
+                          value={editDescription}
+                          onChange={(e) =>
+                            setEditDescription(e.target.value)
+                          }
+                          placeholder="Enter description"
+                          className={INPUT_GLASS}
+                        />
+                      ) : (
+                        <p className="break-words text-sm font-semibold text-white/95">
+                          {selectedExpense.description || 'Expense'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex gap-3 px-4 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <CalendarDays className="h-4 w-4 text-white/60" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-[11px] font-medium text-white/50">
+                        Date
+                      </p>
+
+                      <p className="text-sm font-semibold text-white/95">
+                        {new Date(
+                          selectedExpense.date
+                        ).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Transaction ID */}
+                  <div className="bg-white/[0.015] px-4 py-4">
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-white/45">
+                      Transaction ID
+                    </p>
+
+                    <p className="break-all text-[11px] leading-relaxed text-white/50">
+                      {selectedExpense.id}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="relative border-t border-white/[0.06] p-4">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+                  />
+                  {isEditing ? (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className={`
+                          ${FOCUS_RING}
+                          h-11 flex-1 rounded-xl
+                          border border-white/[0.14] bg-white/[0.045]
+                          text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
+                          transition-[background-color,border-color] duration-300 ${EASE}
+                          hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                        `}
+                        disabled={isSaving}
+                        onClick={handleCancelEdit}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel
+                      </Button>
+
+                      <Button
+                        className={`
+                          ${FOCUS_RING}
+                          h-11 flex-1 rounded-xl
+                          border border-[#9ee82d]/30
+                          bg-gradient-to-r from-[#9ee82d] to-[#c8ff75]
+                          font-semibold text-[#17200a]
+                          shadow-[0_0_18px_-6px_rgba(158,232,45,0.65)]
+                          transition-[transform,box-shadow] duration-300 ${EASE}
+                          hover:scale-[1.02]
+                          hover:shadow-[0_0_24px_-6px_rgba(158,232,45,0.85)]
+                          disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100
+                        `}
+                        disabled={
+                          isSaving ||
+                          !editAmount ||
+                          Number(editAmount) <= 0
+                        }
+                        onClick={handleSave}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        {isSaving ? 'Saving...' : 'Save'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className={`
+                          ${FOCUS_RING}
+                          h-11 flex-1 rounded-xl
+                          border border-white/[0.14] bg-white/[0.045]
+                          text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
+                          transition-[background-color,border-color] duration-300 ${EASE}
+                          hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                        `}
+                        onClick={handleEdit}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        className={`
+                          ${FOCUS_RING}
+                          h-11 flex-1 rounded-xl
+                          border border-red-400/30
+                          bg-red-500/20
+                          font-semibold text-red-200
+                          shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_-8px_rgba(248,113,113,0.55)]
+                          backdrop-blur-xl
+                          transition-[transform,background-color,border-color,box-shadow] duration-300 ${EASE}
+                          hover:scale-[1.02]
+                          hover:border-red-400/50
+                          hover:bg-red-500/30
+                          hover:text-red-100
+                          disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100
+                        `}
+                        disabled={
+                          isDeleting === selectedExpense.id
+                        }
+                        onClick={() =>
+                          handleDelete(selectedExpense)
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+
+                        {isDeleting === selectedExpense.id
+                          ? 'Deleting...'
+                          : 'Delete'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ============================================
+            DELETE CONFIRMATION
+        ============================================ */}
+
+        <AlertDialog
+          open={!!deleteExpense}
+          onOpenChange={(open) => {
+            if (!open && !isDeleting) {
+              setDeleteExpense(null)
+            }
+          }}
+        >
+          <AlertDialogContent className="relative w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-[26px] border border-white/[0.14] bg-[#151922]/90 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+            />
+
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">
+                Delete transaction?
+              </AlertDialogTitle>
+
+              <AlertDialogDescription className="text-white/60">
+                Are you sure you want to delete{' '}
+                <span className="font-semibold text-white/95">
+                  "
+                  {deleteExpense?.description ||
+                    'this transaction'}
+                  "
+                </span>
+                ? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={!!isDeleting}
+                className={`
+                  ${FOCUS_RING}
+                  rounded-xl
+                  border border-white/[0.14] bg-white/[0.045]
+                  text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
+                  transition-[background-color,border-color] duration-300 ${EASE}
+                  hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                  disabled:cursor-not-allowed disabled:opacity-50
+                `}
+              >
+                Cancel
+              </AlertDialogCancel>
+
+              <AlertDialogAction
+                disabled={!!isDeleting}
+                onClick={() => {
+                  if (deleteExpense) {
+                    confirmDelete(
+                      deleteExpense.id
+                    )
+                  }
+                }}
+                className={`
+                  ${FOCUS_RING}
+                  rounded-xl
+                  border border-red-400/30
+                  bg-red-500/20
+                  font-semibold text-red-200
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_-8px_rgba(248,113,113,0.55)]
+                  backdrop-blur-xl
+                  transition-[background-color,border-color,box-shadow] duration-300 ${EASE}
+                  hover:border-red-400/50
+                  hover:bg-red-500/30
+                  hover:text-red-100
+                  disabled:cursor-not-allowed disabled:opacity-50
+                `}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+
+          </AlertDialogContent>
+        </AlertDialog>
+
+      </div>
+    </>
   )
 }

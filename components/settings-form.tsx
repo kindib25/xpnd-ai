@@ -374,313 +374,339 @@ export function SettingsForm({
     .toUpperCase()
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5 md:space-y-6 xl:grid xl:grid-cols-[1fr_360px] xl:gap-6 xl:space-y-0">
+    <>
+      {/* =========================================================
+          AMBIENT BACKGROUND — fixed, full-viewport, out of content flow.
+          Colour orbs give the backdrop-blur something real to bite on.
+      ========================================================== */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
+          }}
+        />
+      </div>
 
-      {/* =========================
-          PROFILE INFORMATION
-      ========================== */}
-      <div className="min-w-0">
-        <Card className="w-full">
+      <div className="relative isolate mx-auto w-full max-w-6xl space-y-5 md:space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-6 xl:space-y-0">
 
-          <CardHeader className="px-4 py-5 sm:px-6">
-            <CardTitle className="text-lg sm:text-xl">
-              Profile information
-            </CardTitle>
+        {/* =========================
+            PROFILE INFORMATION
+        ========================== */}
+        <div className="min-w-0">
+          <Card className="relative w-full overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#11131c]/65 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_24px_70px_-35px_rgba(0,0,0,0.85)] backdrop-blur-[28px]">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.045] via-transparent to-white/[0.01]" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#9ee82d]/30 to-transparent" />
 
-            <CardDescription className="text-sm">
-              Update how your account appears across Xpnd.
-            </CardDescription>
-          </CardHeader>
+            <CardHeader className="relative z-10 border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6">
+              <CardTitle className="text-lg font-semibold tracking-tight text-white sm:text-xl">
+                Profile information
+              </CardTitle>
 
-          <CardContent className="px-4 pb-5 sm:px-6 sm:pb-6">
+              <CardDescription className="text-sm leading-5 text-white/45">
+                Update how your account appears across Xpnd.
+              </CardDescription>
+            </CardHeader>
 
-            <form
-              onSubmit={handleSave}
-              className="space-y-5"
-            >
+            <CardContent className="relative z-10 px-4 pb-5 sm:px-6 sm:pb-6">
 
-              {/* =========================
-                  PROFILE AVATAR
-              ========================== */}
-              <div className="flex flex-col items-center rounded-xl border bg-muted/30 px-4 py-6 text-center sm:py-7">
+              <form
+                onSubmit={handleSave}
+                className="space-y-5"
+              >
 
-                {/* Avatar */}
-                <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xl font-semibold text-primary ring-2 ring-background sm:size-28">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt={`${fullName || 'Profile'} avatar`}
-                      className="size-full object-cover"
+                {/* =========================
+                    PROFILE AVATAR
+                ========================== */}
+                <div className="relative flex flex-col items-center overflow-hidden rounded-[22px] border border-white/[0.09] bg-white/[0.025] px-4 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] sm:py-7">
+                  <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.035] via-transparent to-[#9ee82d]/[0.025]" />
+
+                  {/* Avatar */}
+                  <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#9ee82d]/25 bg-[#9ee82d]/[0.09] text-xl font-semibold text-[#c6ff72] shadow-[0_0_0_6px_rgba(158,232,45,0.035),inset_0_1px_0_rgba(255,255,255,0.12)] sm:size-28">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={`${fullName || 'Profile'} avatar`}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+
+                  {/* Profile Name */}
+                  <p className="relative mt-4 max-w-full truncate text-base font-semibold text-white sm:text-lg">
+                    {fullName || 'Your Profile'}
+                  </p>
+
+                  {/* Upload Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="relative mt-3 h-10 rounded-xl border border-white/[0.12] bg-white/[0.045] text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-300 hover:border-[#9ee82d]/25 hover:bg-[#9ee82d]/[0.07] hover:text-[#c6ff72]"
+                    onClick={() =>
+                      avatarInputRef.current?.click()
+                    }
+                    disabled={
+                      isSaving ||
+                      isUploadingAvatar
+                    }
+                  >
+                    <Camera
+                      className="mr-2 size-4"
+                      aria-hidden="true"
                     />
-                  ) : (
-                    initials
-                  )}
+
+                    {isUploadingAvatar
+                      ? 'Uploading...'
+                      : 'Upload image'}
+                  </Button>
+
+                  {/* File Requirements */}
+                  <p className="relative mt-2 text-xs leading-5 text-white/40">
+                    JPG, PNG, WebP, or GIF up to 5 MB.
+                  </p>
+
+                  <input
+                    ref={avatarInputRef}
+                    id="avatarUpload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleAvatarUpload}
+                    className="sr-only"
+                  />
+
                 </div>
 
-                {/* Profile Name */}
-                <p className="mt-4 max-w-full truncate text-base font-semibold sm:text-lg">
-                  {fullName || 'Your Profile'}
-                </p>
+                {/* =========================
+                    PROFILE NAME + EMAIL
+                ========================== */}
+                <div className="grid grid-cols-1 gap-5">
 
-                {/* Upload Button */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mt-3 h-10"
-                  onClick={() =>
-                    avatarInputRef.current?.click()
-                  }
-                  disabled={
-                    isSaving ||
-                    isUploadingAvatar
-                  }
-                >
-                  <Camera
-                    className="mr-2 size-4"
+                  {/* Profile Name */}
+                  <div>
+                    <Label htmlFor="fullName" className="text-sm font-medium text-white/75">
+                      Profile name
+                    </Label>
+
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) =>
+                        setFullName(e.target.value)
+                      }
+                      disabled={isSaving}
+                      placeholder="Your name"
+                      className="mt-2 h-11 rounded-xl border-white/[0.10] bg-white/[0.035] text-white placeholder:text-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-all duration-300 focus-visible:border-[#9ee82d]/45 focus-visible:ring-[#9ee82d]/15"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <Label htmlFor="email" className="text-sm font-medium text-white/75">
+                      Email address
+                    </Label>
+
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) =>
+                        setEmail(e.target.value)
+                      }
+                      disabled={isSaving}
+                      className="mt-2 h-11 rounded-xl border-white/[0.10] bg-white/[0.035] text-white placeholder:text-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-all duration-300 focus-visible:border-[#9ee82d]/45 focus-visible:ring-[#9ee82d]/15"
+                    />
+                  </div>
+
+                </div>
+
+                {/* Email notice */}
+                <div className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-xs leading-5 text-white/45">
+
+                  <Mail
+                    className="mt-0.5 size-3.5 shrink-0 text-[#9ee82d]/70"
                     aria-hidden="true"
                   />
 
-                  {isUploadingAvatar
-                    ? 'Uploading...'
-                    : 'Upload image'}
+                  <span>
+                    Changing your email may require confirmation.
+                  </span>
+
+                </div>
+
+                {/* =========================
+                    PASSWORD
+                ========================== */}
+                <div>
+
+                  <Label htmlFor="password" className="text-sm font-medium text-white/75">
+                    New password
+                  </Label>
+
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
+                    disabled={isSaving}
+                    placeholder="Leave blank to keep current password"
+                    className="mt-2 h-11 rounded-xl border-white/[0.10] bg-white/[0.035] text-white placeholder:text-sm placeholder:text-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-all duration-300 focus-visible:border-[#9ee82d]/45 focus-visible:ring-[#9ee82d]/15 sm:placeholder:text-sm"
+                  />
+
+                </div>
+
+                {/* =========================
+                    SAVE BUTTON
+                ========================== */}
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="h-11 w-full rounded-xl border border-[#9ee82d]/25 bg-[#9ee82d] font-semibold text-[#11131c] shadow-[0_8px_24px_-12px_rgba(158,232,45,0.65),inset_0_1px_0_rgba(255,255,255,0.45)] transition-all duration-300 hover:bg-[#b0f34b] hover:shadow-[0_10px_30px_-12px_rgba(158,232,45,0.75)] disabled:opacity-50 sm:w-auto"
+                >
+                  {isSaving
+                    ? 'Saving changes...'
+                    : 'Save profile changes'}
                 </Button>
 
-                {/* File Requirements */}
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  JPG, PNG, WebP, or GIF up to 5 MB.
-                </p>
+              </form>
 
-                <input
-                  ref={avatarInputRef}
-                  id="avatarUpload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleAvatarUpload}
-                  className="sr-only"
-                />
+            </CardContent>
 
-              </div>
+          </Card>
+          <div className="relative mt-5 overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#11131c]/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_55px_-35px_rgba(0,0,0,0.8)] backdrop-blur-[28px] md:mt-6 [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-[#9ee82d]/25 to-transparent" />
+            <NotificationsSettings />
+          </div>
+        </div>
 
-              {/* =========================
-                  PROFILE NAME + EMAIL
-              ========================== */}
-              <div className="grid grid-cols-1 gap-5">
 
-                {/* Profile Name */}
-                <div>
-                  <Label htmlFor="fullName">
-                    Profile name
-                  </Label>
 
-                  <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) =>
-                      setFullName(e.target.value)
-                    }
-                    disabled={isSaving}
-                    placeholder="Your name"
-                    className="mt-2 h-11"
-                  />
-                </div>
+        {/* =========================
+            RIGHT COLUMN
+        ========================== */}
+        <div className="min-w-0 space-y-5 md:space-y-6">
 
-                {/* Email */}
-                <div>
-                  <Label htmlFor="email">
-                    Email address
-                  </Label>
+          {/* =========================
+              ACCOUNT SECURITY
+          ========================== */}
+          <Card className="relative overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#11131c]/65 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_24px_70px_-35px_rgba(0,0,0,0.85)] backdrop-blur-[28px]">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.01]" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) =>
-                      setEmail(e.target.value)
-                    }
-                    disabled={isSaving}
-                    className="mt-2 h-11"
-                  />
-                </div>
+            <CardHeader className="relative z-10 border-b border-white/[0.07] px-4 py-5 sm:px-6">
 
-              </div>
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-white sm:text-lg">
 
-              {/* Email notice */}
-              <div className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
-
-                <Mail
-                  className="mt-0.5 size-3.5 shrink-0"
+                <KeyRound
+                  className="size-4 shrink-0 text-[#9ee82d]/80"
                   aria-hidden="true"
                 />
 
-                <span>
-                  Changing your email may require confirmation.
-                </span>
+                Account security
 
-              </div>
+              </CardTitle>
 
-              {/* =========================
-                  PASSWORD
-              ========================== */}
-              <div>
+              <CardDescription className="text-sm leading-5 text-white/45">
+                Your password is updated securely through Supabase Auth.
+              </CardDescription>
 
-                <Label htmlFor="password">
-                  New password
-                </Label>
+            </CardHeader>
 
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value)
-                  }
-                  disabled={isSaving}
-                  placeholder="Leave blank to keep current password"
-                  className="mt-2 h-11 text-base placeholder:text-sm sm:placeholder:text-sm"
+            <CardContent className="relative z-10 space-y-3 px-4 pb-5 pt-5 text-sm leading-5 text-white/55 sm:px-6 sm:pb-6">
+
+              <p>
+                Use a unique password with at least 8 characters.
+              </p>
+
+              <p>
+                Changes to email and password may trigger a confirmation email.
+              </p>
+
+            </CardContent>
+
+          </Card>
+
+          {/* =========================
+              DELETE ACCOUNT
+          ========================== */}
+          <Card className="relative overflow-hidden rounded-[26px] border border-red-400/[0.20] bg-[#171219]/70 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_24px_70px_-35px_rgba(0,0,0,0.85)] backdrop-blur-[28px]">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-red-400/[0.045] via-transparent to-transparent" />
+
+            <CardHeader className="relative z-10 border-b border-white/[0.07] px-4 py-5 sm:px-6">
+
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-red-300 sm:text-lg">
+
+                <ShieldAlert
+                  className="size-4 shrink-0 text-red-300"
+                  aria-hidden="true"
                 />
 
-              </div>
+                Delete account
 
-              {/* =========================
-                  SAVE BUTTON
-              ========================== */}
+              </CardTitle>
+
+              <CardDescription className="text-sm leading-5 text-white/45">
+                Permanently remove your account and associated data.
+              </CardDescription>
+
+            </CardHeader>
+
+            <CardContent className="relative z-10 px-4 pb-5 pt-5 sm:px-6 sm:pb-6">
+
               <Button
-                type="submit"
-                disabled={isSaving}
-                className="h-11 w-full sm:w-auto"
+                type="button"
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="h-11 w-full rounded-xl border border-red-400/20 bg-red-500/[0.09] text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 hover:border-red-400/35 hover:bg-red-500/[0.16] hover:text-red-100"
               >
-                {isSaving
-                  ? 'Saving changes...'
-                  : 'Save profile changes'}
+                {isDeleting
+                  ? 'Processing...'
+                  : 'Delete my account'}
               </Button>
 
-            </form>
+              <p className="mt-3 text-center text-xs leading-5 text-white/40">
+                This action cannot be undone.
+              </p>
 
-          </CardContent>
+            </CardContent>
 
-        </Card>
-        <div className="mt-5 md:mt-6">
-          <NotificationsSettings />
-        </div>
-      </div>
+          </Card>
 
-
-
-      {/* =========================
-          RIGHT COLUMN
-      ========================== */}
-      <div className="min-w-0 space-y-5 md:space-y-6">
-
-        {/* =========================
-            ACCOUNT SECURITY
-        ========================== */}
-        <Card>
-
-          <CardHeader className="px-4 py-5 sm:px-6">
-
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-
-              <KeyRound
-                className="size-4 shrink-0"
-                aria-hidden="true"
-              />
-
-              Account security
-
-            </CardTitle>
-
-            <CardDescription className="text-sm leading-5">
-              Your password is updated securely through Supabase Auth.
-            </CardDescription>
-
-          </CardHeader>
-
-          <CardContent className="space-y-3 px-4 pb-5 text-sm leading-5 text-muted-foreground sm:px-6 sm:pb-6">
-
-            <p>
-              Use a unique password with at least 8 characters.
-            </p>
-
-            <p>
-              Changes to email and password may trigger a confirmation email.
-            </p>
-
-          </CardContent>
-
-        </Card>
-
-        {/* =========================
-            DELETE ACCOUNT
-        ========================== */}
-        <Card className="border-destructive/30">
-
-          <CardHeader className="px-4 py-5 sm:px-6">
-
-            <CardTitle className="flex items-center gap-2 text-base text-destructive sm:text-lg">
-
-              <ShieldAlert
-                className="size-4 shrink-0"
-                aria-hidden="true"
-              />
-
-              Delete account
-
-            </CardTitle>
-
-            <CardDescription className="text-sm leading-5">
-              Permanently remove your account and associated data.
-            </CardDescription>
-
-          </CardHeader>
-
-          <CardContent className="px-4 pb-5 sm:px-6 sm:pb-6">
+          {/* =========================
+              MOBILE LOGOUT
+          ========================== */}
+          <div className="md:hidden">
 
             <Button
               type="button"
-              variant="destructive"
-              onClick={handleDeleteAccount}
-              disabled={isDeleting}
-              className="h-11 w-full"
+              variant="outline"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.035] text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:border-white/[0.20] hover:bg-white/[0.07] hover:text-white"
             >
-              {isDeleting
-                ? 'Processing...'
-                : 'Delete my account'}
+              <LogOut
+                className="mr-2 size-4"
+                aria-hidden="true"
+              />
+
+              {isLoggingOut
+                ? 'Logging out...'
+                : 'Log out'}
             </Button>
 
-            <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
-              This action cannot be undone.
-            </p>
-
-          </CardContent>
-
-        </Card>
-
-        {/* =========================
-            MOBILE LOGOUT
-        ========================== */}
-        <div className="md:hidden">
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="h-11 w-full"
-          >
-            <LogOut
-              className="mr-2 size-4"
-              aria-hidden="true"
-            />
-
-            {isLoggingOut
-              ? 'Logging out...'
-              : 'Log out'}
-          </Button>
+          </div>
 
         </div>
 
       </div>
-
-    </div>
+    </>
   )
 }

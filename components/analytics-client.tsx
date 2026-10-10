@@ -3,13 +3,13 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 
 interface AnalyticsClientProps {
   expenses: any[]
 }
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#f43f5e']
+const COLORS = ['#9ee82d', '#7dd3fc', '#c4b5fd', '#f9a8d4', '#fbbf24', '#5eead4', '#a5b4fc', '#fda4af']
 
 const EXPENSE_CATEGORIES = [
   'Food & Dining',
@@ -23,6 +23,25 @@ const EXPENSE_CATEGORIES = [
   'Personal Care',
   'Other',
 ]
+
+// ---------------------------------------------------------------------------
+// Glass design tokens — extracted from the study so the recipe can't drift
+// ---------------------------------------------------------------------------
+const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]'
+
+const GLASS_SURFACE =
+  'relative overflow-hidden rounded-[26px] border border-white/[0.14] bg-white/[0.075] backdrop-blur-xl ' +
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)]'
+
+const GLASS_SURFACE_DEEP =
+  'relative overflow-hidden rounded-[26px] border border-white/[0.14] bg-[#151922]/70 backdrop-blur-2xl ' +
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_20px_60px_-35px_rgba(0,0,0,0.85)]'
+
+const HAIRLINE =
+  'pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70'
+
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13161a]'
 
 export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'categories'>('overview')
@@ -72,205 +91,314 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
       .slice(-7)
   }, [expenses])
 
+  const maxTrend = trendData.length > 0 ? Math.max(...trendData.map((d) => d.amount)) : 0
+
   return (
-    <div className="w-full p-4 md:p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Analytics</h1>
-        <p className="text-muted-foreground">Understand your spending patterns.</p>
+    <>
+      {/* =========================================================
+          AMBIENT BACKGROUND — fixed, out of content flow.
+          Colored orbs give the backdrop-blur something to bite on.
+      ========================================================== */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
+          }}
+        />
+
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 md:gap-3 mb-8">
-        {(['overview', 'trends', 'categories'] as const).map((tab) => (
-          <Button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            variant={activeTab === tab ? 'default' : 'outline'}
-            className="capitalize rounded-full"
-          >
-            {tab}
-          </Button>
-        ))}
-      </div>
+      <div className="relative mx-auto w-full max-w-7xl space-y-7 p-4 text-white sm:p-6 md:space-y-8 md:p-8">
+        {/* Header */}
+        <div className="relative mb-8">
+          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Analytics
+          </h1>
+          <p className="text-sm text-white/60 sm:text-base">
+            Understand your spending patterns.
+          </p>
+        </div>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Pie Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg md:text-xl">Spending Overview</CardTitle>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">This Month</p>
-            </CardHeader>
-            <CardContent>
-              {categoryData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  No spending data available
-                </div>
-              ) : (
-                <div className="h-64 md:h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => {
-                          const numberValue = Number(value)
-                          return `₱${numberValue.toFixed(2)}`
-                        }}
-                        contentStyle={{
-                          backgroundColor: 'var(--background)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Tab Navigation — glass pill cluster */}
+        <div className="relative mb-8 flex w-full flex-wrap gap-2 overflow-hidden rounded-2xl border border-white/[0.14] bg-white/[0.055] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:w-fit">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+          />
+          {(['overview', 'trends', 'categories'] as const).map((tab) => (
+            <Button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              variant="ghost"
+              className={
+                `${FOCUS_RING} ` +
+                (activeTab === tab
+                  ? `rounded-xl border border-[#9ee82d]/25 bg-[#9ee82d]/10 px-4 text-[#c8ff75] shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_4px_18px_-10px_rgba(158,232,45,0.45)] hover:bg-[#9ee82d]/15`
+                  : `rounded-xl border border-transparent px-4 text-white/55 transition-[color,background-color,border-color] duration-300 ${EASE} hover:border-white/[0.14] hover:bg-white/[0.075] hover:text-white/90`)
+              }
+            >
+              {tab}
+            </Button>
+          ))}
+        </div>
 
-          {/* Category Breakdown */}
-          <Card className="border-0 bg-transparent shadow-none p-3 md:p-5">
-            <CardHeader className="px-0 pb-4">
-              <CardTitle className="text-lg md:text-xl">
-                Category Breakdown
-              </CardTitle>
-            </CardHeader>
+        {/* =========================
+            OVERVIEW TAB
+        ========================== */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Pie Chart */}
+            <Card className={`${GLASS_SURFACE_DEEP} text-white`}>
+              <div
+                aria-hidden="true"
+                className={HAIRLINE}
+              />
+              <CardHeader className="border-b border-white/[0.06] px-5 py-5 sm:px-6">
+                <CardTitle className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                  Spending Overview
+                </CardTitle>
+                <p className="mt-1 text-xs text-white/55 sm:text-sm">Spending by category</p>
+              </CardHeader>
+              <CardContent className="p-5 sm:p-6">
+                {categoryData.length === 0 ? (
+                  <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-white/[0.14] bg-white/[0.025] text-sm text-white/55">
+                    No spending data available
+                  </div>
+                ) : (
+                  <div className="h-64 md:h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => {
+                            const numberValue = Number(value)
+                            return `₱${numberValue.toFixed(2)}`
+                          }}
+                          contentStyle={{
+                            backgroundColor: 'rgba(23,27,37,0.85)',
+                            border: '1px solid rgba(255,255,255,0.14)',
+                            borderRadius: '14px',
+                            color: '#fff',
+                            boxShadow:
+                              'inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.45)',
+                            backdropFilter: 'blur(16px)',
+                          }}
+                          itemStyle={{ color: '#fff' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            <CardContent className="px-0">
-              {topCategories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No spending data available
-                </p>
-              ) : (
-                <div className="space-y-5">
-                  {topCategories.map((category, index) => {
-                    const percentage =
-                      totalSpending > 0
-                        ? Math.round((category.value / totalSpending) * 100)
-                        : 0
+            {/* Category Breakdown */}
+            <Card className={`${GLASS_SURFACE} p-3 text-white md:p-5`}>
+              <div aria-hidden="true" className={HAIRLINE} />
+              <CardHeader className="px-0 pb-4">
+                <CardTitle className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                  Category Breakdown
+                </CardTitle>
+              </CardHeader>
 
-                    return (
-                      <div
-                        key={category.name}
-                        className="
-                flex items-center justify-between
-                px-4 py-5
-                md:px-5 md:py-6
-                rounded-2xl
-                bg-[#1e293b]
-                transition-colors
-                hover:bg-[#253247]
-              "
-                      >
-                        {/* Left Side */}
-                        <div className="flex items-center gap-4 min-w-0">
-                          {/* Category Color */}
+              <CardContent className="px-0">
+                {topCategories.length === 0 ? (
+                  <p className="text-sm text-white/55">No spending data available</p>
+                ) : (
+                  <div className="space-y-5">
+                    {topCategories.map((category, index) => {
+                      const percentage =
+                        totalSpending > 0
+                          ? Math.round((category.value / totalSpending) * 100)
+                          : 0
+
+                      return (
+                        <div
+                          key={category.name}
+                          className="
+                            group relative flex items-center justify-between gap-4 overflow-hidden
+                            rounded-2xl border border-white/[0.14]
+                            bg-white/[0.055] px-4 py-4
+                            shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]
+                            backdrop-blur-xl
+                            transition-[border-color,background-color,box-shadow] duration-500
+                            ease-[cubic-bezier(0.16,1,0.3,1)]
+                            hover:border-white/[0.24] hover:bg-white/[0.10]
+                            hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_12px_40px_-20px_rgba(0,0,0,0.65)]
+                            sm:px-5 sm:py-5
+                          "
+                        >
                           <div
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{
-                              backgroundColor:
-                                COLORS[index % COLORS.length],
-                            }}
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
                           />
 
-                          {/* Category Information */}
-                          <div className="min-w-0">
-                            <p className="text-base md:text-lg font-bold text-white">
-                              {category.name}
-                            </p>
+                          {/* Left Side */}
+                          <div className="flex min-w-0 items-center gap-4">
+                            {/* Category Colour */}
+                            <div
+                              className="h-3 w-3 flex-shrink-0 rounded-full"
+                              style={{
+                                backgroundColor: COLORS[index % COLORS.length],
+                                boxShadow: `0 0 12px ${COLORS[index % COLORS.length]}66`,
+                              }}
+                            />
 
-                            <p className="mt-1 text-sm md:text-base text-slate-400">
-                              ₱{category.value.toFixed(2)}
-                            </p>
+                            {/* Category Information */}
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-white/95 sm:text-base">
+                                {category.name}
+                              </p>
+                              <p className="mt-1 text-sm tabular-nums text-white/55">
+                                ₱{category.value.toFixed(2)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Percentage */}
-                        <p className="ml-4 text-xl md:text-2xl font-bold text-white">
-                          {percentage}%
-                        </p>
+                          {/* Percentage */}
+                          <p className="ml-4 shrink-0 text-lg font-semibold tabular-nums text-[#c8ff75] sm:text-xl">
+                            {percentage}%
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* =========================
+            TRENDS TAB
+        ========================== */}
+        {activeTab === 'trends' && (
+          <Card className={`${GLASS_SURFACE_DEEP} text-white`}>
+            <div aria-hidden="true" className={HAIRLINE} />
+            <CardHeader className="border-b border-white/[0.06] px-5 py-5 sm:px-6">
+              <CardTitle className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                Daily Spending Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 sm:p-6">
+              {trendData.length === 0 ? (
+                <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-white/[0.14] bg-white/[0.025] text-sm text-white/55">
+                  No trend data available
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {trendData.map((day) => (
+                    <div
+                      key={day.date}
+                      className="relative flex items-center justify-between gap-2 overflow-hidden rounded-2xl border border-white/[0.14] bg-white/[0.045] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:gap-4 sm:px-4"
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-70"
+                      />
+                      <p className="w-16 shrink-0 text-xs font-medium text-white/65 sm:w-20 sm:text-sm">
+                        {day.date}
+                      </p>
+                      <div className="mx-1 flex h-8 min-w-0 flex-1 items-center rounded-full border border-white/[0.08] bg-black/25 px-1.5 sm:mx-2 sm:px-2">
+                        <div
+                          className="flex h-6 min-w-1 items-center justify-center rounded-full bg-gradient-to-r from-[#9ee82d] to-[#d0ff79] px-2 shadow-[0_0_18px_-7px_rgba(158,232,45,0.8)] transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                          style={{
+                            width: `${maxTrend > 0 ? Math.min((day.amount / maxTrend) * 100, 100) : 0}%`,
+                          }}
+                        >
+                          {day.amount > 100 && (
+                            <span className="text-[10px] font-bold text-[#17200a]">
+                              ₱{day.amount.toFixed(0)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    )
-                  })}
+                      <p className="w-[76px] shrink-0 text-right text-xs font-semibold tabular-nums text-white/85 sm:w-24 sm:text-sm">
+                        ₱{day.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
 
-      {/* Trends Tab */}
-      {activeTab === 'trends' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Daily Spending Trends</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {trendData.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                No trend data available
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {trendData.map((day) => (
-                  <div key={day.date} className="flex items-center justify-between">
-                    <p className="text-sm font-medium w-20">{day.date}</p>
-                    <div className="flex-1 mx-4 bg-muted rounded-full h-8 flex items-center px-3">
-                      <div className="bg-primary rounded-full h-6 flex items-center justify-center px-2" style={{
-                        width: `${Math.min((day.amount / Math.max(...trendData.map(d => d.amount))) * 100, 100)}%`
-                      }}>
-                        {day.amount > 100 && <span className="text-xs text-primary-foreground font-semibold">₱{day.amount.toFixed(0)}</span>}
+        {/* =========================
+            CATEGORIES TAB
+        ========================== */}
+        {activeTab === 'categories' && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {EXPENSE_CATEGORIES.map((category) => {
+              const catData = categoryData.find((c) => c.name === category)
+              const amount = catData?.value || 0
+              const percentage =
+                totalSpending > 0 ? Math.round((amount / totalSpending) * 100) : 0
+
+              return (
+                <Card
+                  key={category}
+                  className="
+                    group relative overflow-hidden rounded-[24px]
+                    border border-white/[0.14]
+                    bg-[#151922]/65 text-white
+                    shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_45px_-32px_rgba(0,0,0,0.9)]
+                    backdrop-blur-2xl
+                    transition-[transform,border-color,background-color,box-shadow]
+                    duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                    hover:-translate-y-0.5
+                    hover:border-[#9ee82d]/25
+                    hover:bg-[#191e29]/80
+                    hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_24px_55px_-30px_rgba(0,0,0,0.95)]
+                  "
+                >
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/[0.06] blur-2xl"
+                  />
+
+                  <CardContent className="relative z-10 p-5 sm:p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white/90 sm:text-base">
+                          {category}
+                        </p>
+                        <p className="mt-1 text-sm tabular-nums text-white/55">
+                          ₱{amount.toFixed(2)}
+                        </p>
                       </div>
+                      <p className="ml-4 text-xl font-semibold tabular-nums text-[#c8ff75] sm:text-2xl">
+                        {percentage}%
+                      </p>
                     </div>
-                    <p className="text-sm font-semibold w-16 text-right">₱{day.amount.toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Categories Tab */}
-      {activeTab === 'categories' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {EXPENSE_CATEGORIES.map((category) => {
-            const catData = categoryData.find((c) => c.name === category)
-            const amount = catData?.value || 0
-            const percentage = totalSpending > 0 ? Math.round((amount / totalSpending) * 100) : 0
-
-            return (
-              <Card key={category}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex-1">
-                      <p className="font-semibold text-base md:text-lg">{category}</p>
-                      <p className="text-sm text-muted-foreground">₱{amount.toFixed(2)}</p>
-                    </div>
-                    <p className="text-lg md:text-2xl font-bold ml-4">{percentage}%</p>
-                  </div>
-
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </>
   )
 }

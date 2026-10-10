@@ -652,6 +652,23 @@ export function GoalsList({
 
   return (
     <div className="w-full space-y-5 sm:space-y-6">
+
+      {/* =========================================================
+          AMBIENT BACKGROUND — top-level, fixed, out of content flow
+      ========================================================== */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
+          }}
+        />
+      </div>
+
       {/* =========================================
           AVAILABLE SAVINGS
       ========================================= */}
@@ -850,11 +867,10 @@ export function GoalsList({
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {goals.length === 0
                     ? 'Start building your savings'
-                    : `${goals.length} ${
-                        goals.length === 1
-                          ? 'goal'
-                          : 'goals'
-                      }`}
+                    : `${goals.length} ${goals.length === 1
+                      ? 'goal'
+                      : 'goals'
+                    }`}
                 </p>
               </div>
             </div>
@@ -1084,19 +1100,19 @@ export function GoalsList({
                 const progress =
                   target > 0
                     ? Math.min(
-                        100,
-                        (current / target) * 100
-                      )
+                      100,
+                      (current / target) * 100
+                    )
                     : 0
 
                 const daysLeft = goal.deadline
                   ? Math.ceil(
-                      (new Date(
-                        goal.deadline
-                      ).getTime() -
-                        Date.now()) /
-                        86400000
-                    )
+                    (new Date(
+                      goal.deadline
+                    ).getTime() -
+                      Date.now()) /
+                    86400000
+                  )
                   : null
 
                 const remaining = Math.max(
