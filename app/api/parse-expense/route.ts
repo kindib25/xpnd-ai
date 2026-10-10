@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import OpenAI from 'openai'
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
-const MODEL = 'gemma3:4b'
+const openrouter = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+})
+
+const MODEL =
+  process.env.OPENROUTER_MODEL ??
+  'google/gemma-4-26b-a4b-it:free'
+
 
 const EXPENSE_CATEGORIES = [
   'Food & Dining',
@@ -161,67 +169,59 @@ User expense description:
 
 Return ONLY the JSON object.`
 
-    console.log(
-      '[Xpnd AI] Calling Ollama at:',
-      OLLAMA_URL,
-      'with model:',
-      MODEL
-    )
 
-    const ollamaResponse = await fetch(`${OLLAMA_URL}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        prompt,
-        stream: false,
-        temperature: 0.1,
-        format: 'json',
-      }),
-      signal: AbortSignal.timeout(30000),
-    })
+    console.log('[Xpnd AI] Calling OpenRouter with model:', MODEL)
 
-    if (!ollamaResponse.ok) {
-      const errorText = await ollamaResponse.text()
-
-      console.error(
-        '[Xpnd AI] Ollama error:',
-        ollamaResponse.status,
-        errorText
-      )
-
-      return handleFallbackParsing(text)
-    }
-
-    const ollamaData = await ollamaResponse.json()
-    const responseText = ollamaData.response || ''
-
-    console.log(
-      '[Xpnd AI] Ollama response:',
-      responseText.substring(0, 300)
-    )
-
-    let parsedData
+    let parsedData: any
 
     try {
+      const aiResponse = await openrouter.chat.completions.create(
+        {
+          model: MODEL,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.1,
+          response_format: {
+            type: 'json_object',
+          },
+        },
+        {
+          timeout: 30_000,
+        }
+      )
+
+      const responseText =
+        aiResponse.choices[0]?.message?.content ?? ''
+
+      console.log(
+        '[Xpnd AI] OpenRouter response:',
+        responseText.substring(0, 300)
+      )
+
       parsedData = JSON.parse(responseText)
 
       console.log(
         '[Xpnd AI] Successfully parsed AI response:',
         parsedData
       )
-    } catch (parseError) {
-      console.error(
-        '[Xpnd AI] JSON parse error:',
-        parseError,
-        'Response:',
-        responseText
-      )
+    } catch (error) {
+      console.error('[Xpnd AI] OpenRouter error:', error)
 
       return handleFallbackParsing(text)
     }
+
+    if (
+      !parsedData ||
+      typeof parsedData !== 'object' ||
+      Array.isArray(parsedData)
+    ) {
+      return handleFallbackParsing(text)
+    }
+
 
     const expense = {
       amount: validateAmount(parsedData.amount),
