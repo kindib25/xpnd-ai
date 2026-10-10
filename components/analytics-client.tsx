@@ -3,7 +3,18 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from 'recharts'
 
 interface AnalyticsClientProps {
   expenses: any[]
@@ -71,27 +82,43 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
   // Get top categories
   const topCategories = categoryData.slice(0, 5)
 
-  // Calculate daily spending for trends
+  // Calculate daily spending for trends (sorted chronologically for the line chart)
   const trendData = useMemo(() => {
-    const daily: { [key: string]: number } = {}
+    const daily: { [key: string]: { ts: number; label: string; amount: number } } = {}
 
     expenses.forEach((expense) => {
-      const date = new Date(expense.date).toLocaleDateString('en-US', {
+      const parsed = new Date(expense.date)
+      // Local-midnight timestamp → stable sort key, immune to timezone drift
+      const ts = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).getTime()
+      const label = parsed.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
       })
-      daily[date] = (daily[date] || 0) + parseFloat(expense.amount || 0)
+
+      if (!daily[ts]) daily[ts] = { ts, label, amount: 0 }
+      daily[ts].amount += parseFloat(expense.amount || 0)
     })
 
-    return Object.entries(daily)
-      .map(([date, amount]) => ({
-        date,
+    return Object.values(daily)
+      .sort((a, b) => a.ts - b.ts)
+      .map(({ label, amount }) => ({
+        date: label,
         amount: Math.round(amount * 100) / 100,
       }))
       .slice(-7)
   }, [expenses])
 
-  const maxTrend = trendData.length > 0 ? Math.max(...trendData.map((d) => d.amount)) : 0
+  // All categories with amounts + percentages, sorted highest → lowest
+  const categoryBreakdown = useMemo(() => {
+    return EXPENSE_CATEGORIES.map((category) => {
+      const catData = categoryData.find((c) => c.name === category)
+      const amount = catData?.value || 0
+      const percentage =
+        totalSpending > 0 ? Math.round((amount / totalSpending) * 100) : 0
+
+      return { name: category, amount, percentage }
+    }).sort((a, b) => b.amount - a.amount)
+  }, [categoryData, totalSpending])
 
   return (
     <>
@@ -132,22 +159,21 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
           </p>
         </div>
 
-        {/* Tab Navigation — glass pill cluster */}
-        <div className="relative mb-8 flex w-full flex-wrap gap-2 overflow-hidden rounded-2xl border border-white/[0.14] bg-white/[0.055] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:w-fit">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
-          />
+        {/* Tab Navigation — segmented on mobile, glass pill cluster on ≥sm */}
+        <div className="relative mb-8 flex w-full gap-1.5 overflow-hidden rounded-2xl border border-white/[0.14] bg-white/[0.055] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:w-fit sm:gap-2">
+          <div aria-hidden="true" className={HAIRLINE} />
+
           {(['overview', 'trends', 'categories'] as const).map((tab) => (
             <Button
               key={tab}
               onClick={() => setActiveTab(tab)}
               variant="ghost"
+              aria-pressed={activeTab === tab}
               className={
-                `${FOCUS_RING} ` +
+                `${FOCUS_RING} h-10 min-w-0 flex-1 whitespace-nowrap rounded-xl px-2 text-[13px] font-medium capitalize sm:h-9 sm:flex-none sm:px-4 sm:text-sm ` +
                 (activeTab === tab
-                  ? `rounded-xl border border-[#9ee82d]/25 bg-[#9ee82d]/10 px-4 text-[#c8ff75] shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_4px_18px_-10px_rgba(158,232,45,0.45)] hover:bg-[#9ee82d]/15`
-                  : `rounded-xl border border-transparent px-4 text-white/55 transition-[color,background-color,border-color] duration-300 ${EASE} hover:border-white/[0.14] hover:bg-white/[0.075] hover:text-white/90`)
+                  ? `border border-[#9ee82d]/25 bg-[#9ee82d]/10 text-[#c8ff75] shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_4px_18px_-10px_rgba(158,232,45,0.45)] hover:bg-[#9ee82d]/15`
+                  : `border border-transparent text-white/55 transition-[color,background-color,border-color] duration-300 ${EASE} hover:border-white/[0.14] hover:bg-white/[0.075] hover:text-white/90`)
               }
             >
               {tab}
@@ -304,45 +330,94 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
               <CardTitle className="text-base font-semibold tracking-tight text-white sm:text-lg">
                 Daily Spending Trends
               </CardTitle>
+              <p className="mt-1 text-xs text-white/55 sm:text-sm">
+                Last {trendData.length} day{trendData.length === 1 ? '' : 's'} of activity
+              </p>
             </CardHeader>
+
             <CardContent className="p-5 sm:p-6">
               {trendData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-white/[0.14] bg-white/[0.025] text-sm text-white/55">
                   No trend data available
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {trendData.map((day) => (
-                    <div
-                      key={day.date}
-                      className="relative flex items-center justify-between gap-2 overflow-hidden rounded-2xl border border-white/[0.14] bg-white/[0.045] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:gap-4 sm:px-4"
+                <div className="h-64 w-full md:h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={trendData}
+                      margin={{ top: 12, right: 14, bottom: 4, left: 0 }}
                     >
-                      <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-70"
+                      <defs>
+                        <linearGradient id="trendStroke" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#9ee82d" />
+                          <stop offset="100%" stopColor="#d0ff79" />
+                        </linearGradient>
+                      </defs>
+
+                      <CartesianGrid
+                        stroke="rgba(255,255,255,0.08)"
+                        strokeDasharray="3 6"
+                        vertical={false}
                       />
-                      <p className="w-16 shrink-0 text-xs font-medium text-white/65 sm:w-20 sm:text-sm">
-                        {day.date}
-                      </p>
-                      <div className="mx-1 flex h-8 min-w-0 flex-1 items-center rounded-full border border-white/[0.08] bg-black/25 px-1.5 sm:mx-2 sm:px-2">
-                        <div
-                          className="flex h-6 min-w-1 items-center justify-center rounded-full bg-gradient-to-r from-[#9ee82d] to-[#d0ff79] px-2 shadow-[0_0_18px_-7px_rgba(158,232,45,0.8)] transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                          style={{
-                            width: `${maxTrend > 0 ? Math.min((day.amount / maxTrend) * 100, 100) : 0}%`,
-                          }}
-                        >
-                          {day.amount > 100 && (
-                            <span className="text-[10px] font-bold text-[#17200a]">
-                              ₱{day.amount.toFixed(0)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="w-[76px] shrink-0 text-right text-xs font-semibold tabular-nums text-white/85 sm:w-24 sm:text-sm">
-                        ₱{day.amount.toFixed(2)}
-                      </p>
-                    </div>
-                  ))}
+
+                      <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={{ stroke: 'rgba(255,255,255,0.10)' }}
+                        tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 12 }}
+                        tickMargin={10}
+                      />
+
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        width={64}
+                        tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 12 }}
+                        tickFormatter={(value) => `₱${Number(value).toLocaleString()}`}
+                      />
+
+                      <Tooltip
+                        cursor={{
+                          stroke: 'rgba(158,232,45,0.35)',
+                          strokeWidth: 1,
+                          strokeDasharray: '4 4',
+                        }}
+                        formatter={(value) => [`₱${Number(value).toFixed(2)}`, 'Spent']}
+                        labelStyle={{ color: 'rgba(255,255,255,0.60)', marginBottom: 4 }}
+                        contentStyle={{
+                          backgroundColor: 'rgba(23,27,37,0.85)',
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          borderRadius: '14px',
+                          color: '#fff',
+                          boxShadow:
+                            'inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.45)',
+                          backdropFilter: 'blur(16px)',
+                        }}
+                        itemStyle={{ color: '#c8ff75' }}
+                      />
+
+                      <Line
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="url(#trendStroke)"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        dot={{
+                          r: 3.5,
+                          fill: '#9ee82d',
+                          stroke: '#13161a',
+                          strokeWidth: 2,
+                        }}
+                        activeDot={{
+                          r: 6,
+                          fill: '#d0ff79',
+                          stroke: '#13161a',
+                          strokeWidth: 2,
+                          style: { filter: 'drop-shadow(0 0 10px rgba(158,232,45,0.7))' },
+                        }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </CardContent>
@@ -354,56 +429,49 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
         ========================== */}
         {activeTab === 'categories' && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {EXPENSE_CATEGORIES.map((category) => {
-              const catData = categoryData.find((c) => c.name === category)
-              const amount = catData?.value || 0
-              const percentage =
-                totalSpending > 0 ? Math.round((amount / totalSpending) * 100) : 0
+            {categoryBreakdown.map(({ name, amount, percentage }) => (
+              <Card
+                key={name}
+                className="
+                  group relative overflow-hidden rounded-[24px]
+                  border border-white/[0.14]
+                  bg-[#151922]/65 text-white
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_45px_-32px_rgba(0,0,0,0.9)]
+                  backdrop-blur-2xl
+                  transition-[transform,border-color,background-color,box-shadow]
+                  duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                  hover:-translate-y-0.5
+                  hover:border-[#9ee82d]/25
+                  hover:bg-[#191e29]/80
+                  hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_24px_55px_-30px_rgba(0,0,0,0.95)]
+                "
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+                />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/[0.06] blur-2xl"
+                />
 
-              return (
-                <Card
-                  key={category}
-                  className="
-                    group relative overflow-hidden rounded-[24px]
-                    border border-white/[0.14]
-                    bg-[#151922]/65 text-white
-                    shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_45px_-32px_rgba(0,0,0,0.9)]
-                    backdrop-blur-2xl
-                    transition-[transform,border-color,background-color,box-shadow]
-                    duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-                    hover:-translate-y-0.5
-                    hover:border-[#9ee82d]/25
-                    hover:bg-[#191e29]/80
-                    hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_24px_55px_-30px_rgba(0,0,0,0.95)]
-                  "
-                >
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/[0.06] blur-2xl"
-                  />
-
-                  <CardContent className="relative z-10 p-5 sm:p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white/90 sm:text-base">
-                          {category}
-                        </p>
-                        <p className="mt-1 text-sm tabular-nums text-white/55">
-                          ₱{amount.toFixed(2)}
-                        </p>
-                      </div>
-                      <p className="ml-4 text-xl font-semibold tabular-nums text-[#c8ff75] sm:text-2xl">
-                        {percentage}%
+                <CardContent className="relative z-10 p-5 sm:p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-white/90 sm:text-base">
+                        {name}
+                      </p>
+                      <p className="mt-1 text-sm tabular-nums text-white/55">
+                        ₱{amount.toFixed(2)}
                       </p>
                     </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+                    <p className="ml-4 text-xl font-semibold tabular-nums text-[#c8ff75] sm:text-2xl">
+                      {percentage}%
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
