@@ -654,7 +654,8 @@ export function GoalsList({
     <div className="w-full space-y-5 sm:space-y-6">
 
       {/* =========================================================
-          AMBIENT BACKGROUND — top-level, fixed, out of content flow
+          AMBIENT BACKGROUND — fixed, full-viewport, out of content flow.
+          Colour orbs give the backdrop-blur something real to bite on.
       ========================================================== */}
       <div
         aria-hidden="true"
@@ -667,6 +668,15 @@ export function GoalsList({
               'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
           }}
         />
+
+        {/* Lime orb — primary accent, upper-left */}
+        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-[#9ee82d]/[0.14] blur-[130px]" />
+
+        {/* Violet orb — brand purple, right */}
+        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-[#724bf6]/[0.20] blur-[140px]" />
+
+        {/* Sky/cyan counterweight, bottom */}
+        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/[0.10] blur-[140px]" />
       </div>
 
       {/* =========================================

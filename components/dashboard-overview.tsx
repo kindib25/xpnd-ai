@@ -147,7 +147,8 @@ function DashboardOverviewComponent({
   return (
     <>
       {/* =========================================================
-          AMBIENT BACKGROUND — top-level, fixed, out of content flow
+          AMBIENT BACKGROUND — fixed, full-viewport, out of content flow.
+          Colour orbs give the backdrop-blur something real to bite on.
       ========================================================== */}
       <div
         aria-hidden="true"
@@ -161,6 +162,14 @@ function DashboardOverviewComponent({
           }}
         />
 
+        {/* Lime orb — primary accent, upper-left */}
+        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-[#9ee82d]/[0.14] blur-[130px]" />
+
+        {/* Violet orb — brand purple, right */}
+        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-[#724bf6]/[0.20] blur-[140px]" />
+
+        {/* Sky/cyan counterweight, bottom */}
+        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/[0.10] blur-[140px]" />
       </div>
 
       <div className="mx-auto w-full max-w-7xl p-4 text-white md:p-8">
@@ -202,7 +211,7 @@ function DashboardOverviewComponent({
                 className="w-60 h-15 object-contain"
               />
             </div>
-            
+
             {/* Notification — glass chip */}
             <button
               type="button"
