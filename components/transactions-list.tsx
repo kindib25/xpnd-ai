@@ -18,7 +18,7 @@ import {
   CalendarDays,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import {
@@ -683,6 +683,10 @@ export function TransactionsList({
 
   const [dateExpenses, setDateExpenses] = useState<any[]>([])
 
+  // Search dropdown state
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+
   // Editable fields (used by the list-triggered Dialog)
   const [editAmount, setEditAmount] = useState('')
   const [editDescription, setEditDescription] =
@@ -702,6 +706,25 @@ export function TransactionsList({
       setSelectedDate(null)
     }
   }, [dateExpenses, selectedDate])
+
+  // Close the search dropdown when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () =>
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      )
+  }, [])
 
   // ============================================
   // POPULATE EDIT FIELDS (Dialog)
@@ -957,62 +980,44 @@ export function TransactionsList({
       <div className="relative w-full space-y-5 text-white md:space-y-6">
 
         {/* ============================================
-            CALENDAR
+            SEARCH (with dropdown results)
         ============================================ */}
 
-        <section className="space-y-3">
-          <TransactionCalendar
-            expenses={expenses}
-            onDateClick={(dayExpenses, dateKey) => {
-              if (dayExpenses.length > 0) {
-                setDateExpenses(dayExpenses)
-                setSelectedDate(dateKey)
-              }
-            }}
-          />
-        </section>
-
-        {/* ============================================
-            TRANSACTIONS
-        ============================================ */}
-
-        <section className="space-y-3">
-
-          {/* Search */}
+        <section ref={searchRef} className="relative z-30">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
 
             <Input
               placeholder="Search transactions..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setIsSearchOpen(true)
+              }}
+              onFocus={() => setIsSearchOpen(true)}
               className={`focus-visible:ring-2 focus-visible:ring-[#97e431] focus-visible:ring-offset-0 h-11 rounded-full border border-white/[0.14] bg-white/[0.055] pl-10 text-sm text-white placeholder:text-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-[border-color,background-color] duration-300 ${EASE} hover:border-white/[0.20] hover:bg-white/[0.075] md:text-base`}
             />
           </div>
 
-          {/* Transaction List */}
-          <Card className={GLASS_SURFACE_DEEP}>
-            <div aria-hidden="true" className={HAIRLINE} />
-            <CardContent className="relative z-10 p-0">
+          {/* Dropdown results — appears directly under the search bar */}
+          {isSearchOpen && searchQuery.trim().length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-white/[0.14] bg-[#151922]/95 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-30px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+              <div aria-hidden="true" className={HAIRLINE} />
 
               {filteredExpenses.length === 0 ? (
-                <div className="py-10 text-center text-white/55 md:py-12">
-                  <p className="text-sm md:text-base">
-                    No transactions yet
-                  </p>
+                <div className="px-4 py-8 text-center text-sm text-white/55">
+                  No transactions found
                 </div>
               ) : (
-                <div className="divide-y divide-white/[0.06]">
-
-                  {paginatedExpenses.map(
-                    (expense) => (
+                <div className="max-h-[60vh] overflow-y-auto">
+                  <div className="divide-y divide-white/[0.06]">
+                    {paginatedExpenses.map((expense) => (
                       <div
                         key={expense.id}
-                        onClick={() =>
-                          handleSelectExpense(
-                            expense
-                          )
-                        }
+                        onClick={() => {
+                          handleSelectExpense(expense)
+                          setIsSearchOpen(false)
+                        }}
                         className={`
                           group
                           flex
@@ -1024,24 +1029,20 @@ export function TransactionsList({
                           duration-300
                           ${EASE}
                           hover:bg-white/[0.055]
-                          md:gap-4
-                          md:p-4
+                          md:gap-3
                         `}
                       >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl md:h-12 md:w-12">
-                          <Wallet className="h-4 w-4 text-white/60 md:h-5 md:w-5" />
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.10] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
+                          <Wallet className="h-4 w-4 text-white/60" />
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-xs font-semibold text-white/95 md:text-base">
-                            {expense.description ||
-                              'Expense'}
+                          <h3 className="truncate text-sm font-semibold text-white/95">
+                            {expense.description || 'Expense'}
                           </h3>
 
                           <p className="text-xs text-white/55">
-                            {new Date(
-                              expense.date
-                            ).toLocaleDateString(
+                            {new Date(expense.date).toLocaleDateString(
                               'en-US',
                               {
                                 month: 'short',
@@ -1065,85 +1066,86 @@ export function TransactionsList({
                             shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
                             backdrop-blur-xl
                             sm:inline-flex
-                            md:px-3
-                            ${getCategoryColor(
-                            expense.category
-                          )}
+                            ${getCategoryColor(expense.category)}
                           `}
                         >
                           {expense.category}
                         </span>
 
-                        <p className="min-w-fit text-right text-sm font-semibold tabular-nums text-white/95 md:mx-5 md:text-base">
-                          ₱
-                          {parseFloat(
-                            expense.amount
-                          ).toFixed(0)}
+                        <p className="min-w-fit text-right text-sm font-semibold tabular-nums text-white/95">
+                          ₱{parseFloat(expense.amount).toFixed(0)}
                         </p>
                       </div>
-                    )
-                  )}
+                    ))}
+                  </div>
 
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] px-3 py-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === 1}
+                        onClick={() =>
+                          setCurrentPage((prev) => prev - 1)
+                        }
+                        className={`
+                          ${FOCUS_RING}
+                          h-8 rounded-lg border border-white/[0.14] bg-white/[0.045]
+                          px-3 text-xs text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
+                          backdrop-blur-xl transition-[background-color,border-color]
+                          duration-300 ${EASE}
+                          hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                          disabled:cursor-not-allowed disabled:opacity-40
+                        `}
+                      >
+                        Previous
+                      </Button>
+
+                      <div className="text-xs text-white/55">
+                        Page {currentPage} of {totalPages}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === totalPages}
+                        onClick={() =>
+                          setCurrentPage((prev) => prev + 1)
+                        }
+                        className={`
+                          ${FOCUS_RING}
+                          h-8 rounded-lg border border-white/[0.14] bg-white/[0.045]
+                          px-3 text-xs text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
+                          backdrop-blur-xl transition-[background-color,border-color]
+                          duration-300 ${EASE}
+                          hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
+                          disabled:cursor-not-allowed disabled:opacity-40
+                        `}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
-
-            </CardContent>
-          </Card>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between gap-3 pt-2">
-
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() =>
-                  setCurrentPage(
-                    (prev) => prev - 1
-                  )
-                }
-                className={`
-                  ${FOCUS_RING}
-                  rounded-xl border border-white/[0.14] bg-white/[0.045]
-                  text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
-                  transition-[background-color,border-color] duration-300 ${EASE}
-                  hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
-                  disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-white/[0.045]
-                `}
-              >
-                Previous
-              </Button>
-
-              <div className="text-sm text-white/55">
-                Page {currentPage} of {totalPages}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={
-                  currentPage === totalPages
-                }
-                onClick={() =>
-                  setCurrentPage(
-                    (prev) => prev + 1
-                  )
-                }
-                className={`
-                  ${FOCUS_RING}
-                  rounded-xl border border-white/[0.14] bg-white/[0.045]
-                  text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl
-                  transition-[background-color,border-color] duration-300 ${EASE}
-                  hover:border-white/[0.24] hover:bg-white/[0.10] hover:text-white
-                  disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-white/[0.045]
-                `}
-              >
-                Next
-              </Button>
-
             </div>
           )}
+        </section>
+
+        {/* ============================================
+            CALENDAR
+        ============================================ */}
+
+        <section className="space-y-3">
+          <TransactionCalendar
+            expenses={expenses}
+            onDateClick={(dayExpenses, dateKey) => {
+              if (dayExpenses.length > 0) {
+                setDateExpenses(dayExpenses)
+                setSelectedDate(dateKey)
+              }
+            }}
+          />
         </section>
 
         {/* ============================================
