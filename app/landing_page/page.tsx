@@ -75,9 +75,17 @@ const STYLES = `
   --green: #7EEB2A;
   --violet: #A855F7;
 
-  --nav-h: 62px;
+  /* Vertical space consumed by floating nav (top pad + pill + gap) */
+  --nav-h: 94px;
   --gut-l: max(20px, env(safe-area-inset-left));
   --gut-r: max(20px, env(safe-area-inset-right));
+
+  /* Glass ladder */
+  --glass-tint-hi: 0.062;
+  --glass-tint-lo: 0.016;
+  --glass-border: 0.10;
+  --glass-border-hi: 0.19;
+  --glass-bevel: 0.10;
 
   position: relative;
   min-height: 100vh;
@@ -130,29 +138,13 @@ const STYLES = `
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(
-      to right,
-      rgba(245, 247, 255, 0.04) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      rgba(245, 247, 255, 0.04) 1px,
-      transparent 1px
-    );
+    linear-gradient(to right, rgba(245, 247, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(245, 247, 255, 0.04) 1px, transparent 1px);
   background-size: 44px 44px;
   -webkit-mask-image:
-    radial-gradient(
-      ellipse 140% 62% at 50% 0%,
-      #000 4%,
-      transparent 76%
-    );
+    radial-gradient(ellipse 140% 62% at 50% 0%, #000 4%, transparent 76%);
   mask-image:
-    radial-gradient(
-      ellipse 140% 62% at 50% 0%,
-      #000 4%,
-      transparent 76%
-    );
+    radial-gradient(ellipse 140% 62% at 50% 0%, #000 4%, transparent 76%);
 }
 
 .xpnd-noise {
@@ -185,12 +177,7 @@ const STYLES = `
   height: 320px;
   top: -110px;
   left: -110px;
-  background:
-    radial-gradient(
-      circle,
-      rgba(79, 125, 255, 0.55),
-      transparent 68%
-    );
+  background: radial-gradient(circle, rgba(79, 125, 255, 0.55), transparent 68%);
   animation: xpndDrift1 22s ease-in-out infinite alternate;
 }
 
@@ -199,12 +186,7 @@ const STYLES = `
   height: 360px;
   top: -90px;
   right: -130px;
-  background:
-    radial-gradient(
-      circle,
-      rgba(124, 92, 255, 0.5),
-      transparent 68%
-    );
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.5), transparent 68%);
   animation: xpndDrift2 26s ease-in-out infinite alternate;
 }
 
@@ -213,35 +195,18 @@ const STYLES = `
 }
 
 @keyframes xpndDrift1 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  to {
-    transform: translate3d(60px, 44px, 0) scale(1.1);
-  }
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(60px, 44px, 0) scale(1.1); }
 }
 
 @keyframes xpndDrift2 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.05);
-  }
-
-  to {
-    transform: translate3d(-66px, 52px, 0) scale(0.95);
-  }
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to { transform: translate3d(-66px, 52px, 0) scale(0.95); }
 }
 
 @keyframes xpndDrift3 {
-  from {
-    transform: translate3d(-50px, 0, 0) scale(0.95);
-    opacity: 0.55;
-  }
-
-  to {
-    transform: translate3d(60px, -70px, 0) scale(1.1);
-    opacity: 0.8;
-  }
+  from { transform: translate3d(-50px, 0, 0) scale(0.95); opacity: 0.55; }
+  to { transform: translate3d(60px, -70px, 0) scale(1.1); opacity: 0.8; }
 }
 
 /* ================================================================== */
@@ -310,7 +275,7 @@ const STYLES = `
   margin: 0;
   font-size: 1rem;
   line-height: 1.62;
-  color: rgba(245, 247, 255, 0.62);
+  color: rgba(245, 247, 255, 0.66);
   font-weight: 400;
 }
 
@@ -318,18 +283,13 @@ const STYLES = `
   margin: 16px 0 0;
   font-size: 0.95rem;
   line-height: 1.65;
-  color: rgba(245, 247, 255, 0.55);
+  color: rgba(245, 247, 255, 0.58);
   max-width: 56ch;
 }
 
 .grad-text {
   background:
-    linear-gradient(
-      100deg,
-      #4F7DFF 0%,
-      #7C5CFF 42%,
-      #B6FF3B 100%
-    );
+    linear-gradient(100deg, #4F7DFF 0%, #7C5CFF 42%, #B6FF3B 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -350,11 +310,20 @@ const STYLES = `
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  color: rgba(245, 247, 255, 0.78);
-  background: rgba(245, 247, 255, 0.045);
-  border: 1px solid rgba(245, 247, 255, 0.1);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  color: rgba(245, 247, 255, 0.82);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.075),
+      rgba(245, 247, 255, 0.025)
+    );
+  border: 1px solid rgba(245, 247, 255, 0.12);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 6px 18px -12px rgba(0, 0, 0, 0.7);
   max-width: 100%;
 }
 
@@ -364,26 +333,19 @@ const STYLES = `
   border-radius: 50%;
   background: var(--lime);
   box-shadow:
-    0 0 10px 2px rgba(182, 255, 59, 0.7);
+    0 0 10px 2px rgba(182, 255, 59, 0.7),
+    inset 0 0 2px rgba(255, 255, 255, 0.6);
   animation: xpndPulse 2.4s ease-in-out infinite;
   flex: none;
 }
 
 @keyframes xpndPulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.45;
-    transform: scale(0.82);
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
 }
 
 /* ================================================================== */
-/* Buttons                                                             */
+/* Buttons (used outside nav)                                          */
 /* ================================================================== */
 
 .btn {
@@ -414,40 +376,40 @@ const STYLES = `
   will-change: transform;
 }
 
-.btn:active {
-  transform: scale(0.972);
-}
+.btn:active { transform: scale(0.972); }
 
 .btn-ghost {
-  color: rgba(245, 247, 255, 0.92);
-  background: rgba(245, 247, 255, 0.045);
-  border-color: rgba(245, 247, 255, 0.13);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  color: rgba(245, 247, 255, 0.94);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.075),
+      rgba(245, 247, 255, 0.025)
+    );
+  border-color: rgba(245, 247, 255, 0.14);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 8px 22px -14px rgba(0, 0, 0, 0.75);
 }
 
 .btn-primary {
   color: #060814;
   background-image:
-    linear-gradient(
-      100deg,
-      #4F7DFF 0%,
-      #7C5CFF 46%,
-      #B6FF3B 100%
-    );
+    linear-gradient(100deg, #4F7DFF 0%, #7C5CFF 46%, #B6FF3B 100%);
   background-size: 200% 100%;
   background-position: 0% 50%;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
     0 10px 30px -12px rgba(79, 125, 255, 0.85),
     0 0 0 0 rgba(124, 92, 255, 0);
 }
 
-.btn-sm {
-  height: 42px;
-  padding: 0 15px;
-  font-size: 13.5px;
-}
+.btn-sm { height: 42px; padding: 0 15px; font-size: 13.5px; }
 
 /* ================================================================== */
 /* Glass surfaces                                                      */
@@ -456,15 +418,22 @@ const STYLES = `
 .glass {
   position: relative;
   background:
+    radial-gradient(120% 85% at 100% 0%, rgba(245, 247, 255, 0.075), transparent 52%),
+    radial-gradient(100% 75% at 0% 100%, rgba(124, 92, 255, 0.055), transparent 58%),
     linear-gradient(
       180deg,
-      rgba(245, 247, 255, 0.062),
-      rgba(245, 247, 255, 0.018)
+      rgba(245, 247, 255, var(--glass-tint-hi)),
+      rgba(245, 247, 255, var(--glass-tint-lo))
     );
-  border: 1px solid rgba(245, 247, 255, 0.09);
+  border: 1px solid rgba(245, 247, 255, var(--glass-border));
   border-radius: 20px;
   backdrop-filter: blur(20px) saturate(130%);
   -webkit-backdrop-filter: blur(20px) saturate(130%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, var(--glass-bevel)),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.025),
+    0 20px 60px -28px rgba(0, 0, 0, 0.75),
+    0 2px 10px -4px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 
@@ -475,12 +444,10 @@ const STYLES = `
   border-radius: inherit;
   pointer-events: none;
   background:
-    linear-gradient(
-      180deg,
-      rgba(245, 247, 255, 0.09),
-      transparent 42%
-    );
-  opacity: 0.7;
+    linear-gradient(90deg, transparent, rgba(245, 247, 255, 0.35), transparent)
+      top center / 55% 1px no-repeat,
+    linear-gradient(180deg, rgba(245, 247, 255, 0.10), transparent 42%);
+  opacity: 0.85;
 }
 
 .spot::before {
@@ -493,15 +460,19 @@ const STYLES = `
   transition: opacity 0.4s ease;
   background:
     radial-gradient(
-      360px circle at var(--mx, 50%) var(--my, 50%),
-      rgba(124, 92, 255, 0.22),
-      rgba(79, 125, 255, 0.1) 40%,
-      transparent 72%
+      380px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(124, 92, 255, 0.24),
+      rgba(79, 125, 255, 0.10) 42%,
+      transparent 74%
     );
+  z-index: 0;
 }
 
 /* ================================================================== */
-/* Navigation                                                          */
+/* NAVIGATION — floating pill                                          */
+/*                                                                     */
+/*   MOBILE:   [logo] ................................ [☰]             */
+/*   DESKTOP:  [logo] [ links ] [Log In  Sign Up]                      */
 /* ================================================================== */
 
 .xpnd-nav {
@@ -510,57 +481,388 @@ const STYLES = `
   left: 0;
   right: 0;
   z-index: 60;
-  border-bottom: 1px solid transparent;
-  padding-top: env(safe-area-inset-top);
-  transition:
-    background-color 0.45s ease,
-    border-color 0.45s ease,
-    backdrop-filter 0.45s ease;
+  padding: 14px var(--gut-l) 0 var(--gut-r);
+  padding-top: max(14px, env(safe-area-inset-top));
+  pointer-events: none;
+  transition: padding-top 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .xpnd-nav[data-scrolled="true"] {
-  background: rgba(8, 10, 24, 0.72);
-  border-bottom-color: rgba(245, 247, 255, 0.07);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  padding-top: max(10px, env(safe-area-inset-top));
 }
 
-.xpnd-nav-inner {
-  height: var(--nav-h);
+/* The pill itself */
+.xpnd-nav-pill {
+  pointer-events: auto;
+  max-width: 1140px;
+  margin: 0 auto;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
+  padding: 0 8px 0 14px;
+  border-radius: 999px;
+
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(245, 247, 255, 0.06), transparent 55%),
+    radial-gradient(100% 100% at 0% 100%, rgba(124, 92, 255, 0.05), transparent 60%),
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.055),
+      rgba(245, 247, 255, 0.018)
+    );
+  border: 1px solid rgba(245, 247, 255, 0.10);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 14px 40px -22px rgba(0, 0, 0, 0.9),
+    0 2px 8px -4px rgba(0, 0, 0, 0.5);
+
+  transition:
+    background 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
 }
 
-.xpnd-logo {
+.xpnd-nav[data-scrolled="true"] .xpnd-nav-pill {
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(245, 247, 255, 0.085), transparent 55%),
+    radial-gradient(100% 100% at 0% 100%, rgba(124, 92, 255, 0.065), transparent 60%),
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.075),
+      rgba(245, 247, 255, 0.028)
+    );
+  border-color: rgba(245, 247, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    0 20px 55px -24px rgba(0, 0, 0, 0.95),
+    0 4px 12px -4px rgba(0, 0, 0, 0.55);
+}
+
+/* --- Brand (logo image) — darkened glass chip -------------------- */
+
+.xpnd-nav-brand {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.026em;
-  color: var(--off);
-  min-width: 0;
-}
-
-.xpnd-logo svg {
-  display: block;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 18px;
+  border-radius: 999px;
   flex: none;
+  min-width: 0;
+
+  /* darkened glass shell — solid #040613 base with subtle glass light */
+  background:
+  radial-gradient(120% 130% at 0% 0%, rgba(245, 247, 255, 0.12), transparent 55%),
+  linear-gradient(
+    180deg,
+    rgba(18, 21, 40, 0.90),
+    rgba(18, 21, 40, 0.76)
+  );
+  border: 1px solid rgba(245, 247, 255, 0.14);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 10px 24px -16px rgba(0, 0, 0, 0.95);
+
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.xpnd-logo span {
-  display: none;
+/* top bevel highlight line */
+.xpnd-nav-brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(245, 247, 255, 0.38), transparent)
+      top center / 58% 1px no-repeat;
+  opacity: 0.75;
 }
+
+.xpnd-nav-brand:hover { opacity: 1; }
+
+/* Logo image — the wordmark itself */
+.xpnd-nav-logo {
+  display: block;
+  height: 34px;
+  width: auto;
+  max-width: 175px;
+  object-fit: contain;
+  flex: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Center links ------------------------------------------------- */
 
 .xpnd-nav-links {
   display: none;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
+.xpnd-nav-links a {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: rgba(245, 247, 255, 0.62);
+  transition:
+    color 0.25s ease,
+    background 0.25s ease;
+  white-space: nowrap;
+}
+
+/* --- CTA cluster (desktop) --------------------------------------- */
+
 .xpnd-nav-cta {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 8px;
+  flex: none;
+}
+
+.xpnd-nav-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(245, 247, 255, 0.72);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  cursor: pointer;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.xpnd-nav-signup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 22px;
+  border: 1px solid rgba(245, 247, 255, 0.16);
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.14),
+      rgba(245, 247, 255, 0.055)
+    );
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 8px 18px -12px rgba(0, 0, 0, 0.8);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --- Hamburger toggle (mobile only) ------------------------------ */
+
+.xpnd-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 247, 255, 0.12);
+  background:
+    radial-gradient(120% 120% at 30% 0%, rgba(255, 255, 255, 0.10), transparent 55%),
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.06),
+      rgba(245, 247, 255, 0.02)
+    );
+  color: rgba(245, 247, 255, 0.9);
+  cursor: pointer;
+  flex: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.xpnd-nav-toggle:active { transform: scale(0.94); }
+
+.xpnd-nav-toggle-bars {
+  position: relative;
+  width: 16px;
+  height: 12px;
+  display: block;
+}
+
+.xpnd-nav-toggle-bars span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease,
+    top 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.xpnd-nav-toggle-bars span:nth-child(1) { top: 0; }
+.xpnd-nav-toggle-bars span:nth-child(2) { top: 5.25px; }
+.xpnd-nav-toggle-bars span:nth-child(3) { top: 10.5px; }
+
+/* Bars morph to an X when open */
+.xpnd-nav-toggle[aria-expanded="true"] .xpnd-nav-toggle-bars span:nth-child(1) {
+  top: 5.25px;
+  transform: rotate(45deg);
+}
+
+.xpnd-nav-toggle[aria-expanded="true"] .xpnd-nav-toggle-bars span:nth-child(2) {
+  opacity: 0;
+}
+
+.xpnd-nav-toggle[aria-expanded="true"] .xpnd-nav-toggle-bars span:nth-child(3) {
+  top: 5.25px;
+  transform: rotate(-45deg);
+}
+
+/* --- Mobile drawer (expands inside the pill) --------------------- */
+
+.xpnd-nav-sheet {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    margin-top 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.xpnd-nav-sheet[data-open="true"] {
+  max-height: 420px;
+  opacity: 1;
+  margin-top: 10px;
+}
+
+.xpnd-nav-sheet-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 22px;
+  border: 1px solid rgba(245, 247, 255, 0.10);
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(245, 247, 255, 0.06), transparent 55%),
+    radial-gradient(100% 100% at 0% 100%, rgba(124, 92, 255, 0.05), transparent 60%),
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.055),
+      rgba(245, 247, 255, 0.018)
+    );
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 18px 44px -22px rgba(0, 0, 0, 0.9);
+}
+
+.xpnd-nav-sheet-inner a,
+.xpnd-nav-sheet-inner button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.xpnd-nav-sheet-link {
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(245, 247, 255, 0.82);
+}
+
+.xpnd-nav-sheet-login {
+  margin-top: 4px;
+  border: 1px solid rgba(245, 247, 255, 0.12);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.06),
+      rgba(245, 247, 255, 0.02)
+    );
+  color: rgba(245, 247, 255, 0.94);
+}
+
+.xpnd-nav-sheet-signup {
+  border: 1px solid rgba(245, 247, 255, 0.16);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.14),
+      rgba(245, 247, 255, 0.055)
+    );
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 10px 24px -14px rgba(0, 0, 0, 0.9);
 }
 
 /* ================================================================== */
@@ -573,7 +875,7 @@ const STYLES = `
   min-height: 100svh;
   display: flex;
   align-items: center;
-  padding: calc(var(--nav-h) + 56px) 0 84px;
+  padding: calc(var(--nav-h) + 40px) 0 84px;
   text-align: center;
   scroll-margin-top: 0;
 }
@@ -592,11 +894,7 @@ const STYLES = `
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(
-      ellipse 92% 48% at 50% 38%,
-      rgba(8, 10, 24, 0.88),
-      transparent 74%
-    ),
+    radial-gradient(ellipse 92% 48% at 50% 38%, rgba(8, 10, 24, 0.88), transparent 74%),
     linear-gradient(
       180deg,
       rgba(8, 10, 24, 0.62) 0%,
@@ -609,8 +907,65 @@ const STYLES = `
 .xpnd-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 620px;
+  max-width: 640px;
   margin: 0 auto;
+}
+
+.xpnd-hero-panel {
+  position: relative;
+  padding: 26px 22px 28px;
+  border-radius: 24px;
+  isolation: isolate;
+
+  background:
+    radial-gradient(130% 100% at 100% 0%, rgba(245, 247, 255, 0.11), transparent 52%),
+    radial-gradient(110% 90% at 0% 100%, rgba(124, 92, 255, 0.10), transparent 58%),
+    radial-gradient(100% 60% at 50% 0%, rgba(79, 125, 255, 0.07), transparent 62%),
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.075),
+      rgba(245, 247, 255, 0.022)
+    );
+  border: 1px solid rgba(245, 247, 255, 0.14);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 0 90px rgba(124, 92, 255, 0.055),
+    0 30px 90px -40px rgba(0, 0, 0, 0.9),
+    0 8px 30px -14px rgba(0, 0, 0, 0.55);
+}
+
+.xpnd-hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: -50px;
+  border-radius: 60px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(124, 92, 255, 0.20), transparent 60%),
+    radial-gradient(ellipse at 72% 82%, rgba(79, 125, 255, 0.16), transparent 62%);
+  filter: blur(50px);
+  z-index: -1;
+}
+
+.xpnd-hero-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(245, 247, 255, 0.55), transparent)
+      top center / 60% 1px no-repeat,
+    radial-gradient(
+      ellipse 55% 35% at 22% 0%,
+      rgba(255, 255, 255, 0.09),
+      transparent 70%
+    ),
+    linear-gradient(180deg, rgba(245, 247, 255, 0.10), transparent 38%);
+  opacity: 0.95;
 }
 
 .xpnd-hero-actions {
@@ -621,34 +976,43 @@ const STYLES = `
   margin-top: 30px;
 }
 
-.xpnd-hero-actions .btn {
-  width: 100%;
-}
+.xpnd-hero-actions .btn { width: 100%; }
 
 .xpnd-hero-meta {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px 16px;
-  margin-top: 28px;
-  font-size: 12px;
-  color: rgba(245, 247, 255, 0.42);
-  letter-spacing: 0.005em;
+  gap: 8px;
+  margin-top: 26px;
 }
 
 .xpnd-hero-meta span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: rgba(245, 247, 255, 0.72);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.06),
+      rgba(245, 247, 255, 0.018)
+    );
+  border: 1px solid rgba(245, 247, 255, 0.10);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 4px 14px -10px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
 }
 
-.xpnd-hero-meta i {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: rgba(245, 247, 255, 0.28);
-  display: inline-block;
-}
+.xpnd-hero-meta i { display: none; }
 
 /* ================================================================== */
 /* Section head                                                        */
@@ -659,9 +1023,7 @@ const STYLES = `
   margin-bottom: 40px;
 }
 
-.xpnd-sechead .xpnd-h2 {
-  margin-top: 18px;
-}
+.xpnd-sechead .xpnd-h2 { margin-top: 18px; }
 
 /* ================================================================== */
 /* Features                                                            */
@@ -680,8 +1042,10 @@ const STYLES = `
   display: flex;
   flex-direction: column;
   transition:
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.45s ease;
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+  will-change: transform;
 }
 
 .xpnd-card-icon {
@@ -692,33 +1056,29 @@ const STYLES = `
   place-items: center;
   margin-bottom: 22px;
   background:
-    linear-gradient(
-      150deg,
-      rgba(79, 125, 255, 0.18),
-      rgba(124, 92, 255, 0.1)
-    );
-  border: 1px solid rgba(245, 247, 255, 0.1);
+    radial-gradient(120% 120% at 30% 0%, rgba(255, 255, 255, 0.10), transparent 55%),
+    linear-gradient(150deg, rgba(79, 125, 255, 0.20), rgba(124, 92, 255, 0.11));
+  border: 1px solid rgba(245, 247, 255, 0.11);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 10px 24px -14px rgba(79, 125, 255, 0.6);
   position: relative;
   z-index: 1;
 }
 
 .xpnd-card h3,
-.xpnd-card p {
-  position: relative;
-  z-index: 1;
-}
+.xpnd-card p { position: relative; z-index: 1; }
 
 .xpnd-card p {
   margin: 12px 0 0;
   font-size: 14.5px;
   line-height: 1.62;
-  color: rgba(245, 247, 255, 0.55);
+  color: rgba(245, 247, 255, 0.58);
 }
 
 /* ================================================================== */
-/* Ledger preview                                                      */
+/* Ledger                                                              */
 /* ================================================================== */
 
 .xpnd-ledger {
@@ -738,11 +1098,7 @@ const STYLES = `
   padding: 22px 20px 26px;
   border-top: 1px solid rgba(245, 247, 255, 0.07);
   background:
-    linear-gradient(
-      180deg,
-      rgba(124, 92, 255, 0.05),
-      transparent 60%
-    );
+    linear-gradient(180deg, rgba(124, 92, 255, 0.055), transparent 60%);
   position: relative;
   z-index: 1;
 }
@@ -773,8 +1129,16 @@ const STYLES = `
   font-weight: 500;
   letter-spacing: 0.01em;
   color: rgba(182, 255, 59, 0.95);
-  background: rgba(182, 255, 59, 0.09);
-  border: 1px solid rgba(182, 255, 59, 0.22);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(182, 255, 59, 0.12),
+      rgba(182, 255, 59, 0.06)
+    );
+  border: 1px solid rgba(182, 255, 59, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(182, 255, 59, 0.22),
+    0 6px 18px -12px rgba(182, 255, 59, 0.55);
   white-space: nowrap;
 }
 
@@ -809,7 +1173,7 @@ const STYLES = `
 .xpnd-row-value {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(245, 247, 255, 0.42);
+  color: rgba(245, 247, 255, 0.46);
   font-variant-numeric: tabular-nums;
 }
 
@@ -817,6 +1181,9 @@ const STYLES = `
   height: 6px;
   border-radius: 999px;
   background: rgba(245, 247, 255, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(0, 0, 0, 0.25),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
   overflow: hidden;
 }
 
@@ -831,22 +1198,19 @@ const STYLES = `
   margin-top: 22px;
   padding: 15px 16px;
   border-radius: 15px;
-  border: 1px solid rgba(124, 92, 255, 0.22);
+  border: 1px solid rgba(124, 92, 255, 0.24);
   background:
-    linear-gradient(
-      140deg,
-      rgba(124, 92, 255, 0.13),
-      rgba(79, 125, 255, 0.05)
-    );
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.06), transparent 55%),
+    linear-gradient(140deg, rgba(124, 92, 255, 0.14), rgba(79, 125, 255, 0.055));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 10px 26px -18px rgba(124, 92, 255, 0.6);
   font-size: 13.5px;
   line-height: 1.6;
-  color: rgba(245, 247, 255, 0.78);
+  color: rgba(245, 247, 255, 0.8);
 }
 
-.xpnd-ai-note strong {
-  color: #fff;
-  font-weight: 600;
-}
+.xpnd-ai-note strong { color: #fff; font-weight: 600; }
 
 /* ================================================================== */
 /* Steps                                                               */
@@ -863,39 +1227,45 @@ const STYLES = `
   position: relative;
   padding: 24px 22px 28px;
   border-radius: 20px;
-  border: 1px solid rgba(245, 247, 255, 0.07);
-  background: rgba(245, 247, 255, 0.018);
+  border: 1px solid rgba(245, 247, 255, 0.085);
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(245, 247, 255, 0.045), transparent 55%),
+    linear-gradient(
+      180deg,
+      rgba(245, 247, 255, 0.036),
+      rgba(245, 247, 255, 0.012)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 34px -22px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
   transition:
     border-color 0.4s ease,
-    background-color 0.4s ease;
+    background 0.4s ease,
+    box-shadow 0.4s ease,
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
 }
 
 .xpnd-step-num {
   font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.14em;
-  background:
-    linear-gradient(
-      100deg,
-      #4F7DFF,
-      #7C5CFF 50%,
-      #B6FF3B
-    );
+  background: linear-gradient(100deg, #4F7DFF, #7C5CFF 50%, #B6FF3B);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
-.xpnd-step h3 {
-  margin: 16px 0 0;
-}
+.xpnd-step h3 { margin: 16px 0 0; }
 
 .xpnd-step p {
   margin: 10px 0 0;
   font-size: 14.5px;
   line-height: 1.62;
-  color: rgba(245, 247, 255, 0.52);
+  color: rgba(245, 247, 255, 0.56);
 }
 
 /* ================================================================== */
@@ -907,15 +1277,22 @@ const STYLES = `
   grid-template-columns: 1fr;
   gap: 1px;
   background: rgba(245, 247, 255, 0.07);
-  border: 1px solid rgba(245, 247, 255, 0.07);
+  border: 1px solid rgba(245, 247, 255, 0.08);
   border-radius: 20px;
   overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 22px 60px -30px rgba(0, 0, 0, 0.8);
 }
 
 .xpnd-stat {
   padding: 26px 22px;
-  background: #090c1c;
-  transition: background-color 0.4s ease;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(245, 247, 255, 0.03), transparent 55%),
+    #090c1c;
+  transition:
+    background-color 0.4s ease,
+    box-shadow 0.4s ease;
 }
 
 .xpnd-stat-num {
@@ -929,7 +1306,7 @@ const STYLES = `
   margin-top: 10px;
   font-size: 13px;
   line-height: 1.5;
-  color: rgba(245, 247, 255, 0.45);
+  color: rgba(245, 247, 255, 0.48);
 }
 
 /* ================================================================== */
@@ -979,9 +1356,7 @@ const STYLES = `
   margin: 28px auto 0;
 }
 
-.xpnd-cta-actions .btn {
-  width: 100%;
-}
+.xpnd-cta-actions .btn { width: 100%; }
 
 /* ================================================================== */
 /* Footer                                                              */
@@ -990,10 +1365,7 @@ const STYLES = `
 .xpnd-footer {
   position: relative;
   z-index: 3;
-  padding:
-    42px
-    0
-    calc(38px + env(safe-area-inset-bottom));
+  padding: 42px 0 calc(38px + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(245, 247, 255, 0.07);
 }
 
@@ -1014,25 +1386,19 @@ const STYLES = `
 
 .xpnd-footer-links a {
   font-size: 13px;
-  color: rgba(245, 247, 255, 0.42);
+  color: rgba(245, 247, 255, 0.46);
   transition: color 0.25s ease;
   padding: 4px 0;
 }
 
 .xpnd-copy {
   font-size: 12.5px;
-  color: rgba(245, 247, 255, 0.3);
+  color: rgba(245, 247, 255, 0.34);
 }
 
 /* ================================================================== */
 /* Responsive                                                          */
 /* ================================================================== */
-
-@media (min-width: 380px) {
-  .xpnd-logo span {
-    display: inline;
-  }
-}
 
 @media (min-width: 480px) {
   .xpnd-hero-actions {
@@ -1043,9 +1409,7 @@ const STYLES = `
     margin-top: 34px;
   }
 
-  .xpnd-hero-actions .btn {
-    width: auto;
-  }
+  .xpnd-hero-actions .btn { width: auto; }
 
   .xpnd-cta-actions {
     flex-direction: row;
@@ -1056,45 +1420,59 @@ const STYLES = `
     margin-top: 32px;
   }
 
-  .xpnd-cta-actions .btn {
-    width: auto;
-  }
+  .xpnd-cta-actions .btn { width: auto; }
 
-  .xpnd-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .xpnd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 641px) {
   .xpnd {
-    --nav-h: 68px;
+    --nav-h: 108px;
     --gut-l: max(24px, env(safe-area-inset-left));
     --gut-r: max(24px, env(safe-area-inset-right));
+  }
+
+  .xpnd-nav {
+    padding: 18px var(--gut-l) 0 var(--gut-r);
+    padding-top: max(18px, env(safe-area-inset-top));
+  }
+
+  .xpnd-nav[data-scrolled="true"] {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .xpnd-nav-pill {
+    height: 74px;
+    padding: 0 10px 0 16px;
+    gap: 14px;
+  }
+
+  .xpnd-nav-brand {
+    height: 58px;
+    padding: 0 20px;
+  }
+
+  .xpnd-nav-logo {
+    height: 40px;
+    max-width: 200px;
+  }
+
+  .xpnd-nav-toggle {
+    width: 46px;
+    height: 46px;
   }
 
   .xpnd-grid {
     background-size: 68px 68px;
     -webkit-mask-image:
-      radial-gradient(
-        ellipse 90% 55% at 50% 0%,
-        #000 5%,
-        transparent 78%
-      );
+      radial-gradient(ellipse 90% 55% at 50% 0%, #000 5%, transparent 78%);
     mask-image:
-      radial-gradient(
-        ellipse 90% 55% at 50% 0%,
-        #000 5%,
-        transparent 78%
-      );
+      radial-gradient(ellipse 90% 55% at 50% 0%, #000 5%, transparent 78%);
   }
 
-  .xpnd-noise {
-    opacity: 0.05;
-  }
+  .xpnd-noise { opacity: 0.05; }
 
-  .xpnd-aurora {
-    filter: blur(100px);
-  }
+  .xpnd-aurora { filter: blur(100px); }
 
   .xpnd-aurora.a1 {
     width: 620px;
@@ -1116,18 +1494,11 @@ const STYLES = `
     height: 520px;
     top: 620px;
     left: 42%;
-    background:
-      radial-gradient(
-        circle,
-        rgba(168, 85, 247, 0.28),
-        transparent 70%
-      );
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.28), transparent 70%);
     animation: xpndDrift3 30s ease-in-out infinite alternate;
   }
 
-  .xpnd-section {
-    padding: clamp(96px, 12vw, 168px) 0;
-  }
+  .xpnd-section { padding: clamp(96px, 12vw, 168px) 0; }
 
   .xpnd-h1 {
     font-size: clamp(2.65rem, 6.6vw, 5rem);
@@ -1170,25 +1541,33 @@ const STYLES = `
     font-size: 13.5px;
   }
 
-  .glass {
-    border-radius: 22px;
+  .glass { border-radius: 22px; }
+
+  .xpnd-hero-content { max-width: 700px; }
+
+  .xpnd-hero-panel {
+    padding: 36px 32px 38px;
+    border-radius: 28px;
   }
 
-  .xpnd-ledger {
-    border-radius: 22px;
+  .xpnd-hero-meta {
+    gap: 10px;
+    margin-top: 30px;
   }
 
-  .xpnd-sechead {
-    margin-bottom: clamp(44px, 6vw, 72px);
+  .xpnd-hero-meta span {
+    height: 30px;
+    padding: 0 14px;
+    font-size: 12px;
   }
 
-  .xpnd-sechead .xpnd-h2 {
-    margin-top: 22px;
-  }
+  .xpnd-ledger { border-radius: 22px; }
 
-  .xpnd-grid-3 {
-    gap: 18px;
-  }
+  .xpnd-sechead { margin-bottom: clamp(44px, 6vw, 72px); }
+
+  .xpnd-sechead .xpnd-h2 { margin-top: 22px; }
+
+  .xpnd-grid-3 { gap: 18px; }
 
   .xpnd-card {
     padding: 30px 28px 34px;
@@ -1201,51 +1580,25 @@ const STYLES = `
     margin-bottom: 26px;
   }
 
-  .xpnd-ledger-main {
-    padding: 34px 34px 30px;
-  }
+  .xpnd-ledger-main { padding: 34px 34px 30px; }
+  .xpnd-ledger-side { padding: 34px 34px 30px; }
 
-  .xpnd-ledger-side {
-    padding: 34px 34px 30px;
-  }
-
-  .xpnd-spark {
-    margin: 26px -4px 8px;
-    height: 118px;
-  }
-
-  .xpnd-rows {
-    gap: 20px;
-  }
+  .xpnd-spark { margin: 26px -4px 8px; height: 118px; }
+  .xpnd-rows { gap: 20px; }
 
   .xpnd-ai-note {
     margin-top: 26px;
     padding: 16px 18px;
   }
 
-  .xpnd-steps {
-    gap: 18px;
-  }
+  .xpnd-steps { gap: 18px; }
 
-  .xpnd-step {
-    padding: 30px 26px 34px;
-  }
+  .xpnd-step { padding: 30px 26px 34px; }
+  .xpnd-step h3 { margin-top: 20px; }
 
-  .xpnd-step h3 {
-    margin-top: 20px;
-  }
-
-  .xpnd-stat {
-    padding: 34px 26px;
-  }
-
-  .xpnd-stat-num {
-    font-size: clamp(1.75rem, 3vw, 2.35rem);
-  }
-
-  .xpnd-stat-label {
-    margin-top: 12px;
-  }
+  .xpnd-stat { padding: 34px 26px; }
+  .xpnd-stat-num { font-size: clamp(1.75rem, 3vw, 2.35rem); }
+  .xpnd-stat-label { margin-top: 12px; }
 
   .xpnd-cta {
     padding:
@@ -1261,9 +1614,7 @@ const STYLES = `
     filter: blur(50px);
   }
 
-  .xpnd-footer {
-    padding: 54px 0 44px;
-  }
+  .xpnd-footer { padding: 54px 0 44px; }
 
   .xpnd-footer-inner {
     flex-direction: row;
@@ -1280,50 +1631,56 @@ const STYLES = `
   }
 }
 
+/* -------- Desktop: full pill with links + CTAs, no hamburger ---- */
+
 @media (min-width: 900px) {
   .xpnd {
-    --nav-h: 74px;
+    --nav-h: 116px;
   }
 
-  .xpnd-nav-inner {
-    gap: 20px;
+  .xpnd-nav-pill {
+    height: 80px;
+    padding: 0 10px 0 18px;
+    gap: 18px;
+    justify-content: flex-start;
   }
 
-  .xpnd-nav-links {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    margin-left: auto;
-    margin-right: 12px;
+  .xpnd-nav-brand {
+    height: 62px;
+    padding: 0 22px;
   }
 
-  .xpnd-nav-links a {
-    font-size: 13.5px;
-    font-weight: 500;
-    color: rgba(245, 247, 255, 0.58);
-    transition: color 0.25s ease;
+  .xpnd-nav-logo {
+    height: 44px;
+    max-width: 220px;
   }
 
-  .xpnd-nav-cta {
-    gap: 10px;
+  .xpnd-nav-links { display: flex; gap: 14px; }
+  .xpnd-nav-links a { padding: 8px 18px; }
+  .xpnd-nav-cta { display: flex; }
+  .xpnd-nav-toggle { display: none; }
+  .xpnd-nav-sheet { display: none; }
+
+  .xpnd-nav-login,
+  .xpnd-nav-signup {
+    height: 50px;
+    font-size: 14.5px;
   }
 
-  .xpnd-hero {
-    text-align: left;
+  .xpnd-nav-login { padding: 0 22px; }
+  .xpnd-nav-signup { padding: 0 24px; }
+
+   .xpnd-hero {
+    text-align: center;
     padding: 150px 0 110px;
   }
 
-  .xpnd-hero-canvas {
-    opacity: 1;
-  }
+  .xpnd-hero-canvas { opacity: 0.75; }
 
+  /* Symmetric scrim so the centered card sits over an even vignette */
   .xpnd-hero-scrim {
     background:
-      radial-gradient(
-        ellipse 70% 55% at 22% 45%,
-        rgba(8, 10, 24, 0.88),
-        transparent 72%
-      ),
+      radial-gradient(ellipse 60% 55% at 50% 45%, rgba(8, 10, 24, 0.88), transparent 72%),
       linear-gradient(
         180deg,
         rgba(8, 10, 24, 0.55) 0%,
@@ -1333,35 +1690,44 @@ const STYLES = `
       );
   }
 
+  /* Card container stays centered and horizontally bounded */
   .xpnd-hero-content {
-    max-width: 660px;
-    margin: 0;
+    max-width: 1000px;
+    margin: 0 auto;
   }
 
+  .xpnd-hero-panel {
+    padding: 44px 44px 46px;
+    border-radius: 32px;
+    /* Center the inline-block content inside the panel */
+    text-align: center;
+  }
+
+  /* Inner copy centers itself, capped so lines don't stretch edge to edge */
+  .xpnd-hero-panel .xpnd-body {
+    max-width: 52ch;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  /* Buttons and meta pills align as a centered group */
   .xpnd-hero-actions {
-    justify-content: flex-start;
+    justify-content: center;
     gap: 12px;
     margin-top: 36px;
   }
 
   .xpnd-hero-meta {
-    justify-content: flex-start;
-    gap: 10px 22px;
+    justify-content: center;
+    gap: 10px;
     margin-top: 34px;
-    font-size: 12.5px;
   }
 
-  .xpnd-grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .xpnd-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .xpnd-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-  .xpnd-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .xpnd-ledger {
-    grid-template-columns: 1.15fr 0.85fr;
-  }
+  .xpnd-ledger { grid-template-columns: 1.15fr 0.85fr; }
 
   .xpnd-ledger-side {
     border-top: none;
@@ -1370,9 +1736,7 @@ const STYLES = `
 }
 
 @media (min-width: 1000px) {
-  .xpnd-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  .xpnd-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 /* ================================================================== */
@@ -1380,46 +1744,128 @@ const STYLES = `
 /* ================================================================== */
 
 @media (hover: hover) and (pointer: fine) {
+  .xpnd-nav-brand:hover {
+    background:
+      radial-gradient(120% 130% at 0% 0%, rgba(245, 247, 255, 0.11), transparent 55%),
+      linear-gradient(
+        180deg,
+        rgba(4, 6, 19, 0.98),
+        rgba(4, 6, 19, 0.88)
+      );
+    border-color: rgba(245, 247, 255, 0.22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+      0 14px 30px -16px rgba(0, 0, 0, 1);
+  }
+
+  .xpnd-nav-toggle:hover {
+    background:
+      radial-gradient(120% 120% at 30% 0%, rgba(255, 255, 255, 0.16), transparent 55%),
+      linear-gradient(
+        180deg,
+        rgba(245, 247, 255, 0.10),
+        rgba(245, 247, 255, 0.04)
+      );
+    border-color: rgba(245, 247, 255, 0.20);
+  }
+
+  .xpnd-nav-links a:hover {
+    color: rgba(245, 247, 255, 0.98);
+    background: rgba(245, 247, 255, 0.06);
+  }
+
+  .xpnd-nav-login:hover {
+    color: rgba(245, 247, 255, 0.98);
+    background: rgba(245, 247, 255, 0.07);
+  }
+
+  .xpnd-nav-signup:hover {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(245, 247, 255, 0.20),
+        rgba(245, 247, 255, 0.085)
+      );
+    border-color: rgba(245, 247, 255, 0.24);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+      0 12px 26px -14px rgba(0, 0, 0, 0.9);
+  }
+
+  .xpnd-nav-signup:active { transform: scale(0.97); }
+
+  .xpnd-nav-sheet-link:hover {
+    background: rgba(245, 247, 255, 0.06);
+    color: rgba(245, 247, 255, 0.98);
+  }
+
+  .xpnd-nav-sheet-login:hover,
+  .xpnd-nav-sheet-signup:hover {
+    border-color: rgba(245, 247, 255, 0.22);
+  }
+
   .btn-ghost:hover {
-    background: rgba(245, 247, 255, 0.09);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(245, 247, 255, 0.10),
+        rgba(245, 247, 255, 0.04)
+      );
     border-color: rgba(245, 247, 255, 0.26);
     transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+      0 14px 32px -16px rgba(0, 0, 0, 0.85);
   }
 
   .btn-primary:hover {
     background-position: 100% 50%;
     transform: translateY(-1px);
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.14),
       0 18px 44px -14px rgba(124, 92, 255, 0.95),
       0 0 0 6px rgba(124, 92, 255, 0.07);
   }
 
-  .spot:hover::before {
-    opacity: 1;
-  }
+  .spot:hover::before { opacity: 1; }
 
   .xpnd-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(245, 247, 255, 0.17);
+    transform: translateY(-5px);
+    border-color: rgba(245, 247, 255, var(--glass-border-hi));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+      0 30px 80px -30px rgba(0, 0, 0, 0.9),
+      0 4px 14px -4px rgba(0, 0, 0, 0.45);
   }
 
   .xpnd-step:hover {
-    border-color: rgba(245, 247, 255, 0.15);
-    background: rgba(245, 247, 255, 0.035);
+    transform: translateY(-3px);
+    border-color: rgba(245, 247, 255, 0.16);
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgba(245, 247, 255, 0.065), transparent 55%),
+      linear-gradient(
+        180deg,
+        rgba(245, 247, 255, 0.055),
+        rgba(245, 247, 255, 0.018)
+      );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 22px 55px -26px rgba(0, 0, 0, 0.85);
   }
 
   .xpnd-stat:hover {
-    background: #0c1024;
+    background:
+      radial-gradient(120% 100% at 0% 0%, rgba(124, 92, 255, 0.08), transparent 55%),
+      #0c1024;
   }
 
-  .xpnd-nav-links a:hover {
-    color: rgba(245, 247, 255, 0.96);
-  }
-
-  .xpnd-footer-links a:hover {
-    color: rgba(245, 247, 255, 0.9);
-  }
+  .xpnd-footer-links a:hover { color: rgba(245, 247, 255, 0.9); }
 }
 
 /* ================================================================== */
@@ -1427,24 +1873,25 @@ const STYLES = `
 /* ================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-  .xpnd-aurora {
-    animation: none !important;
-  }
-
-  .xpnd-dot {
-    animation: none !important;
-  }
+  .xpnd-aurora { animation: none !important; }
+  .xpnd-dot { animation: none !important; }
 
   .btn,
   .xpnd-card,
   .xpnd-step,
-  .xpnd-stat {
+  .xpnd-stat,
+  .xpnd-nav-pill,
+  .xpnd-nav-toggle,
+  .xpnd-nav-sheet {
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+
+  .xpnd-nav-toggle-bars span {
     transition-duration: 0.01ms !important;
   }
 
-  .btn-primary {
-    background-position: 0% 50% !important;
-  }
+  .btn-primary { background-position: 0% 50% !important; }
 }
 `;
 
@@ -1466,17 +1913,11 @@ const ORB_VERT = /* glsl */ `
 
   void main() {
     vNormal = normalize(normalMatrix * normal);
-
     float d = wave(position, uTime) * 0.155;
     vDisp = d;
-
     vec3 displaced = position + normal * d;
     vPos = normalize(position);
-
-    gl_Position =
-      projectionMatrix *
-      modelViewMatrix *
-      vec4(displaced, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
   }
 `;
 
@@ -1490,51 +1931,15 @@ const ORB_FRAG = /* glsl */ `
   varying float vDisp;
 
   void main() {
-    float fres =
-      pow(
-        1.0 -
-        abs(
-          dot(
-            normalize(vNormal),
-            vec3(0.0, 0.0, 1.0)
-          )
-        ),
-        2.1
-      );
-
-    float h =
-      clamp(
-        vPos.y * 0.5 + 0.5,
-        0.0,
-        1.0
-      );
-
-    vec3 base =
-      mix(
-        uColorA,
-        uColorB,
-        smoothstep(0.04, 0.62, h)
-      );
-
-    base =
-      mix(
-        base,
-        uColorC,
-        smoothstep(0.68, 1.0, h)
-      );
-
-    vec3 col =
-      base *
-      (0.34 + 0.90 * fres);
-
+    float fres = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 2.1);
+    float h = clamp(vPos.y * 0.5 + 0.5, 0.0, 1.0);
+    vec3 base = mix(uColorA, uColorB, smoothstep(0.04, 0.62, h));
+    base = mix(base, uColorC, smoothstep(0.68, 1.0, h));
+    vec3 col = base * (0.34 + 0.90 * fres);
     col += uColorC * fres * 0.22;
     col += vDisp * 1.15;
-
-    float alpha =
-      0.26 + 0.58 * fres;
-
-    gl_FragColor =
-      vec4(col, alpha);
+    float alpha = 0.26 + 0.58 * fres;
+    gl_FragColor = vec4(col, alpha);
   }
 `;
 
@@ -1560,21 +1965,14 @@ function OrbCore({
 
   useFrame((state, delta) => {
     if (reduce) return;
-
     const t = state.clock.elapsedTime;
-
     uniforms.uTime.value = t;
-
     const core = coreRef.current;
-
     if (core) {
       core.rotation.y += delta * 0.14;
-      core.rotation.x =
-        Math.sin(t * 0.24) * 0.13;
+      core.rotation.x = Math.sin(t * 0.24) * 0.13;
     }
-
     const shell = shellRef.current;
-
     if (shell) {
       shell.rotation.y -= delta * 0.075;
       shell.rotation.z += delta * 0.038;
@@ -1585,7 +1983,6 @@ function OrbCore({
     <group>
       <mesh ref={coreRef}>
         <icosahedronGeometry args={[1.34, detail]} />
-
         <shaderMaterial
           uniforms={uniforms}
           vertexShader={ORB_VERT}
@@ -1595,10 +1992,8 @@ function OrbCore({
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-
       <mesh ref={shellRef} scale={1.62}>
         <icosahedronGeometry args={[1.34, 1]} />
-
         <meshBasicMaterial
           color={C.blue}
           wireframe
@@ -1623,61 +2018,28 @@ function Particles({
 
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3);
-
     for (let i = 0; i < count; i++) {
-      const radius =
-        2.4 + Math.random() * 3.6;
-
-      const theta =
-        Math.random() * Math.PI * 2;
-
-      const phi =
-        Math.acos(
-          2 * Math.random() - 1
-        );
-
-      arr[i * 3] =
-        radius *
-        Math.sin(phi) *
-        Math.cos(theta);
-
-      arr[i * 3 + 1] =
-        radius *
-        Math.sin(phi) *
-        Math.sin(theta) *
-        0.68;
-
-      arr[i * 3 + 2] =
-        radius *
-        Math.cos(phi) *
-        0.6 -
-        0.6;
+      const radius = 2.4 + Math.random() * 3.6;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      arr[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      arr[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.68;
+      arr[i * 3 + 2] = radius * Math.cos(phi) * 0.6 - 0.6;
     }
-
     return arr;
   }, [count]);
 
   useFrame((state, delta) => {
     if (reduce || !ref.current) return;
-
-    ref.current.rotation.y +=
-      delta * 0.024;
-
-    ref.current.rotation.x =
-      Math.sin(
-        state.clock.elapsedTime * 0.12
-      ) * 0.06;
+    ref.current.rotation.y += delta * 0.024;
+    ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.12) * 0.06;
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-
       <pointsMaterial
         size={0.022}
         sizeAttenuation
@@ -1700,80 +2062,33 @@ function Rig({
   reduce: boolean;
   offsetX: number;
 }) {
-  const group =
-    useRef<THREE.Group>(null);
-
-  const target =
-    useRef(
-      new THREE.Vector2(
-        offsetX,
-        0.12
-      )
-    );
+  const group = useRef<THREE.Group>(null);
+  const target = useRef(new THREE.Vector2(offsetX, 0.12));
 
   useEffect(() => {
-    target.current.set(
-      offsetX,
-      0.12
-    );
+    target.current.set(offsetX, 0.12);
   }, [offsetX]);
 
   useFrame((state, delta) => {
     const g = group.current;
-
     if (!g) return;
 
-    const k =
-      reduce
-        ? 1
-        : 1 -
-          Math.pow(
-            0.0022,
-            Math.min(delta, 0.05)
-          );
+    const k = reduce
+      ? 1
+      : 1 - Math.pow(0.0022, Math.min(delta, 0.05));
 
-    g.position.x +=
-      (target.current.x -
-        g.position.x) *
-      k;
-
-    g.position.y +=
-      (target.current.y -
-        g.position.y) *
-      k;
+    g.position.x += (target.current.x - g.position.x) * k;
+    g.position.y += (target.current.y - g.position.y) * k;
 
     if (!reduce) {
-      const rk =
-        Math.min(
-          1,
-          delta * 2.6
-        );
-
-      g.rotation.y +=
-        (
-          state.pointer.x *
-            0.34 -
-          g.rotation.y
-        ) * rk;
-
-      g.rotation.x +=
-        (
-          -state.pointer.y *
-            0.2 -
-          g.rotation.x
-        ) * rk;
+      const rk = Math.min(1, delta * 2.6);
+      g.rotation.y += (state.pointer.x * 0.34 - g.rotation.y) * rk;
+      g.rotation.x += (-state.pointer.y * 0.2 - g.rotation.x) * rk;
     }
   });
 
   return (
-    <group
-      ref={group}
-      position={[
-        offsetX,
-        0.12,
-        0,
-      ]}
-    >
+    <group ref={group} position={[offsetX, 0.12, 0]}>
       {children}
     </group>
   );
@@ -1790,52 +2105,20 @@ function Scene({
 }) {
   return (
     <Canvas
-      dpr={
-        isMobile
-          ? [1, 1.5]
-          : [1, 1.75]
-      }
-      camera={{
-        position: [0, 0, 5.3],
-        fov: 45,
-      }}
+      dpr={isMobile ? [1, 1.5] : [1, 1.75]}
+      camera={{ position: [0, 0, 5.3], fov: 45 }}
       gl={{
         antialias: true,
         alpha: true,
-        powerPreference:
-          "high-performance",
+        powerPreference: "high-performance",
       }}
-      frameloop={
-        reduce
-          ? "demand"
-          : "always"
-      }
-      style={{
-        pointerEvents: "none",
-      }}
+      frameloop={reduce ? "demand" : "always"}
+      style={{ pointerEvents: "none" }}
       aria-hidden="true"
     >
-      <Rig
-        reduce={reduce}
-        offsetX={offsetX}
-      >
-        <OrbCore
-          reduce={reduce}
-          detail={
-            isMobile
-              ? 14
-              : 22
-          }
-        />
-
-        <Particles
-          reduce={reduce}
-          count={
-            isMobile
-              ? 240
-              : 520
-          }
-        />
+      <Rig reduce={reduce} offsetX={offsetX}>
+        <OrbCore reduce={reduce} detail={isMobile ? 14 : 22} />
+        <Particles reduce={reduce} count={isMobile ? 240 : 520} />
       </Rig>
     </Canvas>
   );
@@ -1858,42 +2141,18 @@ function Reveal({
   className?: string;
   style?: CSSProperties;
 }) {
-  const reduce =
-    !!useReducedMotion();
+  const reduce = !!useReducedMotion();
 
   return (
     <motion.div
       className={className}
       style={style}
-      initial={
-        reduce
-          ? { opacity: 0 }
-          : {
-              opacity: 0,
-              y,
-            }
-      }
-      whileInView={
-        reduce
-          ? { opacity: 1 }
-          : {
-              opacity: 1,
-              y: 0,
-            }
-      }
-      viewport={{
-        once: true,
-        margin: "-60px",
-      }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y }}
+      whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
       transition={{
-        duration:
-          reduce
-            ? 0.25
-            : 0.8,
-        delay:
-          reduce
-            ? 0
-            : delay,
+        duration: reduce ? 0.25 : 0.8,
+        delay: reduce ? 0 : delay,
         ease: EASE,
       }}
     >
@@ -1911,28 +2170,14 @@ function SpotlightCard({
   className?: string;
   style?: CSSProperties;
 }) {
-  const ref =
-    useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
-  const onMove = (
-    e: React.MouseEvent<HTMLDivElement>
-  ) => {
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = ref.current;
-
     if (!el) return;
-
-    const r =
-      el.getBoundingClientRect();
-
-    el.style.setProperty(
-      "--mx",
-      `${e.clientX - r.left}px`
-    );
-
-    el.style.setProperty(
-      "--my",
-      `${e.clientY - r.top}px`
-    );
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
   };
 
   return (
@@ -1947,98 +2192,25 @@ function SpotlightCard({
   );
 }
 
-function Logo({
-  size = 26,
-}: {
-  size?: number;
-}) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 26 26"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="0.5"
-        y="0.5"
-        width="25"
-        height="25"
-        rx="8"
-        fill="url(#xpndMark)"
-      />
-
-      <path
-        d="M7.6 17.9 L13 8.1 L18.4 17.9"
-        stroke="#080A18"
-        strokeWidth="2.05"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M10.3 14.7 H15.7"
-        stroke="#080A18"
-        strokeWidth="2.05"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function GradientDefs() {
   return (
     <svg
       width="0"
       height="0"
-      style={{
-        position: "absolute",
-      }}
+      style={{ position: "absolute" }}
       aria-hidden="true"
       focusable="false"
     >
       <defs>
-        <linearGradient
-          id="xpndMark"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
-          <stop
-            offset="0%"
-            stopColor={C.blue}
-          />
-          <stop
-            offset="52%"
-            stopColor={C.purple}
-          />
-          <stop
-            offset="100%"
-            stopColor={C.lime}
-          />
+        <linearGradient id="xpndMark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={C.blue} />
+          <stop offset="52%" stopColor={C.purple} />
+          <stop offset="100%" stopColor={C.lime} />
         </linearGradient>
-
-        <linearGradient
-          id="xpndStroke"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
-          <stop
-            offset="0%"
-            stopColor={C.blue}
-          />
-          <stop
-            offset="55%"
-            stopColor={C.purple}
-          />
-          <stop
-            offset="100%"
-            stopColor={C.lime}
-          />
+        <linearGradient id="xpndStroke" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={C.blue} />
+          <stop offset="55%" stopColor={C.purple} />
+          <stop offset="100%" stopColor={C.lime} />
         </linearGradient>
       </defs>
     </svg>
@@ -2074,18 +2246,12 @@ function SectionHead({
           {eyebrow}
         </span>
       </Reveal>
-
       <Reveal delay={0.07}>
-        <h2 className="xpnd-h2">
-          {title}
-        </h2>
+        <h2 className="xpnd-h2">{title}</h2>
       </Reveal>
-
       {sub ? (
         <Reveal delay={0.13}>
-          <p className="xpnd-sub">
-            {sub}
-          </p>
+          <p className="xpnd-sub">{sub}</p>
         </Reveal>
       ) : null}
     </div>
@@ -2093,90 +2259,137 @@ function SectionHead({
 }
 
 /* ------------------------------------------------------------------ */
-/* Navigation                                                          */
+/* Navigation — floating pill                                          */
 /* ------------------------------------------------------------------ */
 
+const NAV_LINKS = [
+  { href: "#features", label: "Features" },
+  { href: "#how", label: "How it works" },
+  { href: "#intelligence", label: "Dashboard" },
+];
+
 function Nav() {
-  const router =
-    useRouter();
+  const router = useRouter();
+  const { scrollY } = useScroll();
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const { scrollY } =
-    useScroll();
+  useMotionValueEvent(scrollY, "change", (v) => {
+    setScrolled(v > 22);
+  });
 
-  const [scrolled, setScrolled] =
-    useState(false);
+  /* Close the drawer on Escape */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  useMotionValueEvent(
-    scrollY,
-    "change",
-    (v) => {
-      setScrolled(v > 22);
-    }
-  );
+  const closeSheet = () => setOpen(false);
 
   return (
-    <header
-      className="xpnd-nav"
-      data-scrolled={scrolled}
-    >
-      <nav
-        className="xpnd-container xpnd-nav-inner"
-        aria-label="Primary"
-      >
+    <header className="xpnd-nav" data-scrolled={scrolled}>
+      <nav className="xpnd-nav-pill" aria-label="Primary">
+        {/* Brand — logo image inside darkened glass chip */}
         <a
-          className="xpnd-logo"
+          className="xpnd-nav-brand"
           href="#top"
           aria-label="Xpnd AI home"
+          onClick={closeSheet}
         >
-          <div className="flex justify-center pt-[5%]">
-            <img
-              src="/xpnd-ai-logo-dark.svg"
-              alt="Xpnd AI"
-              className="h-auto w-[100px] md:w-[120px]"
-            />
-          </div>
+          <img
+            src="/xpnd-ai-logo-dark.svg"
+            alt="Xpnd AI"
+            className="xpnd-nav-logo"
+          />
         </a>
 
+        {/* Center links — desktop only */}
         <div className="xpnd-nav-links">
-          <a href="#features">
-            Features
-          </a>
-
-          <a href="#how">
-            How it works
-          </a>
-
-          <a href="#intelligence">
-            Dashboard
-          </a>
+          {NAV_LINKS.map((l) => (
+            <a key={l.href} href={l.href}>
+              {l.label}
+            </a>
+          ))}
         </div>
 
+        {/* Right side — CTAs on desktop, hamburger on mobile */}
         <div className="xpnd-nav-cta">
           <button
             type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() =>
-              router.push(
-                "/auth/login"
-              )
-            }
+            className="xpnd-nav-login"
+            onClick={() => router.push("/auth/login")}
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            className="xpnd-nav-signup"
+            onClick={() => router.push("/auth/sign-up")}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="xpnd-nav-toggle"
+          aria-expanded={open}
+          aria-controls="xpnd-mobile-sheet"
+          aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="xpnd-nav-toggle-bars" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+        </button>
+      </nav>
+
+      {/* Mobile drawer — expands inside the floating pill area */}
+      <div
+        id="xpnd-mobile-sheet"
+        className="xpnd-nav-sheet"
+        data-open={open}
+      >
+        <div className="xpnd-nav-sheet-inner">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className="xpnd-nav-sheet-link"
+              onClick={closeSheet}
+            >
+              {l.label}
+            </a>
+          ))}
+
+          <button
+            type="button"
+            className="xpnd-nav-sheet-login"
+            onClick={() => {
+              closeSheet();
+              router.push("/auth/login");
+            }}
           >
             Log In
           </button>
 
           <button
             type="button"
-            className="btn btn-primary btn-sm"
-            onClick={() =>
-              router.push(
-                "/auth/sign-up"
-              )
-            }
+            className="xpnd-nav-sheet-signup"
+            onClick={() => {
+              closeSheet();
+              router.push("/auth/sign-up");
+            }}
           >
             Sign Up
           </button>
         </div>
-      </nav>
+      </div>
     </header>
   );
 }
@@ -2194,164 +2407,77 @@ function Hero({
   isDesktop: boolean;
   isMobile: boolean;
 }) {
-  const router =
-    useRouter();
+  const router = useRouter();
+  const heroRef = useRef<HTMLDivElement>(null);
 
-  const heroRef =
-    useRef<HTMLDivElement>(null);
-
-  const {
-    scrollYProgress,
-  } = useScroll({
+  const { scrollYProgress } = useScroll({
     target: heroRef,
-    offset: [
-      "start start",
-      "end start",
-    ],
+    offset: ["start start", "end start"],
   });
 
-  const y = useTransform(
-    scrollYProgress,
-    [0, 1],
-    [0, reduce ? 0 : 90]
-  );
-
-  const opacity =
-    useTransform(
-      scrollYProgress,
-      [0, 0.85],
-      [1, reduce ? 1 : 0]
-    );
+  const y = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 90]);
+  const opacity = useTransform(scrollYProgress, [0, 0.85], [1, reduce ? 1 : 0]);
 
   return (
-    <section
-      className="xpnd-hero"
-      ref={heroRef}
-      id="top"
-    >
+    <section className="xpnd-hero" ref={heroRef} id="top">
       <div className="xpnd-hero-canvas">
         <Scene
           reduce={reduce}
-          offsetX={
-            isDesktop
-              ? 1.25
-              : 0
-          }
+          offsetX={isDesktop ? 1.25 : 0}
           isMobile={isMobile}
         />
       </div>
 
-      <div
-        className="xpnd-hero-scrim"
-        aria-hidden="true"
-      />
+      <div className="xpnd-hero-scrim" aria-hidden="true" />
 
       <div className="xpnd-container">
-        <motion.div
-          className="xpnd-hero-content"
-          style={{
-            y,
-            opacity,
-          }}
-        >
-          <Reveal y={18}>
-            <span className="xpnd-eyebrow">
-              <span className="xpnd-dot" />
-              AI-powered expense tracking
-            </span>
-          </Reveal>
-
-          <Reveal
-            delay={0.08}
-            y={30}
-          >
-            <h1
-              className="xpnd-h1"
-              style={{
-                marginTop: 22,
-              }}
-            >
-              Track spending
-              <br />
-              <span className="grad-text">
-                without the hassle.
+        <motion.div className="xpnd-hero-content" style={{ y, opacity }}>
+          <div className="xpnd-hero-panel">
+            <Reveal y={18}>
+              <span className="xpnd-eyebrow">
+                <span className="xpnd-dot" />
+                AI-powered expense tracking
               </span>
-            </h1>
-          </Reveal>
+            </Reveal>
 
-          <Reveal
-            delay={0.16}
-            y={26}
-          >
-            <p
-              className="xpnd-body"
-              style={{
-                marginTop: 20,
-                marginInline:
-                  "auto",
-              }}
-            >
-              Xpnd AI makes expense
-              tracking simple. Enter
-              expenses naturally, and
-              the system automatically
-              identifies important
-              expense details and
-              categories.
-            </p>
-          </Reveal>
+            <Reveal delay={0.08} y={30}>
+              <h1 className="xpnd-h1" style={{ marginTop: 22 }}>
+                Track spending
+                <br />
+                <span className="grad-text">without the hassle.</span>
+              </h1>
+            </Reveal>
 
-          <Reveal
-            delay={0.24}
-            y={22}
-          >
-            <div className="xpnd-hero-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() =>
-                  router.push(
-                    "/auth/sign-up"
-                  )
-                }
+            <Reveal delay={0.16} y={26}>
+              <p
+                className="xpnd-body"
+                style={{ marginTop: 20, marginInline: "auto" }}
               >
-                Get Started
-              </button>
+                Xpnd AI makes expense tracking simple. Enter expenses naturally,
+                and the system automatically identifies important expense
+                details and categories.
+              </p>
+            </Reveal>
 
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() =>
-                  router.push(
-                    "/auth/login"
-                  )
-                }
-              >
-                Log In
-              </button>
-            </div>
-          </Reveal>
-
-          <Reveal
-            delay={0.32}
-            y={18}
-          >
-            <div className="xpnd-hero-meta">
-              <span>
-                Natural-language input
-              </span>
-
-              <span>
-                <i aria-hidden="true" />
-                Automated categorization
-              </span>
-
-              <span>
-                <i aria-hidden="true" />
-                Budget monitoring
-              </span>
-            </div>
-          </Reveal>
+            <Reveal delay={0.24} y={22}>
+              <div className="xpnd-hero-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => router.push("/auth/sign-up")}
+                >
+                  Get Started
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => router.push("/auth/login")}
+                >
+                  Log In
+                </button>
+              </div>
+            </Reveal>
+          </div>
         </motion.div>
       </div>
     </section>
@@ -2364,40 +2490,29 @@ function Hero({
 
 const FEATURES = [
   {
-    title:
-      "Natural-language expense input",
-
+    title: "Natural-language expense input",
     body:
       'Record expenses naturally, such as "Spent 150 pesos for lunch," without filling out multiple fields manually.',
-
     icon: (
       <svg {...iconProps}>
         <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4.5h0A2.5 2.5 0 0 1 4 13.5z" />
       </svg>
     ),
   },
-
   {
-    title:
-      "Automatic categorization",
-
+    title: "Automatic categorization",
     body:
       "Xpnd AI processes your expense text and identifies important details such as the amount, category, date, and description.",
-
     icon: (
       <svg {...iconProps}>
         <path d="M12 2.6 L13.9 9.4 L20.8 11.3 L13.9 13.2 L12 20 L10.1 13.2 L3.2 11.3 L10.1 9.4 Z" />
       </svg>
     ),
   },
-
   {
-    title:
-      "Budget and spending monitoring",
-
+    title: "Budget and spending monitoring",
     body:
       "Monitor your expenses against your budgets and receive notifications when spending reaches important limits.",
-
     icon: (
       <svg {...iconProps}>
         <path d="M4 19V5" />
@@ -2411,10 +2526,7 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section
-      className="xpnd-section"
-      id="features"
-    >
+    <section className="xpnd-section" id="features">
       <div className="xpnd-container">
         <SectionHead
           eyebrow="Core features"
@@ -2422,46 +2534,26 @@ function Features() {
             <>
               Expense tracking
               <br />
-              <span className="grad-text">
-                made simpler.
-              </span>
+              <span className="grad-text">made simpler.</span>
             </>
           }
           sub="Xpnd AI focuses on reducing the effort required to record expenses while helping users understand and monitor their spending."
         />
 
         <div className="xpnd-grid-3">
-          {FEATURES.map(
-            (f, i) => (
-              <Reveal
-                key={f.title}
-                delay={i * 0.09}
-                style={{
-                  display:
-                    "flex",
-                }}
-              >
-                <SpotlightCard
-                  className="xpnd-card"
-                  style={{
-                    flex: 1,
-                  }}
-                >
-                  <div className="xpnd-card-icon">
-                    {f.icon}
-                  </div>
-
-                  <h3 className="xpnd-h3">
-                    {f.title}
-                  </h3>
-
-                  <p>
-                    {f.body}
-                  </p>
-                </SpotlightCard>
-              </Reveal>
-            )
-          )}
+          {FEATURES.map((f, i) => (
+            <Reveal
+              key={f.title}
+              delay={i * 0.09}
+              style={{ display: "flex" }}
+            >
+              <SpotlightCard className="xpnd-card" style={{ flex: 1 }}>
+                <div className="xpnd-card-icon">{f.icon}</div>
+                <h3 className="xpnd-h3">{f.title}</h3>
+                <p>{f.body}</p>
+              </SpotlightCard>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -2473,47 +2565,17 @@ function Features() {
 /* ------------------------------------------------------------------ */
 
 const LEDGER_ROWS = [
-  {
-    label: "Food & Dining",
-    value: "₱1,240",
-    pct: 82,
-    color: C.blue,
-  },
-
-  {
-    label: "Transportation",
-    value: "₱860",
-    pct: 57,
-    color: C.purple,
-  },
-
-  {
-    label: "Shopping",
-    value: "₱420",
-    pct: 28,
-    color: C.violet,
-  },
-
-  {
-    label: "Education",
-    value: "₱610",
-    pct: 41,
-    color: C.lime,
-  },
+  { label: "Food & Dining", value: "₱1,240", pct: 82, color: C.blue },
+  { label: "Transportation", value: "₱860", pct: 57, color: C.purple },
+  { label: "Shopping", value: "₱420", pct: 28, color: C.violet },
+  { label: "Education", value: "₱610", pct: 41, color: C.lime },
 ];
 
 function Ledger() {
-  const reduce =
-    !!useReducedMotion();
+  const reduce = !!useReducedMotion();
 
   return (
-    <section
-      className="xpnd-section"
-      id="intelligence"
-      style={{
-        paddingTop: 0,
-      }}
-    >
+    <section className="xpnd-section" id="intelligence" style={{ paddingTop: 0 }}>
       <div className="xpnd-container">
         <SectionHead
           eyebrow="Dashboard preview"
@@ -2521,9 +2583,7 @@ function Ledger() {
             <>
               Your spending,
               <br />
-              <span className="grad-text">
-                in one view.
-              </span>
+              <span className="grad-text">in one view.</span>
             </>
           }
           sub="View expenses, category breakdowns, budgets, and savings progress from a single dashboard."
@@ -2537,35 +2597,22 @@ function Ledger() {
                   <div
                     style={{
                       fontSize: 12.5,
-                      letterSpacing:
-                        "0.1em",
-                      textTransform:
-                        "uppercase",
-                      color:
-                        "rgba(245,247,255,0.4)",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: "rgba(245,247,255,0.42)",
                       fontWeight: 500,
                     }}
                   >
                     This Month
                   </div>
-
-                  <div
-                    className="xpnd-ledger-total"
-                    style={{
-                      marginTop: 10,
-                    }}
-                  >
+                  <div className="xpnd-ledger-total" style={{ marginTop: 10 }}>
                     ₱4,250
-
                     <span
                       style={{
-                        fontSize:
-                          "0.42em",
+                        fontSize: "0.42em",
                         fontWeight: 500,
-                        color:
-                          "rgba(245,247,255,0.35)",
-                        letterSpacing:
-                          "-0.01em",
+                        color: "rgba(245,247,255,0.38)",
+                        letterSpacing: "-0.01em",
                         marginLeft: 10,
                       }}
                     >
@@ -2575,13 +2622,7 @@ function Ledger() {
                 </div>
 
                 <span className="xpnd-chip">
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                  >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path
                       d="M5 15 L12 8 L19 15"
                       stroke="currentColor"
@@ -2590,7 +2631,6 @@ function Ledger() {
                       strokeLinejoin="round"
                     />
                   </svg>
-
                   Within budget
                 </span>
               </div>
@@ -2602,77 +2642,24 @@ function Ledger() {
                 aria-hidden="true"
               >
                 <defs>
-                  <linearGradient
-                    id="xpndLine"
-                    x1="0"
-                    y1="0"
-                    x2="1"
-                    y2="0"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={
-                        C.blue
-                      }
-                    />
-
-                    <stop
-                      offset="55%"
-                      stopColor={
-                        C.purple
-                      }
-                    />
-
-                    <stop
-                      offset="100%"
-                      stopColor={
-                        C.lime
-                      }
-                    />
+                  <linearGradient id="xpndLine" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={C.blue} />
+                    <stop offset="55%" stopColor={C.purple} />
+                    <stop offset="100%" stopColor={C.lime} />
                   </linearGradient>
-
-                  <linearGradient
-                    id="xpndFill"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={
-                        C.purple
-                      }
-                      stopOpacity="0.3"
-                    />
-
-                    <stop
-                      offset="100%"
-                      stopColor={
-                        C.purple
-                      }
-                      stopOpacity="0"
-                    />
+                  <linearGradient id="xpndFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C.purple} stopOpacity="0.3" />
+                    <stop offset="100%" stopColor={C.purple} stopOpacity="0" />
                   </linearGradient>
                 </defs>
 
                 <motion.path
                   d="M0,92 C42,72 62,98 104,74 C146,50 168,84 210,60 C252,36 280,66 322,42 C360,20 388,32 420,22 L420,120 L0,120 Z"
                   fill="url(#xpndFill)"
-                  initial={{
-                    opacity: 0,
-                  }}
-                  whileInView={{
-                    opacity: 1,
-                  }}
-                  viewport={{
-                    once: true,
-                  }}
-                  transition={{
-                    duration: 1.1,
-                    delay: 0.35,
-                    ease: EASE,
-                  }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.1, delay: 0.35, ease: EASE }}
                 />
 
                 <motion.path
@@ -2682,192 +2669,102 @@ function Ledger() {
                   strokeWidth="2.4"
                   strokeLinecap="round"
                   vectorEffect="non-scaling-stroke"
-                  initial={{
-                    pathLength:
-                      reduce
-                        ? 1
-                        : 0,
-                  }}
-                  whileInView={{
-                    pathLength: 1,
-                  }}
-                  viewport={{
-                    once: true,
-                  }}
-                  transition={{
-                    duration:
-                      reduce
-                        ? 0
-                        : 1.6,
-                    ease: EASE,
-                  }}
+                  initial={{ pathLength: reduce ? 1 : 0 }}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: reduce ? 0 : 1.6, ease: EASE }}
                 />
               </svg>
 
               <div className="xpnd-rows">
-                {LEDGER_ROWS.map(
-                  (row, i) => (
-                    <div
-                      key={
-                        row.label
-                      }
-                    >
-                      <div className="xpnd-row-head">
-                        <span className="xpnd-row-label">
-                          {row.label}
-                        </span>
-
-                        <span className="xpnd-row-value">
-                          {row.value}
-                        </span>
-                      </div>
-
-                      <div className="xpnd-bar-track">
-                        <motion.div
-                          className="xpnd-bar-fill"
-                          style={{
-                            background:
-                              `linear-gradient(90deg, ${row.color}, ${row.color}CC)`,
-                            color:
-                              row.color,
-                          }}
-                          initial={{
-                            width:
-                              reduce
-                                ? `${row.pct}%`
-                                : 0,
-                          }}
-                          whileInView={{
-                            width: `${row.pct}%`,
-                          }}
-                          viewport={{
-                            once: true,
-                            margin:
-                              "-40px",
-                          }}
-                          transition={{
-                            duration:
-                              reduce
-                                ? 0
-                                : 1.1,
-                            delay:
-                              reduce
-                                ? 0
-                                : 0.15 +
-                                  i *
-                                    0.08,
-                            ease: EASE,
-                          }}
-                        />
-                      </div>
+                {LEDGER_ROWS.map((row, i) => (
+                  <div key={row.label}>
+                    <div className="xpnd-row-head">
+                      <span className="xpnd-row-label">{row.label}</span>
+                      <span className="xpnd-row-value">{row.value}</span>
                     </div>
-                  )
-                )}
+                    <div className="xpnd-bar-track">
+                      <motion.div
+                        className="xpnd-bar-fill"
+                        style={{
+                          background: `linear-gradient(90deg, ${row.color}, ${row.color}CC)`,
+                          color: row.color,
+                        }}
+                        initial={{ width: reduce ? `${row.pct}%` : 0 }}
+                        whileInView={{ width: `${row.pct}%` }}
+                        viewport={{ once: true, margin: "-40px" }}
+                        transition={{
+                          duration: reduce ? 0 : 1.1,
+                          delay: reduce ? 0 : 0.15 + i * 0.08,
+                          ease: EASE,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="xpnd-ledger-side">
-              <span
-                className="xpnd-eyebrow"
-                style={{
-                  height: 28,
-                  fontSize: 12,
-                }}
-              >
+              <span className="xpnd-eyebrow" style={{ height: 28, fontSize: 12 }}>
                 <span className="xpnd-dot" />
                 Spending summary
               </span>
 
               <p
                 style={{
-                  margin:
-                    "20px 0 0",
-                  fontSize:
-                    14.5,
-                  lineHeight:
-                    1.68,
-                  color:
-                    "rgba(245,247,255,0.66)",
+                  margin: "20px 0 0",
+                  fontSize: 14.5,
+                  lineHeight: 1.68,
+                  color: "rgba(245,247,255,0.68)",
                 }}
               >
-                Food & Dining is
-                currently the
-                highest spending
-                category. Reviewing
-                category totals can
-                help you identify
-                where your money
+                Food &amp; Dining is currently the highest spending category.
+                Reviewing category totals can help you identify where your money
                 goes.
               </p>
 
               <div className="xpnd-ai-note">
-                <strong>
-                  Reminder:
-                </strong>{" "}
-                Keep recording your
-                daily expenses to
-                maintain an accurate
-                view of your spending.
+                <strong>Reminder:</strong> Keep recording your daily expenses to
+                maintain an accurate view of your spending.
               </div>
 
               <div
                 style={{
                   marginTop: 22,
                   display: "flex",
-                  flexDirection:
-                    "column",
+                  flexDirection: "column",
                   gap: 12,
                 }}
               >
                 {[
-                  [
-                    "Expenses recorded",
-                    "24",
-                  ],
-                  [
-                    "Top category",
-                    "Food & Dining",
-                  ],
-                  [
-                    "Budget status",
-                    "Within budget",
-                  ],
-                ].map(
-                  ([k, v]) => (
-                    <div
-                      key={k}
+                  ["Expenses recorded", "24"],
+                  ["Top category", "Food & Dining"],
+                  ["Budget status", "Within budget"],
+                ].map(([k, v]) => (
+                  <div
+                    key={k}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      fontSize: 13,
+                      color: "rgba(245,247,255,0.46)",
+                    }}
+                  >
+                    <span>{k}</span>
+                    <span
                       style={{
-                        display:
-                          "flex",
-                        justifyContent:
-                          "space-between",
-                        gap: 12,
-                        fontSize: 13,
-                        color:
-                          "rgba(245,247,255,0.42)",
+                        color: "rgba(245,247,255,0.9)",
+                        fontWeight: 500,
+                        fontVariantNumeric: "tabular-nums",
+                        textAlign: "right",
                       }}
                     >
-                      <span>
-                        {k}
-                      </span>
-
-                      <span
-                        style={{
-                          color:
-                            "rgba(245,247,255,0.88)",
-                          fontWeight:
-                            500,
-                          fontVariantNumeric:
-                            "tabular-nums",
-                          textAlign:
-                            "right",
-                        }}
-                      >
-                        {v}
-                      </span>
-                    </div>
-                  )
-                )}
+                      {v}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -2885,31 +2782,23 @@ const STEPS = [
   {
     num: "01",
     title: "Enter an expense",
-    body:
-      'Type your expense naturally, such as "Spent 150 pesos for lunch."',
+    body: 'Type your expense naturally, such as "Spent 150 pesos for lunch."',
   },
-
   {
     num: "02",
     title: "Let AI process it",
-    body:
-      "Xpnd AI identifies important expense details and automatically assigns an appropriate category.",
+    body: "Xpnd AI identifies important expense details and automatically assigns an appropriate category.",
   },
-
   {
     num: "03",
     title: "Monitor your spending",
-    body:
-      "View your expenses, budgets, savings, and spending summaries to better understand where your money goes.",
+    body: "View your expenses, budgets, savings, and spending summaries to better understand where your money goes.",
   },
 ];
 
 function Steps() {
   return (
-    <section
-      className="xpnd-section"
-      id="how"
-    >
+    <section className="xpnd-section" id="how">
       <div className="xpnd-container">
         <SectionHead
           eyebrow="How it works"
@@ -2917,37 +2806,22 @@ function Steps() {
             <>
               Three steps.
               <br />
-              <span className="grad-text">
-                Simple expense tracking.
-              </span>
+              <span className="grad-text">Simple expense tracking.</span>
             </>
           }
           sub="Xpnd AI reduces the effort required to record and monitor personal expenses."
         />
 
         <div className="xpnd-steps">
-          {STEPS.map(
-            (s, i) => (
-              <Reveal
-                key={s.num}
-                delay={i * 0.1}
-              >
-                <div className="xpnd-step">
-                  <span className="xpnd-step-num">
-                    {s.num}
-                  </span>
-
-                  <h3 className="xpnd-h3">
-                    {s.title}
-                  </h3>
-
-                  <p>
-                    {s.body}
-                  </p>
-                </div>
-              </Reveal>
-            )
-          )}
+          {STEPS.map((s, i) => (
+            <Reveal key={s.num} delay={i * 0.1}>
+              <div className="xpnd-step">
+                <span className="xpnd-step-num">{s.num}</span>
+                <h3 className="xpnd-h3">{s.title}</h3>
+                <p>{s.body}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -2959,58 +2833,24 @@ function Steps() {
 /* ------------------------------------------------------------------ */
 
 const STATS = [
-  {
-    value: "42",
-    label:
-      "Student respondents",
-  },
-
-  {
-    value: "73.8%",
-    label:
-      "Use mental expense tracking",
-  },
-
-  {
-    value: "71.4%",
-    label:
-      "Cited forgetfulness as a challenge",
-  },
-
-  {
-    value: "40.5%",
-    label:
-      "Very likely to use automated tracking",
-  },
+  { value: "42", label: "Student respondents" },
+  { value: "73.8%", label: "Use mental expense tracking" },
+  { value: "71.4%", label: "Cited forgetfulness as a challenge" },
+  { value: "40.5%", label: "Very likely to use automated tracking" },
 ];
 
 function Stats() {
   return (
-    <section
-      className="xpnd-section"
-      style={{
-        paddingTop: 0,
-      }}
-    >
+    <section className="xpnd-section" style={{ paddingTop: 0 }}>
       <div className="xpnd-container">
         <Reveal y={30}>
           <div className="xpnd-stats">
-            {STATS.map(
-              (s) => (
-                <div
-                  className="xpnd-stat"
-                  key={s.label}
-                >
-                  <div className="xpnd-stat-num grad-text">
-                    {s.value}
-                  </div>
-
-                  <div className="xpnd-stat-label">
-                    {s.label}
-                  </div>
-                </div>
-              )
-            )}
+            {STATS.map((s) => (
+              <div className="xpnd-stat" key={s.label}>
+                <div className="xpnd-stat-num grad-text">{s.value}</div>
+                <div className="xpnd-stat-label">{s.label}</div>
+              </div>
+            ))}
           </div>
         </Reveal>
       </div>
@@ -3023,23 +2863,14 @@ function Stats() {
 /* ------------------------------------------------------------------ */
 
 function FinalCTA() {
-  const router =
-    useRouter();
+  const router = useRouter();
 
   return (
-    <section
-      className="xpnd-section"
-      style={{
-        paddingTop: 0,
-      }}
-    >
+    <section className="xpnd-section" style={{ paddingTop: 0 }}>
       <div className="xpnd-container">
         <Reveal y={34}>
           <div className="glass xpnd-cta">
-            <div
-              className="xpnd-cta-glow"
-              aria-hidden="true"
-            />
+            <div className="xpnd-cta-glow" aria-hidden="true" />
 
             <div className="xpnd-cta-inner">
               <span className="xpnd-eyebrow">
@@ -3049,51 +2880,31 @@ function FinalCTA() {
 
               <h2
                 className="xpnd-h2"
-                style={{
-                  marginTop: 20,
-                  maxWidth: "18ch",
-                }}
+                style={{ marginTop: 20, maxWidth: "18ch" }}
               >
-                Take control of
-                your spending.
+                Take control of your spending.
               </h2>
 
               <p
                 className="xpnd-sub"
-                style={{
-                  margin:
-                    "16px auto 0",
-                  textAlign:
-                    "center",
-                }}
+                style={{ margin: "16px auto 0", textAlign: "center" }}
               >
-                Record expenses naturally,
-                monitor your budget, and
-                understand your spending
-                habits with Xpnd AI.
+                Record expenses naturally, monitor your budget, and understand
+                your spending habits with Xpnd AI.
               </p>
 
               <div className="xpnd-cta-actions">
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() =>
-                    router.push(
-                      "/auth/sign-up"
-                    )
-                  }
+                  onClick={() => router.push("/auth/sign-up")}
                 >
                   Get Started
                 </button>
-
                 <button
                   type="button"
                   className="btn btn-ghost"
-                  onClick={() =>
-                    router.push(
-                      "/auth/login"
-                    )
-                  }
+                  onClick={() => router.push("/auth/login")}
                 >
                   Log In
                 </button>
@@ -3114,12 +2925,8 @@ function Footer() {
   return (
     <footer className="xpnd-footer">
       <div className="xpnd-container xpnd-footer-inner">
-        <a
-          className="xpnd-logo"
-          href="#top"
-          aria-label="Xpnd AI home"
-        >
-         <div className="flex justify-center pt-[5%]">
+        <a className="xpnd-logo" href="#top" aria-label="Xpnd AI home">
+          <div className="flex justify-center pt-[5%]">
             <img
               src="/xpnd-ai-logo-dark.svg"
               alt="Xpnd AI"
@@ -3128,34 +2935,15 @@ function Footer() {
           </div>
         </a>
 
-        <nav
-          className="xpnd-footer-links"
-          aria-label="Footer"
-        >
-          <a href="#features">
-            Features
-          </a>
-
-          <a href="#how">
-            How it works
-          </a>
-
-          <a href="#intelligence">
-            Dashboard
-          </a>
-
-          <a href="#top">
-            Privacy
-          </a>
-
-          <a href="#top">
-            Terms
-          </a>
+        <nav className="xpnd-footer-links" aria-label="Footer">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#intelligence">Dashboard</a>
+          <a href="#top">Privacy</a>
+          <a href="#top">Terms</a>
         </nav>
 
-        <span className="xpnd-copy">
-          © 2026 Xpnd AI. All rights reserved.
-        </span>
+        <span className="xpnd-copy">© 2026 Xpnd AI. All rights reserved.</span>
       </div>
     </footer>
   );
@@ -3166,68 +2954,36 @@ function Footer() {
 /* ------------------------------------------------------------------ */
 
 export default function XpndAILanding() {
-  const reduce =
-    !!useReducedMotion();
-
-  const isDesktop =
-    useMediaQuery(
-      "(min-width: 900px)"
-    );
-
-  const isMobile =
-    useMediaQuery(
-      "(max-width: 640px)"
-    );
+  const reduce = !!useReducedMotion();
+  const isDesktop = useMediaQuery("(min-width: 900px)");
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   return (
     <div className="xpnd">
-      <style>
-        {STYLES}
-      </style>
+      <style>{STYLES}</style>
 
       <GradientDefs />
 
-      {/* Ambient backdrop */}
-      <div
-        className="xpnd-aurora-wrap"
-        aria-hidden="true"
-      >
+      <div className="xpnd-aurora-wrap" aria-hidden="true">
         <div className="xpnd-aurora a1" />
         <div className="xpnd-aurora a2" />
         <div className="xpnd-aurora a3" />
       </div>
 
-      <div
-        className="xpnd-grid"
-        aria-hidden="true"
-      />
-
-      <div
-        className="xpnd-noise"
-        aria-hidden="true"
-      />
+      <div className="xpnd-grid" aria-hidden="true" />
+      <div className="xpnd-noise" aria-hidden="true" />
 
       <Nav />
 
       <main className="xpnd-main">
-        <Hero
-          reduce={reduce}
-          isDesktop={isDesktop}
-          isMobile={isMobile}
-        />
-
+        <Hero reduce={reduce} isDesktop={isDesktop} isMobile={isMobile} />
         <Features />
-
         <Ledger />
-
         <div className="xpnd-container">
           <div className="xpnd-rule" />
         </div>
-
         <Steps />
-
         <Stats />
-
         <FinalCTA />
       </main>
 
