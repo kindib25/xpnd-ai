@@ -569,7 +569,17 @@ function TransactionDetailCard({
           }
         }}
       >
-        <AlertDialogContent className="relative w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-[26px] border border-white/[0.14] bg-[#151922]/90 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+        <AlertDialogContent
+          className="
+            fixed left-1/2 top-1/2 z-[100]
+            w-[calc(100%-2rem)] max-w-md
+            -translate-x-1/2 -translate-y-1/2
+            overflow-hidden rounded-[26px]
+            border border-white/[0.14] bg-[#151922]/90 text-white
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-40px_rgba(0,0,0,0.95)]
+            backdrop-blur-2xl
+          "
+        >
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
