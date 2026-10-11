@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import OpenAI from 'openai'
 
-const OLLAMA_URL =
-  process.env.OLLAMA_URL || 'http://localhost:11434'
+const openrouter = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+})
 
-const MODEL = 'gemma3:4b'
+const MODEL =
+  process.env.OPENROUTER_MODEL ??
+  'google/gemma-4-26b-a4b-it:free'
 
 export async function POST(request: NextRequest) {
   try {
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
       : []
 
     /*
-     * Limit the amount of data sent to Gemma
+     * Limit the amount of data sent to the model
      */
 
     const safeExpenses = currentMonthExpenses.slice(0, 100)
@@ -131,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     /*
      * ============================================================
-     * GEMMA PROMPT
+     * AI PROMPT
      * ============================================================
      */
 
@@ -176,14 +181,13 @@ ${JSON.stringify(safeBudgets)}
 
     /*
      * ============================================================
-     * DEBUG: GEMMA INPUT
+     * DEBUG: MODEL INPUT
      * ============================================================
      */
 
-    console.log('\n================ GEMMA INPUT ================')
+    console.log('\n================ AI INPUT ================')
 
     console.log('[Xpnd AI] Model:', MODEL)
-    console.log('[Xpnd AI] Ollama URL:', OLLAMA_URL)
 
     console.log('[Xpnd AI] Current month:', currentMonth)
 
@@ -193,58 +197,41 @@ ${JSON.stringify(safeBudgets)}
     console.log('[Xpnd AI] Budgets sent to model:')
     console.log(JSON.stringify(safeBudgets, null, 2))
 
-    console.log('[Xpnd AI] Full prompt sent to Gemma:')
+    console.log('[Xpnd AI] Full prompt sent to model:')
     console.log(prompt)
 
-    console.log('=============================================\n')
+    console.log('==========================================\n')
 
     /*
      * ============================================================
-     * CALL OLLAMA
+     * CALL OPENROUTER
      * ============================================================
      */
 
-    const response = await fetch(
-      `${OLLAMA_URL}/api/generate`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    let data: OpenAI.Chat.Completions.ChatCompletion
+
+    try {
+      data = await openrouter.chat.completions.create(
+        {
           model: MODEL,
-          prompt,
-          stream: false,
-          options: {
-            temperature: 0.2,
-            top_p: 0.8,
-            top_k: 40,
-            num_predict: 50,
-          },
-        }),
-        signal: AbortSignal.timeout(30000),
-      }
-    )
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.2,
+          top_p: 0.8,
+          max_tokens: 50,
+        },
+        {
+          timeout: 30_000,
+        }
+      )
+    } catch (error) {
+      console.error('[Xpnd AI] OpenRouter error:', error)
 
-    console.log('\n================ GEMMA RESPONSE ================')
-
-    console.log(
-      '[Xpnd AI] HTTP status:',
-      response.status
-    )
-
-    console.log(
-      '[Xpnd AI] Response OK:',
-      response.ok
-    )
-
-    if (!response.ok) {
-      const errorText = await response.text()
-
-      console.error('[Xpnd AI] Ollama error:')
-      console.error(errorText)
-
-      console.log('=================================================\n')
+      console.log('=============================================\n')
 
       return NextResponse.json(
         { error: 'AI service unavailable' },
@@ -252,15 +239,18 @@ ${JSON.stringify(safeBudgets)}
       )
     }
 
-    const data = await response.json()
+    console.log('\n================ AI RESPONSE ================')
 
-    console.log('[Xpnd AI] Complete Ollama response:')
+    console.log('[Xpnd AI] Complete OpenRouter response:')
     console.log(JSON.stringify(data, null, 2))
 
-    console.log('[Xpnd AI] Raw Gemma response:')
-    console.log(data.response)
+    const rawResponse =
+      data.choices?.[0]?.message?.content ?? ''
 
-    console.log('=================================================\n')
+    console.log('[Xpnd AI] Raw AI response:')
+    console.log(rawResponse)
+
+    console.log('=============================================\n')
 
     /*
      * ============================================================
@@ -271,27 +261,10 @@ ${JSON.stringify(safeBudgets)}
     console.log('\n========== AI INSIGHT TOKEN USAGE ==========')
 
     console.log(`Model: ${MODEL}`)
-    console.log(`Input tokens: ${data.prompt_eval_count ?? 'N/A'}`)
-    console.log(`Output tokens: ${data.eval_count ?? 'N/A'}`)
+    console.log(`Input tokens: ${data.usage?.prompt_tokens ?? 'N/A'}`)
+    console.log(`Output tokens: ${data.usage?.completion_tokens ?? 'N/A'}`)
     console.log(
-      `Total tokens: ${data.prompt_eval_count != null && data.eval_count != null
-        ? data.prompt_eval_count + data.eval_count
-        : 'N/A'
-      }`
-    )
-
-    console.log(
-      `Prompt evaluation time: ${data.prompt_eval_duration != null
-        ? `${(data.prompt_eval_duration / 1_000_000).toFixed(0)} ms`
-        : 'N/A'
-      }`
-    )
-
-    console.log(
-      `Generation time: ${data.eval_duration != null
-        ? `${(data.eval_duration / 1_000_000).toFixed(0)} ms`
-        : 'N/A'
-      }`
+      `Total tokens: ${data.usage?.total_tokens ?? 'N/A'}`
     )
 
     console.log('============================================\n')
@@ -303,8 +276,8 @@ ${JSON.stringify(safeBudgets)}
      */
 
     let insight =
-      typeof data.response === 'string'
-        ? data.response.trim()
+      typeof rawResponse === 'string'
+        ? rawResponse.trim()
         : ''
 
     if (!insight) {
