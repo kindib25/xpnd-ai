@@ -264,6 +264,40 @@ ${JSON.stringify(safeBudgets)}
 
     /*
      * ============================================================
+     * AI INSIGHT TOKEN USAGE CONSOLE LOG
+     * ============================================================
+     */
+
+    console.log('\n========== AI INSIGHT TOKEN USAGE ==========')
+
+    console.log(`Model: ${MODEL}`)
+    console.log(`Input tokens: ${data.prompt_eval_count ?? 'N/A'}`)
+    console.log(`Output tokens: ${data.eval_count ?? 'N/A'}`)
+    console.log(
+      `Total tokens: ${data.prompt_eval_count != null && data.eval_count != null
+        ? data.prompt_eval_count + data.eval_count
+        : 'N/A'
+      }`
+    )
+
+    console.log(
+      `Prompt evaluation time: ${data.prompt_eval_duration != null
+        ? `${(data.prompt_eval_duration / 1_000_000).toFixed(0)} ms`
+        : 'N/A'
+      }`
+    )
+
+    console.log(
+      `Generation time: ${data.eval_duration != null
+        ? `${(data.eval_duration / 1_000_000).toFixed(0)} ms`
+        : 'N/A'
+      }`
+    )
+
+    console.log('============================================\n')
+
+    /*
+     * ============================================================
      * PROCESS AI RESPONSE
      * ============================================================
      */
