@@ -470,9 +470,6 @@ const STYLES = `
 
 /* ================================================================== */
 /* NAVIGATION — floating pill                                          */
-/*                                                                     */
-/*   MOBILE:   [logo] ................................ [☰]             */
-/*   DESKTOP:  [logo] [ links ] [Log In  Sign Up]                      */
 /* ================================================================== */
 
 .xpnd-nav {
@@ -491,7 +488,6 @@ const STYLES = `
   padding-top: max(10px, env(safe-area-inset-top));
 }
 
-/* The pill itself */
 .xpnd-nav-pill {
   pointer-events: auto;
   max-width: 1140px;
@@ -544,8 +540,6 @@ const STYLES = `
     0 4px 12px -4px rgba(0, 0, 0, 0.55);
 }
 
-/* --- Brand (logo image) — darkened glass chip -------------------- */
-
 .xpnd-nav-brand {
   position: relative;
   display: inline-flex;
@@ -558,7 +552,6 @@ const STYLES = `
   flex: none;
   min-width: 0;
 
-  /* darkened glass shell — solid #040613 base with subtle glass light */
   background:
   radial-gradient(120% 130% at 0% 0%, rgba(245, 247, 255, 0.12), transparent 55%),
   linear-gradient(
@@ -581,7 +574,6 @@ const STYLES = `
     transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* top bevel highlight line */
 .xpnd-nav-brand::after {
   content: "";
   position: absolute;
@@ -596,7 +588,6 @@ const STYLES = `
 
 .xpnd-nav-brand:hover { opacity: 1; }
 
-/* Logo image — the wordmark itself */
 .xpnd-nav-logo {
   display: block;
   height: 34px;
@@ -609,8 +600,6 @@ const STYLES = `
   position: relative;
   z-index: 1;
 }
-
-/* --- Center links ------------------------------------------------- */
 
 .xpnd-nav-links {
   display: none;
@@ -633,8 +622,6 @@ const STYLES = `
     background 0.25s ease;
   white-space: nowrap;
 }
-
-/* --- CTA cluster (desktop) --------------------------------------- */
 
 .xpnd-nav-cta {
   display: none;
@@ -698,8 +685,6 @@ const STYLES = `
   -webkit-tap-highlight-color: transparent;
 }
 
-/* --- Hamburger toggle (mobile only) ------------------------------ */
-
 .xpnd-nav-toggle {
   display: inline-flex;
   align-items: center;
@@ -755,7 +740,6 @@ const STYLES = `
 .xpnd-nav-toggle-bars span:nth-child(2) { top: 5.25px; }
 .xpnd-nav-toggle-bars span:nth-child(3) { top: 10.5px; }
 
-/* Bars morph to an X when open */
 .xpnd-nav-toggle[aria-expanded="true"] .xpnd-nav-toggle-bars span:nth-child(1) {
   top: 5.25px;
   transform: rotate(45deg);
@@ -769,8 +753,6 @@ const STYLES = `
   top: 5.25px;
   transform: rotate(-45deg);
 }
-
-/* --- Mobile drawer (expands inside the pill) --------------------- */
 
 .xpnd-nav-sheet {
   overflow: hidden;
@@ -866,7 +848,7 @@ const STYLES = `
 }
 
 /* ================================================================== */
-/* Hero                                                                */
+/* Hero — simplified (no glass panel)                                  */
 /* ================================================================== */
 
 .xpnd-hero {
@@ -907,65 +889,8 @@ const STYLES = `
 .xpnd-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 640px;
+  max-width: 620px;
   margin: 0 auto;
-}
-
-.xpnd-hero-panel {
-  position: relative;
-  padding: 26px 22px 28px;
-  border-radius: 24px;
-  isolation: isolate;
-
-  background:
-    radial-gradient(130% 100% at 100% 0%, rgba(245, 247, 255, 0.11), transparent 52%),
-    radial-gradient(110% 90% at 0% 100%, rgba(124, 92, 255, 0.10), transparent 58%),
-    radial-gradient(100% 60% at 50% 0%, rgba(79, 125, 255, 0.07), transparent 62%),
-    linear-gradient(
-      180deg,
-      rgba(245, 247, 255, 0.075),
-      rgba(245, 247, 255, 0.022)
-    );
-  border: 1px solid rgba(245, 247, 255, 0.14);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-    inset 0 0 90px rgba(124, 92, 255, 0.055),
-    0 30px 90px -40px rgba(0, 0, 0, 0.9),
-    0 8px 30px -14px rgba(0, 0, 0, 0.55);
-}
-
-.xpnd-hero-panel::before {
-  content: "";
-  position: absolute;
-  inset: -50px;
-  border-radius: 60px;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(124, 92, 255, 0.20), transparent 60%),
-    radial-gradient(ellipse at 72% 82%, rgba(79, 125, 255, 0.16), transparent 62%);
-  filter: blur(50px);
-  z-index: -1;
-}
-
-.xpnd-hero-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, transparent, rgba(245, 247, 255, 0.55), transparent)
-      top center / 60% 1px no-repeat,
-    radial-gradient(
-      ellipse 55% 35% at 22% 0%,
-      rgba(255, 255, 255, 0.09),
-      transparent 70%
-    ),
-    linear-gradient(180deg, rgba(245, 247, 255, 0.10), transparent 38%);
-  opacity: 0.95;
 }
 
 .xpnd-hero-actions {
@@ -982,37 +907,26 @@ const STYLES = `
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  margin-top: 26px;
+  gap: 8px 16px;
+  margin-top: 28px;
+  font-size: 12px;
+  color: rgba(245, 247, 255, 0.42);
+  letter-spacing: 0.005em;
 }
 
 .xpnd-hero-meta span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: 0.005em;
-  color: rgba(245, 247, 255, 0.72);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(245, 247, 255, 0.06),
-      rgba(245, 247, 255, 0.018)
-    );
-  border: 1px solid rgba(245, 247, 255, 0.10);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    0 4px 14px -10px rgba(0, 0, 0, 0.6);
-  white-space: nowrap;
 }
 
-.xpnd-hero-meta i { display: none; }
+.xpnd-hero-meta i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(245, 247, 255, 0.28);
+  display: inline-block;
+}
 
 /* ================================================================== */
 /* Section head                                                        */
@@ -1543,24 +1457,6 @@ const STYLES = `
 
   .glass { border-radius: 22px; }
 
-  .xpnd-hero-content { max-width: 700px; }
-
-  .xpnd-hero-panel {
-    padding: 36px 32px 38px;
-    border-radius: 28px;
-  }
-
-  .xpnd-hero-meta {
-    gap: 10px;
-    margin-top: 30px;
-  }
-
-  .xpnd-hero-meta span {
-    height: 30px;
-    padding: 0 14px;
-    font-size: 12px;
-  }
-
   .xpnd-ledger { border-radius: 22px; }
 
   .xpnd-sechead { margin-bottom: clamp(44px, 6vw, 72px); }
@@ -1670,17 +1566,21 @@ const STYLES = `
   .xpnd-nav-login { padding: 0 22px; }
   .xpnd-nav-signup { padding: 0 24px; }
 
-   .xpnd-hero {
-    text-align: center;
+  /* Hero — desktop: left aligned, no panel */
+  .xpnd-hero {
+    text-align: left;
     padding: 150px 0 110px;
   }
 
-  .xpnd-hero-canvas { opacity: 0.75; }
+  .xpnd-hero-canvas { opacity: 1; }
 
-  /* Symmetric scrim so the centered card sits over an even vignette */
   .xpnd-hero-scrim {
     background:
-      radial-gradient(ellipse 60% 55% at 50% 45%, rgba(8, 10, 24, 0.88), transparent 72%),
+      radial-gradient(
+        ellipse 70% 55% at 22% 45%,
+        rgba(8, 10, 24, 0.88),
+        transparent 72%
+      ),
       linear-gradient(
         180deg,
         rgba(8, 10, 24, 0.55) 0%,
@@ -1690,38 +1590,22 @@ const STYLES = `
       );
   }
 
-  /* Card container stays centered and horizontally bounded */
   .xpnd-hero-content {
-    max-width: 1000px;
-    margin: 0 auto;
+    max-width: 660px;
+    margin: 0;
   }
 
-  .xpnd-hero-panel {
-    padding: 44px 44px 46px;
-    border-radius: 32px;
-    /* Center the inline-block content inside the panel */
-    text-align: center;
-  }
-
-  /* Inner copy centers itself, capped so lines don't stretch edge to edge */
-  .xpnd-hero-panel .xpnd-body {
-    max-width: 52ch;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-  }
-
-  /* Buttons and meta pills align as a centered group */
   .xpnd-hero-actions {
-    justify-content: center;
+    justify-content: flex-start;
     gap: 12px;
     margin-top: 36px;
   }
 
   .xpnd-hero-meta {
-    justify-content: center;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: 10px 22px;
     margin-top: 34px;
+    font-size: 12.5px;
   }
 
   .xpnd-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2278,7 +2162,6 @@ function Nav() {
     setScrolled(v > 22);
   });
 
-  /* Close the drawer on Escape */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -2292,7 +2175,6 @@ function Nav() {
   return (
     <header className="xpnd-nav" data-scrolled={scrolled}>
       <nav className="xpnd-nav-pill" aria-label="Primary">
-        {/* Brand — logo image inside darkened glass chip */}
         <a
           className="xpnd-nav-brand"
           href="#top"
@@ -2306,7 +2188,6 @@ function Nav() {
           />
         </a>
 
-        {/* Center links — desktop only */}
         <div className="xpnd-nav-links">
           {NAV_LINKS.map((l) => (
             <a key={l.href} href={l.href}>
@@ -2315,7 +2196,6 @@ function Nav() {
           ))}
         </div>
 
-        {/* Right side — CTAs on desktop, hamburger on mobile */}
         <div className="xpnd-nav-cta">
           <button
             type="button"
@@ -2349,7 +2229,6 @@ function Nav() {
         </button>
       </nav>
 
-      {/* Mobile drawer — expands inside the floating pill area */}
       <div
         id="xpnd-mobile-sheet"
         className="xpnd-nav-sheet"
@@ -2395,7 +2274,7 @@ function Nav() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Hero                                                                */
+/* Hero — simplified (no glass panel)                                  */
 /* ------------------------------------------------------------------ */
 
 function Hero({
@@ -2432,52 +2311,64 @@ function Hero({
 
       <div className="xpnd-container">
         <motion.div className="xpnd-hero-content" style={{ y, opacity }}>
-          <div className="xpnd-hero-panel">
-            <Reveal y={18}>
-              <span className="xpnd-eyebrow">
-                <span className="xpnd-dot" />
-                AI-powered expense tracking
-              </span>
-            </Reveal>
+          <Reveal y={18}>
+            <span className="xpnd-eyebrow">
+              <span className="xpnd-dot" />
+              AI-powered expense tracking
+            </span>
+          </Reveal>
 
-            <Reveal delay={0.08} y={30}>
-              <h1 className="xpnd-h1" style={{ marginTop: 22 }}>
-                Track spending
-                <br />
-                <span className="grad-text">without the hassle.</span>
-              </h1>
-            </Reveal>
+          <Reveal delay={0.08} y={30}>
+            <h1 className="xpnd-h1" style={{ marginTop: 22 }}>
+              Track spending
+              <br />
+              <span className="grad-text">without the hassle.</span>
+            </h1>
+          </Reveal>
 
-            <Reveal delay={0.16} y={26}>
-              <p
-                className="xpnd-body"
-                style={{ marginTop: 20, marginInline: "auto" }}
+          <Reveal delay={0.16} y={26}>
+            <p
+              className="xpnd-body"
+              style={{ marginTop: 20, marginInline: "auto" }}
+            >
+              Xpnd AI makes expense tracking simple. Enter expenses naturally,
+              and the system automatically identifies important expense
+              details and categories.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.24} y={22}>
+            <div className="xpnd-hero-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => router.push("/auth/sign-up")}
               >
-                Xpnd AI makes expense tracking simple. Enter expenses naturally,
-                and the system automatically identifies important expense
-                details and categories.
-              </p>
-            </Reveal>
+                Get Started
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => router.push("/auth/login")}
+              >
+                Log In
+              </button>
+            </div>
+          </Reveal>
 
-            <Reveal delay={0.24} y={22}>
-              <div className="xpnd-hero-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => router.push("/auth/sign-up")}
-                >
-                  Get Started
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => router.push("/auth/login")}
-                >
-                  Log In
-                </button>
-              </div>
-            </Reveal>
-          </div>
+          <Reveal delay={0.32} y={18}>
+            <div className="xpnd-hero-meta">
+              <span>Natural-language input</span>
+              <span>
+                <i aria-hidden="true" />
+                Automated categorization
+              </span>
+              <span>
+                <i aria-hidden="true" />
+                Budget monitoring
+              </span>
+            </div>
+          </Reveal>
         </motion.div>
       </div>
     </section>
