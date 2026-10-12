@@ -113,6 +113,7 @@ const getCategoryColor = (category: string) => {
   return CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
 }
 
+
 // ===========================================================================
 // SWIPE-TO-CLOSE SHEET CONTENT
 // Wraps SheetContent with a swipe-down dismissal gesture.
