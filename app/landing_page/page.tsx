@@ -546,53 +546,24 @@ const STYLES = `
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 50px;
-  padding: 0 18px;
+  height: 56px;
+  padding: 0 12px;
   border-radius: 999px;
   flex: none;
   min-width: 0;
-
-  background:
-  radial-gradient(120% 130% at 0% 0%, rgba(245, 247, 255, 0.12), transparent 55%),
-  linear-gradient(
-    180deg,
-    rgba(18, 21, 40, 0.90),
-    rgba(18, 21, 40, 0.76)
-  );
-  border: 1px solid rgba(245, 247, 255, 0.14);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-    0 10px 24px -16px rgba(0, 0, 0, 0.95);
-
-  transition:
-    background 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease,
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.xpnd-nav-brand::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, transparent, rgba(245, 247, 255, 0.38), transparent)
-      top center / 58% 1px no-repeat;
-  opacity: 0.75;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .xpnd-nav-brand:hover { opacity: 1; }
 
 .xpnd-nav-logo {
   display: block;
-  height: 34px;
+  height: 44px;
   width: auto;
-  max-width: 175px;
+  max-width: 220px;
   object-fit: contain;
   flex: none;
   user-select: none;
@@ -1361,14 +1332,14 @@ const STYLES = `
     gap: 14px;
   }
 
-  .xpnd-nav-brand {
-    height: 58px;
-    padding: 0 20px;
+   .xpnd-nav-brand {
+    height: 66px;
+    padding: 0 12px;
   }
 
   .xpnd-nav-logo {
-    height: 40px;
-    max-width: 200px;
+    height: 52px;
+    max-width: 250px;
   }
 
   .xpnd-nav-toggle {
@@ -1542,13 +1513,13 @@ const STYLES = `
   }
 
   .xpnd-nav-brand {
-    height: 62px;
-    padding: 0 22px;
+    height: 74px;
+    padding: 0 14px;
   }
 
   .xpnd-nav-logo {
-    height: 44px;
-    max-width: 220px;
+    height: 60px;
+    max-width: 290px;
   }
 
   .xpnd-nav-links { display: flex; gap: 14px; }
@@ -1628,20 +1599,6 @@ const STYLES = `
 /* ================================================================== */
 
 @media (hover: hover) and (pointer: fine) {
-  .xpnd-nav-brand:hover {
-    background:
-      radial-gradient(120% 130% at 0% 0%, rgba(245, 247, 255, 0.11), transparent 55%),
-      linear-gradient(
-        180deg,
-        rgba(4, 6, 19, 0.98),
-        rgba(4, 6, 19, 0.88)
-      );
-    border-color: rgba(245, 247, 255, 0.22);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-      0 14px 30px -16px rgba(0, 0, 0, 1);
-  }
 
   .xpnd-nav-toggle:hover {
     background:
