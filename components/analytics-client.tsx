@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -54,8 +54,333 @@ const HAIRLINE =
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13161a]'
 
+// ---------------------------------------------------------------------------
+// Pie callout labels — leader lines from each slice out to a readable label.
+// ---------------------------------------------------------------------------
+const RADIAN = Math.PI / 180
+
+/** True below `breakpoint` px. Used to slim the callouts down on phones. */
+function useIsNarrow(breakpoint = 640) {
+  const [isNarrow, setIsNarrow] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
+    const sync = () => setIsNarrow(mq.matches)
+
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [breakpoint])
+
+  return isNarrow
+}
+
+/**
+ * Callback ref that reports the element's pixel size and keeps it in sync.
+ * A callback ref (rather than useRef + useEffect) means it re-attaches every
+ * time the chart mounts — e.g. after switching tabs away and back.
+ */
+function useMeasuredSize() {
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  const observer = useRef<ResizeObserver | null>(null)
+
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    observer.current?.disconnect()
+    if (!node) return
+
+    const measure = () => {
+      const rect = node.getBoundingClientRect()
+      setSize((prev) =>
+        prev.width === rect.width && prev.height === rect.height
+          ? prev
+          : { width: rect.width, height: rect.height },
+      )
+    }
+
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(node)
+    observer.current = ro
+  }, [])
+
+  return [ref, size] as const
+}
+
+/** Trim a label to fit the callout column without wrapping. */
+function truncateLabel(value: string, max: number) {
+  return value.length > max ? `${value.slice(0, max - 1).trimEnd()}…` : value
+}
+
+interface PieLabelNode {
+  index: number
+  name: string
+  value: number
+  pct: number
+  color: string
+  side: -1 | 1
+  /** Vertical anchor the label settles on, after de-overlap. */
+  ey: number
+  /** Fixed x of the label column on this side of the pie. */
+  ex: number
+}
+
+interface PieLayout {
+  nodes: PieLabelNode[]
+  cx: number
+  cy: number
+  outerRadius: number
+  innerRadius: number
+  elbowGutter: number
+}
+
+const EMPTY_LAYOUT: PieLayout = {
+  nodes: [],
+  cx: 0,
+  cy: 0,
+  outerRadius: 0,
+  innerRadius: 0,
+  elbowGutter: 12,
+}
+
+/**
+ * Two-pass layout.
+ *
+ * Pass 1 places every label at the y its slice naturally points to.
+ * Pass 2 sweeps each side top→bottom and pushes rows apart so they can never
+ * collide — the same technique a chart library uses for axis ticks.
+ *
+ * The result is a set of label anchors that always show the category name,
+ * even when the chart is squeezed into a phone.
+ */
+function computePieLayout(
+  data: { name: string; value: number }[],
+  width: number,
+  height: number,
+  isNarrow: boolean,
+): PieLayout {
+  if (!data.length || width <= 0 || height <= 0) return EMPTY_LAYOUT
+
+  const cx = width / 2
+  const cy = height / 2
+  const min = Math.min(width, height)
+
+  // On phones the ring shrinks further so the two label columns have room.
+  const outerRadius = Math.max(24, Math.round(min * (isNarrow ? 0.2 : 0.3)))
+  const innerRadius = Math.round(outerRadius * 0.64)
+
+  // Two stacked text rows on mobile, so rows need more breathing space.
+  const rowHeight = isNarrow ? 30 : 34
+  const elbowGutter = isNarrow ? 8 : 14
+  const edgePad = isNarrow ? 6 : 10
+  // Horizontal room reserved for the label text on each side.
+  const textReserve = isNarrow ? 78 : 148
+
+  const tailLimit = cx - 8 - textReserve
+  const tailCap = outerRadius + (isNarrow ? 56 : 150)
+  const tail = Math.max(
+    outerRadius + elbowGutter + 2,
+    Math.min(tailLimit, tailCap),
+  )
+
+  const total = data.reduce((sum, d) => sum + d.value, 0) || 1
+
+  let cumulative = 0
+  const nodes: PieLabelNode[] = data.map((entry, index) => {
+    const fraction = entry.value / total
+    const midFraction = cumulative + fraction / 2
+    cumulative += fraction
+
+    // Recharts measures angles counter-clockwise; negate for screen coords.
+    const angle = -RADIAN * (midFraction * 360)
+    const sin = Math.sin(angle)
+    const side: -1 | 1 = Math.cos(angle) >= 0 ? 1 : -1
+
+    return {
+      index,
+      name: entry.name,
+      value: entry.value,
+      pct: Math.round(fraction * 100),
+      color: COLORS[index % COLORS.length],
+      side,
+      naturalY: cy + (outerRadius + elbowGutter) * sin,
+      ey: 0,
+      ex: cx + side * tail,
+    } as PieLabelNode & { naturalY: number }
+  })
+
+  // --- Pass 2: separate rows on each side --------------------------------
+  const top = edgePad + rowHeight / 2
+  const bottom = Math.max(top, height - edgePad - rowHeight / 2)
+
+  for (const side of [-1, 1] as const) {
+    const group = nodes
+      .filter((node) => node.side === side)
+      .sort(
+        (a, b) =>
+          (a as PieLabelNode & { naturalY: number }).naturalY -
+          (b as PieLabelNode & { naturalY: number }).naturalY,
+      )
+
+    const count = group.length
+    if (!count) continue
+
+    const ys = group.map((node) => {
+      const natural = (node as PieLabelNode & { naturalY: number }).naturalY
+      return Math.min(Math.max(natural, top), bottom)
+    })
+
+    // Push down so nothing overlaps…
+    for (let i = 1; i < count; i++) {
+      ys[i] = Math.max(ys[i], ys[i - 1] + rowHeight)
+    }
+
+    // …then, if we ran off the bottom, shove the whole stack back up.
+    if (ys[count - 1] > bottom) {
+      ys[count - 1] = bottom
+      for (let i = count - 2; i >= 0; i--) {
+        ys[i] = Math.min(ys[i], ys[i + 1] - rowHeight)
+      }
+    }
+
+    // Final guard: if the stack is taller than the chart, pin it to the top.
+    if (ys[0] < top) {
+      ys[0] = top
+      for (let i = 1; i < count; i++) {
+        ys[i] = Math.max(ys[i], ys[i - 1] + rowHeight)
+      }
+    }
+
+    group.forEach((node, i) => {
+      node.ey = ys[i]
+    })
+  }
+
+  return { nodes, cx, cy, outerRadius, innerRadius, elbowGutter }
+}
+
+/**
+ * Renders a leader line + label anchored to a pie sector.
+ *
+ * The slice edge and elbow radius come from Recharts' live sector geometry so
+ * the line always touches the arc; the label column and vertical position come
+ * from the pre-computed layout, which guarantees the text stays legible and
+ * never overlaps a neighbour.
+ */
+function renderPieLabel(props: any, layout: PieLayout, isNarrow: boolean) {
+  const { cx, cy, midAngle, outerRadius, index = 0 } = props
+  const node = layout.nodes[index]
+
+  if (!node || !Number.isFinite(midAngle) || !outerRadius) return <g />
+
+  const angle = -RADIAN * midAngle
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+
+  const radius = Number(outerRadius)
+  const elbowR = radius + layout.elbowGutter
+
+  // Anchor on the slice edge, elbow just outside the ring, then jog to the
+  // label's own row before running out horizontally.
+  const sx = cx + (radius + 2) * cos
+  const sy = cy + (radius + 2) * sin
+  const mx = cx + elbowR * cos
+  const my = cy + elbowR * sin
+
+  const ex = node.ex
+  const ey = node.ey
+  const direction = node.side
+  const textX = ex + direction * 8
+  const textAnchor = direction >= 0 ? 'start' : 'end'
+
+  const name = isNarrow ? truncateLabel(node.name, 12) : node.name
+
+  // A dark halo keeps the type readable wherever it crosses the artwork.
+  const halo = {
+    paintOrder: 'stroke' as const,
+    stroke: 'rgba(15,17,21,0.6)',
+    strokeWidth: 3,
+    strokeLinejoin: 'round' as const,
+  }
+
+  return (
+    <g key={`pie-label-${index}`} style={{ pointerEvents: 'none' }}>
+      <polyline
+        points={`${sx},${sy} ${mx},${my} ${mx},${ey} ${ex},${ey}`}
+        stroke={node.color}
+        strokeWidth={1.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        opacity={0.7}
+      />
+
+      <circle cx={ex} cy={ey} r={2.5} fill={node.color} opacity={0.9} />
+
+      {isNarrow ? (
+        <>
+          {/* Category name leads — the percentage is the supporting detail. */}
+          <text
+            x={textX}
+            y={ey - 6}
+            textAnchor={textAnchor}
+            dominantBaseline="central"
+            fill="rgba(255,255,255,0.96)"
+            fontSize={11}
+            fontWeight={600}
+            style={halo}
+          >
+            {name}
+          </text>
+          <text
+            x={textX}
+            y={ey + 8}
+            textAnchor={textAnchor}
+            dominantBaseline="central"
+            fill={node.color}
+            fontSize={10.5}
+            fontWeight={700}
+            className="tabular-nums"
+            style={{ ...halo, strokeWidth: 2.5 }}
+          >
+            {`${node.pct}%`}
+          </text>
+        </>
+      ) : (
+        <>
+          <text
+            x={textX}
+            y={ey - 1}
+            textAnchor={textAnchor}
+            dominantBaseline="central"
+            fill="rgba(255,255,255,0.96)"
+            fontSize={12}
+            fontWeight={600}
+            style={halo}
+          >
+            {name}
+          </text>
+          <text
+            x={textX}
+            y={ey + 14}
+            textAnchor={textAnchor}
+            dominantBaseline="central"
+            fill="rgba(255,255,255,0.62)"
+            fontSize={11}
+            className="tabular-nums"
+            style={{ ...halo, strokeWidth: 2.5 }}
+          >
+            {`₱${node.value.toFixed(2)} · ${node.pct}%`}
+          </text>
+        </>
+      )}
+    </g>
+  )
+}
+
 export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'categories'>('overview')
+  const isNarrow = useIsNarrow()
+  const [chartRef, chartSize] = useMeasuredSize()
 
   // Calculate category breakdown
   const categoryData = useMemo(() => {
@@ -81,6 +406,12 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
 
   // Get top categories
   const topCategories = categoryData.slice(0, 5)
+
+  // Callout geometry — recomputed whenever the chart box or breakpoint changes
+  const pieLayout = useMemo(
+    () => computePieLayout(categoryData, chartSize.width, chartSize.height, isNarrow),
+    [categoryData, chartSize.width, chartSize.height, isNarrow],
+  )
 
   // Calculate daily spending for trends (sorted chronologically for the line chart)
   const trendData = useMemo(() => {
@@ -204,17 +535,21 @@ export function AnalyticsClient({ expenses }: AnalyticsClientProps) {
                     No spending data available
                   </div>
                 ) : (
-                  <div className="h-64 md:h-80">
+                  <div ref={chartRef} className="h-80 w-full sm:h-80 md:h-96">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <PieChart margin={{ top: 12, right: 12, bottom: 12, left: 12 }}>
                         <Pie
                           data={categoryData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
+                          innerRadius={pieLayout.innerRadius}
+                          outerRadius={pieLayout.outerRadius}
                           paddingAngle={2}
                           dataKey="value"
+                          labelLine={false}
+                          label={(props: any) =>
+                            renderPieLabel(props, pieLayout, isNarrow)
+                          }
                         >
                           {categoryData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
