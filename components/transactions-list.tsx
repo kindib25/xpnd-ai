@@ -14,7 +14,12 @@ import {
   CalendarDays,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useState, useEffect, useRef } from 'react'
+import {
+  useState,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import {
@@ -106,6 +111,146 @@ const CATEGORIES = [
 
 const getCategoryColor = (category: string) => {
   return CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
+}
+
+// ===========================================================================
+// SWIPE-TO-CLOSE SHEET CONTENT
+// Wraps SheetContent with a swipe-down dismissal gesture.
+// - Only activates when the internal scroller is at scrollTop === 0
+// - Ignores multi-touch
+// - Uses distance + velocity thresholds (flick or drag)
+// - Desktop is unaffected (touch events won't fire)
+// ===========================================================================
+
+function SwipeableSheetContent({
+  onClose,
+  open,
+  children,
+  style,
+  ...props
+}: React.ComponentProps<typeof SheetContent> & {
+  onClose: () => void
+  open: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [offsetY, setOffsetY] = useState(0)
+
+  const startY = useRef(0)
+  const lastY = useRef(0)
+  const lastT = useRef(0)
+  const velocity = useRef(0)
+  const dragging = useRef(false)
+  const offsetRef = useRef(0)
+  const onCloseRef = useRef(onClose)
+
+  // Keep latest onClose without re-binding listeners
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  // Reset drag offset before paint whenever the sheet (re)opens
+  useLayoutEffect(() => {
+    if (open) {
+      offsetRef.current = 0
+      setOffsetY(0)
+    }
+  }, [open])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const getScroller = () =>
+      el.querySelector<HTMLElement>('[data-sheet-scrollable]')
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+
+      // Don't hijack the gesture if the inner scroller isn't at the top
+      const scroller = getScroller()
+      if (scroller && scroller.scrollTop > 0) return
+
+      startY.current = e.touches[0].clientY
+      lastY.current = startY.current
+      lastT.current = performance.now()
+      velocity.current = 0
+      dragging.current = true
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragging.current) return
+
+      const y = e.touches[0].clientY
+      const now = performance.now()
+      const dt = now - lastT.current
+      if (dt > 0) {
+        velocity.current = (y - lastY.current) / dt // px/ms
+      }
+      lastY.current = y
+      lastT.current = now
+
+      // Only allow downward drag
+      const delta = Math.max(0, y - startY.current)
+      offsetRef.current = delta
+      setOffsetY(delta)
+
+      if (delta > 0 && e.cancelable) e.preventDefault()
+    }
+
+    const onTouchEnd = () => {
+      if (!dragging.current) return
+      dragging.current = false
+
+      const shouldClose =
+        offsetRef.current > 110 || velocity.current > 0.55
+
+      if (shouldClose) {
+        onCloseRef.current()
+      } else {
+        // Snap back
+        offsetRef.current = 0
+        setOffsetY(0)
+      }
+    }
+
+    el.addEventListener('touchstart', onTouchStart, {
+      passive: true,
+    })
+    el.addEventListener('touchmove', onTouchMove, {
+      passive: false,
+    })
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('touchcancel', onTouchEnd)
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [])
+
+  return (
+    <SheetContent
+      ref={ref}
+      style={
+        offsetY > 0
+          ? {
+              transform: `translateY(${offsetY}px)`,
+              transition: 'none',
+              ...style,
+            }
+          : {
+              transition:
+                'transform 320ms cubic-bezier(0.16,1,0.3,1)',
+              ...style,
+            }
+      }
+      {...props}
+    >
+      {children}
+    </SheetContent>
+  )
 }
 
 // ===========================================================================
@@ -923,6 +1068,8 @@ export function TransactionsList({
         {/* ============================================
             DATE TRANSACTIONS SHEET
             Uses the same content + UI as the details Dialog
+            — full viewport width on desktop, centered content column
+            — Swipe-down to close on mobile
         ============================================ */}
 
         <Sheet
@@ -934,10 +1081,15 @@ export function TransactionsList({
             }
           }}
         >
-          <SheetContent
+          <SwipeableSheetContent
+            open={!!selectedDate}
+            onClose={() => {
+              setSelectedDate(null)
+              setDateExpenses([])
+            }}
             side="bottom"
             className="
-              mx-auto w-full max-w-md
+              w-full mx-auto max-w-2xl
               rounded-t-[26px] rounded-b-none
               border-x border-t border-b-0 border-white/[0.14]
               bg-[#151922]/90
@@ -954,79 +1106,89 @@ export function TransactionsList({
               <div className="h-1.5 w-10 rounded-full bg-white/25" />
             </div>
 
-            {/* Header */}
+            {/* Header — constrained to same column as content */}
             <SheetHeader className="relative border-b border-white/[0.06] px-4 py-4 text-left">
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
               />
 
-              <SheetTitle className="text-base font-semibold text-white">
-                {selectedDate
-                  ? new Date(
-                      selectedDate + 'T00:00:00'
-                    ).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
-                  : ''}
-              </SheetTitle>
+              <div className="mx-auto w-full max-w-3xl">
+                <SheetTitle className="text-base font-semibold text-white">
+                  {selectedDate
+                    ? new Date(
+                        selectedDate + 'T00:00:00'
+                      ).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : ''}
+                </SheetTitle>
 
-              <SheetDescription className="text-xs text-white/55">
-                {dateExpenses.length}{' '}
-                {dateExpenses.length === 1
-                  ? 'transaction'
-                  : 'transactions'}{' '}
-                · ₱
-                {dateExpenses
-                  .reduce(
-                    (sum, e) =>
-                      sum + Number(e.amount || 0),
-                    0
-                  )
-                  .toFixed(2)}
-              </SheetDescription>
+                <SheetDescription className="text-xs text-white/55">
+                  {dateExpenses.length}{' '}
+                  {dateExpenses.length === 1
+                    ? 'transaction'
+                    : 'transactions'}{' '}
+                  · ₱
+                  {dateExpenses
+                    .reduce(
+                      (sum, e) =>
+                        sum + Number(e.amount || 0),
+                      0
+                    )
+                    .toFixed(2)}
+                </SheetDescription>
+              </div>
             </SheetHeader>
 
             {/* Transactions — each one rendered with the full
-                details UI from the Dialog */}
-            <div className="max-h-[75vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-              {dateExpenses.map((expense, index) => (
-                <div
-                  key={expense.id}
-                  className={
-                    index > 0
-                      ? 'border-t border-white/[0.10]'
-                      : ''
-                  }
-                >
-                  <TransactionDetailCard
-                    expense={expense}
-                    onUpdated={(updated) => {
-                      setDateExpenses((prev) =>
-                        prev.map((e) =>
-                          e.id === updated.id ? updated : e
+                details UI from the Dialog. Centered column so rows
+                stay readable on wide desktop screens. */}
+            <div
+              data-sheet-scrollable
+              className="max-h-[75vh] overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]"
+            >
+              <div className="mx-auto w-full max-w-3xl">
+                {dateExpenses.map((expense, index) => (
+                  <div
+                    key={expense.id}
+                    className={
+                      index > 0
+                        ? 'border-t border-white/[0.10]'
+                        : ''
+                    }
+                  >
+                    <TransactionDetailCard
+                      expense={expense}
+                      onUpdated={(updated) => {
+                        setDateExpenses((prev) =>
+                          prev.map((e) =>
+                            e.id === updated.id ? updated : e
+                          )
                         )
-                      )
-                    }}
-                    onDeleted={(id) => {
-                      setDateExpenses((prev) =>
-                        prev.filter((e) => e.id !== id)
-                      )
-                    }}
-                  />
-                </div>
-              ))}
+                      }}
+                      onDeleted={(id) => {
+                        setDateExpenses((prev) =>
+                          prev.filter((e) => e.id !== id)
+                        )
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </SheetContent>
+          </SwipeableSheetContent>
         </Sheet>
 
         {/* ============================================
             SEARCH RESULT SHEET
             Opens when a transaction is picked from the search dropdown.
             Uses the same TransactionDetailCard UI as the date sheet.
+            — full viewport width on desktop, centered content column
+            — Swipe-down to close on mobile
         ============================================ */}
 
         <Sheet
@@ -1037,10 +1199,12 @@ export function TransactionsList({
             }
           }}
         >
-          <SheetContent
+          <SwipeableSheetContent
+            open={!!searchSheetExpense}
+            onClose={() => setSearchSheetExpense(null)}
             side="bottom"
             className="
-              mx-auto w-full max-w-md
+              w-full mx-auto max-w-2xl
               rounded-t-[26px] rounded-b-none
               border-x border-t border-b-0 border-white/[0.14]
               bg-[#151922]/90
@@ -1057,46 +1221,53 @@ export function TransactionsList({
               <div className="h-1.5 w-10 rounded-full bg-white/25" />
             </div>
 
-            {/* Header */}
+            {/* Header — constrained to same column as content */}
             <SheetHeader className="relative border-b border-white/[0.06] px-4 py-4 text-left">
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
               />
 
-              <SheetTitle className="text-base font-semibold text-white">
-                Transaction Details
-              </SheetTitle>
+              <div className="mx-auto w-full max-w-3xl">
+                <SheetTitle className="text-base font-semibold text-white">
+                  Transaction Details
+                </SheetTitle>
 
-              <SheetDescription className="text-xs text-white/55">
-                {searchSheetExpense
-                  ? new Date(
-                      searchSheetExpense.date
-                    ).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
-                  : ''}
-              </SheetDescription>
+                <SheetDescription className="text-xs text-white/55">
+                  {searchSheetExpense
+                    ? new Date(
+                        searchSheetExpense.date
+                      ).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : ''}
+                </SheetDescription>
+              </div>
             </SheetHeader>
 
-            <div className="max-h-[75vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-              {searchSheetExpense && (
-                <TransactionDetailCard
-                  key={searchSheetExpense.id}
-                  expense={searchSheetExpense}
-                  onUpdated={(updated) =>
-                    setSearchSheetExpense(updated)
-                  }
-                  onDeleted={() =>
-                    setSearchSheetExpense(null)
-                  }
-                />
-              )}
+            <div
+              data-sheet-scrollable
+              className="max-h-[75vh] overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]"
+            >
+              <div className="mx-auto w-full max-w-3xl">
+                {searchSheetExpense && (
+                  <TransactionDetailCard
+                    key={searchSheetExpense.id}
+                    expense={searchSheetExpense}
+                    onUpdated={(updated) =>
+                      setSearchSheetExpense(updated)
+                    }
+                    onDeleted={() =>
+                      setSearchSheetExpense(null)
+                    }
+                  />
+                )}
+              </div>
             </div>
-          </SheetContent>
+          </SwipeableSheetContent>
         </Sheet>
 
       </div>
