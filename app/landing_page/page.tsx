@@ -76,7 +76,7 @@ const STYLES = `
   --violet: #A855F7;
 
   /* Vertical space consumed by floating nav (top pad + pill + gap) */
-  --nav-h: 94px;
+  --nav-h: 70px;
   --gut-l: max(20px, env(safe-area-inset-left));
   --gut-r: max(20px, env(safe-area-inset-right));
 
@@ -546,7 +546,7 @@ const STYLES = `
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 56px;
+  height: 66px;
   padding: 0 12px;
   border-radius: 999px;
   flex: none;
@@ -561,9 +561,9 @@ const STYLES = `
 
 .xpnd-nav-logo {
   display: block;
-  height: 44px;
+  height: 54px;
   width: auto;
-  max-width: 220px;
+  max-width: 260px;
   object-fit: contain;
   flex: none;
   user-select: none;
