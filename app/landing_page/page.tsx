@@ -729,6 +729,10 @@ const STYLES = `
   overflow: hidden;
   max-height: 0;
   opacity: 0;
+  pointer-events: auto;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
   transition:
     max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.3s ease,
