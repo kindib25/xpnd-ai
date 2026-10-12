@@ -113,7 +113,6 @@ const getCategoryColor = (category: string) => {
   return CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
 }
 
-
 // ===========================================================================
 // SWIPE-TO-CLOSE SHEET CONTENT
 // Wraps SheetContent with a swipe-down dismissal gesture.
@@ -121,6 +120,10 @@ const getCategoryColor = (category: string) => {
 // - Ignores multi-touch
 // - Uses distance + velocity thresholds (flick or drag)
 // - Desktop is unaffected (touch events won't fire)
+//
+// IMPORTANT: Radix Sheet doesn't mount SheetContent until the sheet is open,
+// so the listeners must be attached via a callback ref keyed on the DOM node
+// (NOT a plain useEffect with [] deps — ref would still be null on mount).
 // ===========================================================================
 
 function SwipeableSheetContent({
@@ -133,7 +136,7 @@ function SwipeableSheetContent({
   onClose: () => void
   open: boolean
 }) {
-  const ref = useRef<HTMLDivElement>(null)
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
   const [offsetY, setOffsetY] = useState(0)
 
   const startY = useRef(0)
@@ -157,12 +160,13 @@ function SwipeableSheetContent({
     }
   }, [open])
 
+  // Attach listeners whenever the sheet content mounts / unmounts.
+  // `node` flips from null → element on open, and back to null on close.
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
+    if (!node) return
 
     const getScroller = () =>
-      el.querySelector<HTMLElement>('[data-sheet-scrollable]')
+      node.querySelector<HTMLElement>('[data-sheet-scrollable]')
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return
@@ -205,48 +209,47 @@ function SwipeableSheetContent({
       const shouldClose =
         offsetRef.current > 110 || velocity.current > 0.55
 
+      // Always reset the inline offset so Radix's exit animation can run
+      offsetRef.current = 0
+      setOffsetY(0)
+
       if (shouldClose) {
         onCloseRef.current()
-      } else {
-        // Snap back
-        offsetRef.current = 0
-        setOffsetY(0)
       }
     }
 
-    el.addEventListener('touchstart', onTouchStart, {
+    node.addEventListener('touchstart', onTouchStart, {
       passive: true,
     })
-    el.addEventListener('touchmove', onTouchMove, {
+    node.addEventListener('touchmove', onTouchMove, {
       passive: false,
     })
-    el.addEventListener('touchend', onTouchEnd)
-    el.addEventListener('touchcancel', onTouchEnd)
+    node.addEventListener('touchend', onTouchEnd)
+    node.addEventListener('touchcancel', onTouchEnd)
 
     return () => {
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchmove', onTouchMove)
-      el.removeEventListener('touchend', onTouchEnd)
-      el.removeEventListener('touchcancel', onTouchEnd)
+      node.removeEventListener('touchstart', onTouchStart)
+      node.removeEventListener('touchmove', onTouchMove)
+      node.removeEventListener('touchend', onTouchEnd)
+      node.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [])
+  }, [node])
 
   return (
     <SheetContent
-      ref={ref}
-      style={
-        offsetY > 0
+      ref={setNode}
+      style={{
+        ...(offsetY > 0
           ? {
               transform: `translateY(${offsetY}px)`,
               transition: 'none',
-              ...style,
             }
           : {
               transition:
                 'transform 320ms cubic-bezier(0.16,1,0.3,1)',
-              ...style,
-            }
-      }
+            }),
+        ...style,
+      }}
       {...props}
     >
       {children}
