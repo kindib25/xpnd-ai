@@ -825,7 +825,7 @@ function DashboardOverviewComponent({
                     What did you spend on?
                   </h2>
 
-                  <p className="mt-2 text-xs md:text-base text-white/55 max-w-lg mx-auto">
+                  <p className="mt-2 text-xs md:text-base text-white/55 max-w-80 md:max-w-lg mx-auto">
                     Just describe your expense naturally. Xpnd AI will
                     automatically extract the amount, category, and details.
                   </p>
