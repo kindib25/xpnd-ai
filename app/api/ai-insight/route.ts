@@ -8,7 +8,7 @@ const openrouter = new OpenAI({
 
 const MODEL =
   process.env.OPENROUTER_MODEL ??
-  'google/gemma-4-26b-a4b-it:free'
+  'qwen/qwen3-14b'
 
 export async function POST(request: NextRequest) {
   try {
