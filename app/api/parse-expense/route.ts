@@ -8,7 +8,7 @@ const openrouter = new OpenAI({
 
 const MODEL =
   process.env.OPENROUTER_MODEL ??
-  'qwen/qwen3-14b'
+  'google/gemma-3-27b-it'
 
 
 const EXPENSE_CATEGORIES = [

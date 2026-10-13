@@ -11,7 +11,7 @@ export const runtime = 'nodejs'
 /* Config                                                             */
 /* ------------------------------------------------------------------ */
 
-const MODEL = process.env.OPENROUTER_MODEL ?? 'qwen/qwen3-14b'
+const MODEL = process.env.OPENROUTER_MODEL ?? 'google/gemma-3-27b-it'
 const DEBUG = process.env.NODE_ENV !== 'production'
 
 const RATE_LIMIT_WINDOW_MS = 60_000
