@@ -67,6 +67,13 @@ function DashboardOverviewComponent({
     }
   }
 
+  // Format a number as Philippine peso with thousands separators.
+  const formatPeso = (value: number) =>
+    `₱${value.toLocaleString('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })}`
+
   const totalExpenses = expenses.reduce(
     (sum, exp) => sum + parseFloat(exp.amount || 0),
     0
@@ -136,8 +143,8 @@ function DashboardOverviewComponent({
   )
 
   const STATS = [
-    { label: 'Today', value: `₱${todaySpending.toFixed(0)}`, icon: Calendar },
-    { label: 'This Week', value: `₱${weekSpending.toFixed(0)}`, icon: Calendars },
+    { label: 'Today', value: formatPeso(todaySpending), icon: Calendar },
+    { label: 'This Week', value: formatPeso(weekSpending), icon: Calendars },
     { label: 'Transactions', value: transactionCount.toString(), icon: Database },
     { label: 'Top Category', value: topCategory.category, icon: Layers },
   ]
@@ -303,7 +310,7 @@ function DashboardOverviewComponent({
                   Total Spent
                 </p>
                 <p className="text-2xl font-bold text-white md:text-3xl">
-                  ₱{totalExpenses.toFixed(0)}
+                  {formatPeso(totalExpenses)}
                 </p>
               </div>
 
@@ -312,7 +319,7 @@ function DashboardOverviewComponent({
                   Budget
                 </p>
                 <p className="text-2xl font-bold text-white md:text-3xl">
-                  ₱{totalBudget.toFixed(0)}
+                  {formatPeso(totalBudget)}
                 </p>
               </div>
 
@@ -333,7 +340,7 @@ function DashboardOverviewComponent({
                 <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <p>
                   <span className="font-semibold">Budget exceeded.</span>{' '}
-                  You are ₱{(totalExpenses - totalBudget).toFixed(0)} over your
+                  You are {formatPeso(totalExpenses - totalBudget)} over your
                   monthly limit.
                 </p>
               </div>
@@ -393,7 +400,7 @@ function DashboardOverviewComponent({
 
               <div className="flex items-center justify-between">
                 <p className="text-xs text-white/90 md:text-sm">
-                  ₱{Math.max(totalBudget - totalExpenses, 0).toFixed(0)} left
+                  {formatPeso(Math.max(totalBudget - totalExpenses, 0))} left
                 </p>
                 <p className="text-xs font-medium text-[#c8fb45] md:text-sm">
                   {Math.round(budgetPercentage)}% used
