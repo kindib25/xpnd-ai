@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -46,13 +45,6 @@ const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]'
 
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13161a]'
-
-const HAIRLINE =
-  'pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70'
-
-const GLASS_SURFACE_DEEP =
-  'relative overflow-hidden rounded-[26px] border border-white/[0.14] bg-[#151922]/70 backdrop-blur-2xl ' +
-  'shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_20px_60px_-35px_rgba(0,0,0,0.85)]'
 
 export function QuickAddExpense({
   showExamples = true,
@@ -218,84 +210,74 @@ export function QuickAddExpense({
   // ============================================
   return (
     <div className={className}>
-      <Card className={GLASS_SURFACE_DEEP}>
-        <div aria-hidden="true" className={HAIRLINE} />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#9ee82d]/12 blur-3xl"
-        />
+      <form onSubmit={handleSubmitInput} className="space-y-4">
+        <div className="relative">
+          <textarea
+            placeholder="e.g. Spent 150 pesos for lunch"
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value)
+              setError('')
+            }}
+            disabled={isParsingNLP}
+            maxLength={500}
+            rows={5}
+            aria-label="Describe your expense"
+            className="
+              w-full min-h-[130px] md:min-h-[150px] resize-none rounded-2xl
+              border border-white/[0.14] bg-white/[0.045] px-4 py-4 pb-10
+              text-base leading-relaxed text-white placeholder:text-white/35
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl
+              transition-[border-color,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+              hover:border-white/[0.20] hover:bg-white/[0.06]
+              focus:outline-none focus:border-[#9ee82d]/50 focus:bg-white/[0.06]
+              focus:ring-2 focus:ring-[#9ee82d]/25
+              disabled:cursor-not-allowed disabled:opacity-60
+            "
+          />
+          <div className="absolute bottom-3 right-4 text-[11px] tabular-nums text-white/45">
+            {input.length}/500
+          </div>
+        </div>
 
-        <CardContent className="relative z-10 p-4 sm:p-6 md:p-7">
-          <form onSubmit={handleSubmitInput} className="space-y-4">
-            <div className="relative">
-              <textarea
-                placeholder="e.g. Spent 150 pesos for lunch"
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  setError('')
-                }}
-                disabled={isParsingNLP}
-                maxLength={500}
-                rows={5}
-                aria-label="Describe your expense"
-                className="
-                  w-full min-h-[130px] md:min-h-[150px] resize-none rounded-2xl
-                  border border-white/[0.14] bg-white/[0.045] px-4 py-4 pb-10
-                  text-base leading-relaxed text-white placeholder:text-white/35
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl
-                  transition-[border-color,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
-                  hover:border-white/[0.20] hover:bg-white/[0.06]
-                  focus:outline-none focus:border-[#9ee82d]/50 focus:bg-white/[0.06]
-                  focus:ring-2 focus:ring-[#9ee82d]/25
-                  disabled:cursor-not-allowed disabled:opacity-60
-                "
-              />
-              <div className="absolute bottom-3 right-4 text-[11px] tabular-nums text-white/45">
-                {input.length}/500
-              </div>
-            </div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-white/55">
+            <Sparkles className="w-3.5 h-3.5 text-[#9ee82d]/80" />
+            <span>AI will analyze your expense</span>
+          </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-xs text-white/55">
-                <Sparkles className="w-3.5 h-3.5 text-[#9ee82d]/80" />
-                <span>AI will analyze your expense</span>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isParsingNLP || !input.trim()}
-                size="lg"
-                className={`
-                  ${FOCUS_RING}
-                  ml-auto h-11 md:h-12 rounded-xl
-                  border border-[#9ee82d]/30
-                  bg-gradient-to-r from-[#9ee82d] to-[#c8ff75]
-                  px-5 gap-2 text-sm font-semibold text-[#17200a]
-                  shadow-[0_0_18px_-6px_rgba(158,232,45,0.65)]
-                  transition-[transform,box-shadow] duration-300 ${EASE}
-                  hover:scale-[1.02]
-                  hover:shadow-[0_0_24px_-6px_rgba(158,232,45,0.85)]
-                  disabled:cursor-not-allowed disabled:opacity-50
-                  disabled:hover:scale-100
-                `}
-              >
-                {isParsingNLP ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    Analyze Expense
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          <Button
+            type="submit"
+            disabled={isParsingNLP || !input.trim()}
+            size="lg"
+            className={`
+              ${FOCUS_RING}
+              ml-auto h-11 md:h-12 rounded-xl
+              border border-[#9ee82d]/30
+              bg-gradient-to-r from-[#9ee82d] to-[#c8ff75]
+              px-5 gap-2 text-sm font-semibold text-[#17200a]
+              shadow-[0_0_18px_-6px_rgba(158,232,45,0.65)]
+              transition-[transform,box-shadow] duration-300 ${EASE}
+              hover:scale-[1.02]
+              hover:shadow-[0_0_24px_-6px_rgba(158,232,45,0.85)]
+              disabled:cursor-not-allowed disabled:opacity-50
+              disabled:hover:scale-100
+            `}
+          >
+            {isParsingNLP ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                Analyze Expense
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
 
       {showExamples && (
         <div className="mt-6">

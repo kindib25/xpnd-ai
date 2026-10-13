@@ -1,6 +1,7 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Card,
   CardContent,
@@ -21,6 +22,7 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -70,12 +72,15 @@ interface QuickAddExpenseProps {
   showExamples?: boolean
   onSaved?: () => void
   className?: string
+  /** Notifies the parent when a fullscreen AI overlay is active. */
+  onOverlayChange?: (active: boolean) => void
 }
 
 function QuickAddExpense({
   showExamples = false,
   onSaved,
   className,
+  onOverlayChange,
 }: QuickAddExpenseProps) {
   const [step, setStep] = useState<'input' | 'preview'>('input')
   const [input, setInput] = useState('')
@@ -93,7 +98,23 @@ function QuickAddExpense({
   )
 
   const [isSaving, setIsSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  // Portal target is only available client-side.
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const showLoader = isParsingNLP
+  const showPreview = step === 'preview' && !!parsedExpense
+  const overlayActive = showLoader || showPreview
+
+  // Tell the parent to hide the rest of the dashboard while an
+  // overlay is on screen.
+  useEffect(() => {
+    onOverlayChange?.(overlayActive)
+  }, [overlayActive, onOverlayChange])
 
   // ============================
   // PARSE (NLP)
@@ -217,116 +238,79 @@ function QuickAddExpense({
   }
 
   // ============================
-  // LOADING (AI)
-  // ============================
-  if (isParsingNLP) {
-    return (
-      <>
-        <AILoaderBackground />
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <AILoader />
-        </div>
-      </>
-    )
-  }
-
-  // ============================
-  // PREVIEW
-  // ============================
-  if (step === 'preview' && parsedExpense) {
-    return (
-      <AIExtractionPreview
-        expense={parsedExpense}
-        onEdit={() => setStep('input')}
-        onConfirm={(updatedExpense) => handleSubmit(updatedExpense)}
-        isLoading={isSaving}
-      />
-    )
-  }
-
-  // ============================
   // INPUT UI
+  // (always rendered — overlays are portaled to <body>)
   // ============================
   return (
     <div className={className}>
-      <Card className={GLASS_SURFACE_DEEP}>
-        <div aria-hidden="true" className={HAIRLINE} />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#9ee82d]/12 blur-3xl"
-        />
+      <form onSubmit={handleSubmitInput} className="space-y-4">
+        <div className="relative">
+          <textarea
+            placeholder="e.g. Spent 150 pesos for lunch"
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value)
+              setError('')
+            }}
+            disabled={isParsingNLP}
+            maxLength={500}
+            rows={4}
+            aria-label="Describe your expense"
+            className="
+              w-full min-h-[120px] md:min-h-[140px] resize-none rounded-2xl
+              border border-white/[0.14] bg-white/[0.045] px-4 py-4 pb-10
+              text-base leading-relaxed text-white placeholder:text-white/35
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl
+              transition-[border-color,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+              hover:border-white/[0.20] hover:bg-white/[0.06]
+              focus:outline-none focus:border-[#9ee82d]/50 focus:bg-white/[0.06]
+              focus:ring-2 focus:ring-[#9ee82d]/25
+              disabled:cursor-not-allowed disabled:opacity-60
+            "
+          />
+          <div className="absolute bottom-3 right-4 text-[11px] tabular-nums text-white/45">
+            {input.length}/500
+          </div>
+        </div>
 
-        <CardContent className="relative z-10 p-4 sm:p-6 md:p-7">
-          <form onSubmit={handleSubmitInput} className="space-y-4">
-            <div className="relative">
-              <textarea
-                placeholder="e.g. Spent 150 pesos for lunch"
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  setError('')
-                }}
-                disabled={isParsingNLP}
-                maxLength={500}
-                rows={4}
-                aria-label="Describe your expense"
-                className="
-                  w-full min-h-[120px] md:min-h-[140px] resize-none rounded-2xl
-                  border border-white/[0.14] bg-white/[0.045] px-4 py-4 pb-10
-                  text-base leading-relaxed text-white placeholder:text-white/35
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl
-                  transition-[border-color,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
-                  hover:border-white/[0.20] hover:bg-white/[0.06]
-                  focus:outline-none focus:border-[#9ee82d]/50 focus:bg-white/[0.06]
-                  focus:ring-2 focus:ring-[#9ee82d]/25
-                  disabled:cursor-not-allowed disabled:opacity-60
-                "
-              />
-              <div className="absolute bottom-3 right-4 text-[11px] tabular-nums text-white/45">
-                {input.length}/500
-              </div>
-            </div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-white/55">
+            <Sparkles className="w-3.5 h-3.5 text-[#9ee82d]/80" />
+            <span>AI will analyze your expense</span>
+          </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-xs text-white/55">
-                <Sparkles className="w-3.5 h-3.5 text-[#9ee82d]/80" />
-                <span>AI will analyze your expense</span>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isParsingNLP || !input.trim()}
-                size="lg"
-                className={`
-                  ${FOCUS_RING}
-                  ml-auto h-11 md:h-12 rounded-xl
-                  border border-[#9ee82d]/30
-                  bg-gradient-to-r from-[#9ee82d] to-[#c8ff75]
-                  px-5 gap-2 text-sm font-semibold text-[#17200a]
-                  shadow-[0_0_18px_-6px_rgba(158,232,45,0.65)]
-                  transition-[transform,box-shadow] duration-300 ${EASE}
-                  hover:scale-[1.02]
-                  hover:shadow-[0_0_24px_-6px_rgba(158,232,45,0.85)]
-                  disabled:cursor-not-allowed disabled:opacity-50
-                  disabled:hover:scale-100
-                `}
-              >
-                {isParsingNLP ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    Analyze Expense
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          <Button
+            type="submit"
+            disabled={isParsingNLP || !input.trim()}
+            size="lg"
+            className={`
+              ${FOCUS_RING}
+              ml-auto h-11 md:h-12 rounded-xl
+              border border-[#9ee82d]/30
+              bg-gradient-to-r from-[#9ee82d] to-[#c8ff75]
+              px-5 gap-2 text-sm font-semibold text-[#17200a]
+              shadow-[0_0_18px_-6px_rgba(158,232,45,0.65)]
+              transition-[transform,box-shadow] duration-300 ${EASE}
+              hover:scale-[1.02]
+              hover:shadow-[0_0_24px_-6px_rgba(158,232,45,0.85)]
+              disabled:cursor-not-allowed disabled:opacity-50
+              disabled:hover:scale-100
+            `}
+          >
+            {isParsingNLP ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                Analyze Expense
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
 
       {showExamples && (
         <div className="mt-6">
@@ -394,6 +378,376 @@ function QuickAddExpense({
           </div>
         </div>
       )}
+
+      {/* ==========================================================
+          AI LOADING — portaled fullscreen overlay.
+          Nothing else needs to be rendered when this is on screen.
+      =========================================================== */}
+      {mounted &&
+        showLoader &&
+        createPortal(
+          <div className="fixed inset-0 z-[100]">
+            <AILoaderBackground />
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label="Analyzing your expense"
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <AILoader />
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ==========================================================
+          AI EXTRACTION PREVIEW — portaled fullscreen modal.
+          Shown only when the loader is not active.
+      =========================================================== */}
+      {mounted &&
+        !showLoader &&
+        showPreview &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm extracted expense"
+            className="fixed inset-0 z-[100] overflow-y-auto"
+          >
+            {/* Backdrop — click to dismiss (not while saving) */}
+            <button
+              type="button"
+              aria-label="Cancel preview"
+              onClick={() => {
+                if (!isSaving) setStep('input')
+              }}
+              className="
+                absolute inset-0 cursor-default bg-black/70 backdrop-blur-md
+                animate-in fade-in duration-200
+              "
+            />
+
+            <div className="relative flex min-h-full items-center justify-center p-4">
+              <div
+                className="
+                  relative z-10 w-full max-w-lg
+                  animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300
+                "
+              >
+                <AIExtractionPreview
+                  expense={parsedExpense!}
+                  onEdit={() => setStep('input')}
+                  onConfirm={(updatedExpense) => handleSubmit(updatedExpense)}
+                  isLoading={isSaving}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Floating AI assistant — draggable FAB + message bubble
+// ---------------------------------------------------------------------------
+interface FloatingAIAssistantProps {
+  insight: string | null
+  isLoading: boolean
+  error: string | null
+  onGenerate: () => void
+  disabled?: boolean
+}
+
+const FAB_SIZE = 56
+const FAB_MARGIN = 20
+const BUBBLE_RESERVE = 320
+
+function FloatingAIAssistant({
+  insight,
+  isLoading,
+  error,
+  onGenerate,
+  disabled,
+}: FloatingAIAssistantProps) {
+  const [open, setOpen] = useState(false)
+  const [hasRequested, setHasRequested] = useState(false)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const [viewport, setViewport] = useState({ w: 0, h: 0 })
+
+  const dragRef = useRef({
+    pointerId: null as number | null,
+    startX: 0,
+    startY: 0,
+    startPosX: 0,
+    startPosY: 0,
+    moved: false,
+  })
+  const suppressClickRef = useRef(false)
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      setViewport({ w, h })
+      setPos((prev) => {
+        if (!prev) {
+          return {
+            x: w - FAB_SIZE - FAB_MARGIN,
+            y: h - FAB_SIZE - FAB_MARGIN,
+          }
+        }
+        return {
+          x: Math.max(
+            FAB_MARGIN,
+            Math.min(w - FAB_SIZE - FAB_MARGIN, prev.x)
+          ),
+          y: Math.max(
+            FAB_MARGIN,
+            Math.min(h - FAB_SIZE - FAB_MARGIN, prev.y)
+          ),
+        }
+      })
+    }
+
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pos) return
+    suppressClickRef.current = false
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPosX: pos.x,
+      startPosY: pos.y,
+      moved: false,
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (dragRef.current.pointerId !== e.pointerId) return
+    const dx = e.clientX - dragRef.current.startX
+    const dy = e.clientY - dragRef.current.startY
+
+    if (!dragRef.current.moved && Math.hypot(dx, dy) > 4) {
+      dragRef.current.moved = true
+      setDragging(true)
+      setOpen(false)
+    }
+
+    if (dragRef.current.moved) {
+      const newX = Math.max(
+        FAB_MARGIN,
+        Math.min(
+          viewport.w - FAB_SIZE - FAB_MARGIN,
+          dragRef.current.startPosX + dx
+        )
+      )
+      const newY = Math.max(
+        FAB_MARGIN,
+        Math.min(
+          viewport.h - FAB_SIZE - FAB_MARGIN,
+          dragRef.current.startPosY + dy
+        )
+      )
+      setPos({ x: newX, y: newY })
+    }
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (dragRef.current.pointerId !== e.pointerId) return
+    if (dragRef.current.moved) {
+      suppressClickRef.current = true
+    }
+    dragRef.current.pointerId = null
+    setDragging(false)
+  }
+
+  const handleToggle = () => {
+    const next = !open
+    setOpen(next)
+    if (next && !hasRequested && !insight && !isLoading) {
+      setHasRequested(true)
+      onGenerate()
+    }
+  }
+
+  const handleClick = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
+    handleToggle()
+  }
+
+  const openUpward = pos
+    ? pos.y + FAB_SIZE + BUBBLE_RESERVE > viewport.h
+    : true
+  const alignRight = pos ? pos.x + FAB_SIZE / 2 > viewport.w / 2 : true
+
+  if (!pos) return null
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: pos.x,
+        top: pos.y,
+        zIndex: 50,
+        touchAction: 'none',
+      }}
+    >
+      {open && (
+        <div
+          role="dialog"
+          aria-label="AI assistant"
+          className={`
+            absolute w-[min(92vw,360px)] overflow-hidden rounded-2xl
+            border border-white/[0.14] bg-[#0D1626]/95 backdrop-blur-2xl
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_24px_60px_-20px_rgba(0,0,0,0.85)]
+            animate-in fade-in duration-200
+            ${openUpward ? 'bottom-full mb-3 slide-in-from-bottom-3' : 'top-full mt-3 slide-in-from-top-3'}
+            ${alignRight ? 'right-0' : 'left-0'}
+          `}
+        >
+          <div
+            aria-hidden="true"
+            className="h-[2px] w-full bg-[linear-gradient(90deg,#7CFF3A,#65E8FF,#6945FF)]"
+          />
+
+          <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-[#7A35FF] to-[#5B24E8] shadow-[0_0_14px_rgba(105,69,255,0.45)]">
+                <span className="text-[11px] font-bold text-white">AI</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white leading-none">
+                  Xpnd Assistant
+                </p>
+                <p className="mt-0.5 text-[11px] text-white/45">
+                  Spending insight
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close assistant"
+              className="
+                grid h-7 w-7 place-items-center rounded-full
+                text-white/55 transition-colors
+                hover:bg-white/[0.08] hover:text-white
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd]
+              "
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="px-4 pb-3">
+            <div
+              className="
+                relative rounded-2xl rounded-tl-sm
+                border border-white/[0.10] bg-white/[0.05]
+                px-3.5 py-3 text-sm leading-relaxed text-white/90
+                shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+              "
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2 text-white/70">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#c8ff75]" />
+                  Analyzing your spending...
+                </span>
+              ) : error ? (
+                <span className="flex items-start gap-2 text-red-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />
+                  <span>{error}</span>
+                </span>
+              ) : insight ? (
+                insight
+              ) : (
+                <span className="text-white/55">
+                  Tap refresh to get a personalized insight on your spending.
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={isLoading || disabled}
+                className="
+                  inline-flex items-center gap-1.5 rounded-lg
+                  border border-[#6930FF]/40 bg-gradient-to-r from-[#6930FF] to-[#7538FF]
+                  px-3 py-1.5 text-xs font-semibold text-white
+                  shadow-[0_0_14px_rgba(105,69,255,0.30)]
+                  transition-all duration-200
+                  hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(105,69,255,0.45)]
+                  disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd]
+                "
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Loading
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {insight ? 'Refresh' : 'Get insight'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={handleClick}
+        aria-label={open ? 'Close AI assistant' : 'Open AI assistant'}
+        aria-expanded={open}
+        style={{ touchAction: 'none' }}
+        className={`
+          group relative grid h-14 w-14 select-none place-items-center rounded-full
+          border border-white/[0.14] text-white
+          bg-[linear-gradient(135deg,#7CFF3A_0%,#65E8FF_48%,#6945FF_100%)]
+          shadow-[0_10px_30px_-8px_rgba(105,69,255,0.65),0_0_0_1px_rgba(255,255,255,0.06)_inset]
+          transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]
+          ${dragging ? 'scale-105 cursor-grabbing' : 'cursor-grab hover:scale-[1.06]'}
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13161a]
+        `}
+      >
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 rounded-full bg-[#6945FF]/40 blur-xl opacity-70"
+        />
+        {open ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <>
+            <Sparkles className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" />
+            {insight && !isLoading && (
+              <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#7CFF3A] ring-2 ring-[#0D1626]" />
+            )}
+          </>
+        )}
+      </button>
     </div>
   )
 }
@@ -421,6 +775,9 @@ function DashboardOverviewComponent({
   const [isLoadingInsight, setIsLoadingInsight] = useState(false)
   const [insightError, setInsightError] = useState<string | null>(null)
 
+  // When true, the dashboard paints nothing but the portaled AI overlay.
+  const [overlayActive, setOverlayActive] = useState(false)
+
   async function generateInsight() {
     setIsLoadingInsight(true)
     setInsightError(null)
@@ -446,7 +803,6 @@ function DashboardOverviewComponent({
     }
   }
 
-  // Format a number as Philippine peso with thousands separators.
   const formatPeso = (value: number) =>
     `₱${value.toLocaleString('en-PH', {
       minimumFractionDigits: 0,
@@ -472,7 +828,6 @@ function DashboardOverviewComponent({
   const isApproachingBudget =
     totalBudget > 0 && budgetPercentage >= 80 && !isOverBudget
 
-  // Local-time safe: "YYYY-MM-DD" parsed as UTC shifts a day in negative offsets.
   const toLocalMidnight = (value: string) => {
     const [y, m, d] = value.split('-').map(Number)
     if (!y || !m || !d) return new Date(value)
@@ -490,7 +845,6 @@ function DashboardOverviewComponent({
     })
     .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
 
-  // Sunday → Saturday
   const weekStart = new Date(today)
   weekStart.setDate(today.getDate() - today.getDay())
   weekStart.setHours(0, 0, 0, 0)
@@ -532,391 +886,310 @@ function DashboardOverviewComponent({
 
   return (
     <>
-      {/* =========================================================
-          AMBIENT BACKGROUND — fixed, full-viewport, out of content flow.
-      ========================================================== */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      >
+      {/* ==================================================================
+          DASHBOARD CONTENT — hidden entirely while an AI overlay is active.
+          The overlay itself is portaled to <body>, so hiding this branch
+          does NOT affect it.
+      ================================================================== */}
+      <div className={overlayActive ? 'hidden' : undefined}>
+        {/* Ambient background */}
         <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
-          }}
-        />
-
-        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-[#9ee82d]/[0.14] blur-[130px]" />
-        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-[#724bf6]/[0.20] blur-[140px]" />
-        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/[0.10] blur-[140px]" />
-      </div>
-
-      <div className="mx-auto w-full max-w-7xl p-4 text-white md:p-8">
-        {/* =========================
-            HEADER
-        ========================== */}
-        <header className="mb-6 md:mb-8">
-          {/* Mobile Only */}
-          <div className="flex items-center justify-between mb-2 md:hidden">
-            <div className="w-11 h-11 overflow-hidden rounded-full bg-gray-500 flex items-center justify-center">
-              {profile?.avatar_url ? (
-                <Link href="/dashboard/settings">
-                  <img
-                    src={profile.avatar_url}
-                    alt={`${profile.full_name || 'Profile'} avatar`}
-                    className="w-full h-full object-cover"
-                  />
-                </Link>
-              ) : (
-                <UserRound
-                  className="w-5 h-5 text-white"
-                  aria-hidden="true"
-                />
-              )}
-            </div>
-
-            <div>
-              <img
-                src="/xpnd-ai-logo-dark.svg"
-                alt="Logo"
-                className="w-60 h-15 object-contain"
-              />
-            </div>
-
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="
-                grid h-11 w-11 place-items-center rounded-full
-                border border-white/[0.14] bg-white/[0.055]
-                text-white/70
-                shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]
-                backdrop-blur-xl
-                transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-                hover:-translate-y-0.5 hover:border-white/[0.24]
-                hover:bg-white/[0.10] hover:text-white
-              "
-            >
-              <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
-            </button>
-          </div>
-
-          <h1 className="text-xl font-semibold tracking-tight text-white md:text-3xl">
-            Good day{firstName ? `, ${firstName}` : ''}!
-          </h1>
-
-          <p className="mt-1 text-xs text-white/40 md:text-sm">
-            Track smarter with AI-powered insights.
-          </p>
-        </header>
-
-        {/* =========================
-            THIS MONTH OVERVIEW
-        ========================== */}
-        <Card
-          className="
-            relative mb-6 overflow-hidden rounded-[18px]
-            border border-[#724bf6]/[0.50]
-            bg-gradient-to-br from-[#271c83]/[0.72] via-[#4d34bd]/[0.62] to-[#724bf6]/[0.42]
-            text-white backdrop-blur-[28px]
-            shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_36px_-24px_rgba(39,28,131,0.70)]
-            md:mb-8
-          "
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
         >
           <div
-            aria-hidden="true"
-            className="
-              pointer-events-none absolute inset-0
-              bg-gradient-to-br from-[#e9d5ff]/[0.22] via-[#c4b5fd]/[0.05] to-[#a78bfa]/[0.10]
-            "
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
+            }}
           />
 
-          <div
-            aria-hidden="true"
-            className="
-              pointer-events-none absolute inset-x-5 top-0 h-px
-              bg-gradient-to-r from-transparent via-[#c4b5fd]/85 to-transparent
-            "
-          />
+          <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-[#9ee82d]/[0.14] blur-[130px]" />
+          <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-[#724bf6]/[0.20] blur-[140px]" />
+          <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/[0.10] blur-[140px]" />
+        </div>
 
-          <CardHeader className="relative z-10 pb-3 md:pb-4">
-            <CardTitle className="text-xs font-medium text-white/90 md:text-sm">
-              This Month Overview
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="relative z-10 space-y-4 md:space-y-6">
-            <div className="grid grid-cols-2 gap-4 md:gap-8">
-              <div>
-                <p className="mb-1 text-xs font-medium text-white/90 md:mb-2">
-                  Total Spent
-                </p>
-                <p className="text-2xl font-bold text-white md:text-3xl">
-                  {formatPeso(totalExpenses)}
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="mb-1 text-xs font-medium text-white/90 md:mb-2">
-                  Budget
-                </p>
-                <p className="text-2xl font-bold text-white md:text-3xl">
-                  {formatPeso(totalBudget)}
-                </p>
-              </div>
-            </div>
-
-            {isOverBudget && (
-              <div
-                className="
-                  flex items-start gap-3 rounded-lg
-                  border border-red-400/50 bg-red-500/[0.22] p-3
-                  text-sm text-red-50
-                "
-                role="alert"
-              >
-                <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <p>
-                  <span className="font-semibold">Budget exceeded.</span>{' '}
-                  You are {formatPeso(totalExpenses - totalBudget)} over your
-                  monthly limit.
-                </p>
-              </div>
-            )}
-
-            {isApproachingBudget && (
-              <div
-                className="
-                  flex items-start gap-3 rounded-lg
-                  border border-amber-400/50 bg-amber-500/[0.22] p-3
-                  text-sm text-amber-50
-                "
-                role="status"
-              >
-                <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <p>
-                  <span className="font-semibold">Approaching your limit.</span>{' '}
-                  You have used {Math.round(budgetPercentage)}% of your monthly
-                  budget.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs md:text-sm">
-                <p className="text-white/90">Budget Usage</p>
-              </div>
-
-              <div
-                className="
-                  h-3 w-full overflow-hidden rounded-full
-                  border border-[#724bf6]/[0.30] bg-[#170f57]/[0.55]
-                "
-              >
-                <div
-                  className="
-                    h-full rounded-full
-                    bg-gradient-to-r from-[#c8fb45] to-[#9ee82d]
-                    shadow-[0_0_12px_rgba(158,232,45,0.65)]
-                    transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
-                  "
-                  style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-white/90 md:text-sm">
-                  {formatPeso(Math.max(totalBudget - totalExpenses, 0))} left
-                </p>
-                <p className="text-xs font-medium text-[#c8fb45] md:text-sm">
-                  {Math.round(budgetPercentage)}% used
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* =========================
-            QUICK STATS
-        ========================== */}
-        <div className="mb-6 grid grid-cols-2 gap-3 md:mb-8 md:grid-cols-4 md:gap-4">
-          {STATS.map((stat) => (
-            <div
-              key={stat.label}
-              className="
-                group relative overflow-hidden rounded-[20px] p-4 md:p-5
-                border border-white/[0.14] bg-white/[0.075] backdrop-blur-xl
-                shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)]
-                transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
-                hover:-translate-y-1 hover:border-white/[0.24] hover:bg-white/[0.12]
-                hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_20px_55px_-18px_rgba(0,0,0,0.85)]
-              "
-            >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.10] via-transparent to-white/[0.015] opacity-70"
-              />
-
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
-              />
-
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/[0.06] blur-2xl"
-              />
-
-              <div className="relative z-10 flex h-full flex-col">
-                <div className="flex items-center gap-2 pb-1 md:pb-2">
-                  <stat.icon
-                    className="h-4 w-4 text-white/50 md:h-5 md:w-5"
+        <div className="mx-auto w-full max-w-7xl p-4 text-white md:p-8">
+          {/* HEADER */}
+          <header className="mb-6 md:mb-8">
+            <div className="flex items-center justify-between mb-2 md:hidden">
+              <div className="w-11 h-11 overflow-hidden rounded-full bg-gray-500 flex items-center justify-center">
+                {profile?.avatar_url ? (
+                  <Link href="/dashboard/settings">
+                    <img
+                      src={profile.avatar_url}
+                      alt={`${profile.full_name || 'Profile'} avatar`}
+                      className="w-full h-full object-cover"
+                    />
+                  </Link>
+                ) : (
+                  <UserRound
+                    className="w-5 h-5 text-white"
                     aria-hidden="true"
                   />
-                  <span className="text-xs font-medium text-white/50">
-                    {stat.label}
-                  </span>
-                </div>
-
-                <p className="mt-2 truncate text-xl font-semibold tabular-nums tracking-tight text-white md:text-2xl">
-                  {stat.value}
-                </p>
+                )}
               </div>
+
+              <div>
+                <img
+                  src="/xpnd-ai-logo-dark.svg"
+                  alt="Logo"
+                  className="w-60 h-15 object-contain"
+                />
+              </div>
+
+              <button
+                type="button"
+                aria-label="Notifications"
+                className="
+                  grid h-11 w-11 place-items-center rounded-full
+                  border border-white/[0.14] bg-white/[0.055]
+                  text-white/70
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]
+                  backdrop-blur-xl
+                  transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                  hover:-translate-y-0.5 hover:border-white/[0.24]
+                  hover:bg-white/[0.10] hover:text-white
+                "
+              >
+                <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
+              </button>
             </div>
-          ))}
-        </div>
 
-        {/* =========================
-            AI INSIGHT
-        ========================== */}
-        <Card
-          className="
-            group relative mb-6 overflow-hidden rounded-[28px]
-            border-0 bg-transparent p-[2px]
-            shadow-[0_0_25px_rgba(105,69,255,0.15)]
-          "
-        >
-          <div
-            className="
-              absolute inset-0 rounded-[28px]
-              bg-[linear-gradient(90deg,#7CFF3A_0%,#65E8FF_48%,#6945FF_100%)]
-              opacity-90
-            "
-          />
+            <h1 className="text-xl font-semibold tracking-tight text-white md:text-3xl">
+              Good day{firstName ? `, ${firstName}` : ''}!
+            </h1>
 
-          <div
-            className="
-              absolute -inset-1 rounded-[30px]
-              bg-[linear-gradient(90deg,#7CFF3A,#65E8FF,#6945FF)]
-              opacity-25 blur-xl
-            "
-          />
+            <p className="mt-1 text-xs text-white/40 md:text-sm">
+              Track smarter with AI-powered insights.
+            </p>
+          </header>
 
-          <div
+          {/* THIS MONTH OVERVIEW */}
+          <Card
             className="
-              relative flex min-h-[190px] flex-col justify-between gap-5
-              rounded-[26px] bg-[#0D1626] px-5 py-6
-              sm:px-6 sm:py-7
-              md:min-h-[190px] md:flex-row md:items-center md:gap-8 md:px-8
-              lg:px-10
+              relative mb-6 overflow-hidden rounded-[18px]
+              border border-[#724bf6]/[0.50]
+              bg-gradient-to-br from-[#271c83]/[0.72] via-[#4d34bd]/[0.62] to-[#724bf6]/[0.42]
+              text-white backdrop-blur-[28px]
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_36px_-24px_rgba(39,28,131,0.70)]
+              md:mb-8
             "
           >
-            <div className="min-w-0 flex-1">
-              <div className="mb-3 flex items-center gap-2 md:gap-2.5">
-                <div
-                  className="
-                    flex h-9 w-9 shrink-0 items-center justify-center rounded-md
-                    bg-gradient-to-br from-[#7A35FF] to-[#5B24E8]
-                    shadow-[0_0_18px_rgba(105,69,255,0.45)]
-                    sm:h-10 sm:w-10
-                  "
-                >
-                  <span className="text-lg font-bold text-white sm:text-xl">
-                    AI
-                  </span>
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute inset-0
+                bg-gradient-to-br from-[#e9d5ff]/[0.22] via-[#c4b5fd]/[0.05] to-[#a78bfa]/[0.10]
+              "
+            />
+
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute inset-x-5 top-0 h-px
+                bg-gradient-to-r from-transparent via-[#c4b5fd]/85 to-transparent
+              "
+            />
+
+            <CardHeader className="relative z-10 pb-3 md:pb-4">
+              <CardTitle className="text-xs font-medium text-white/90 md:text-sm">
+                This Month Overview
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="relative z-10 space-y-4 md:space-y-6">
+              <div className="grid grid-cols-2 gap-4 md:gap-8">
+                <div>
+                  <p className="mb-1 text-xs font-medium text-white/90 md:mb-2">
+                    Total Spent
+                  </p>
+                  <p className="text-2xl font-bold text-white md:text-3xl">
+                    {formatPeso(totalExpenses)}
+                  </p>
                 </div>
 
-                <h3
-                  className="
-                    text-lg font-bold tracking-tight text-white
-                    sm:text-xl md:text-2xl
-                  "
-                >
-                  Insight
-                </h3>
+                <div className="text-right">
+                  <p className="mb-1 text-xs font-medium text-white/90 md:mb-2">
+                    Budget
+                  </p>
+                  <p className="text-2xl font-bold text-white md:text-3xl">
+                    {formatPeso(totalBudget)}
+                  </p>
+                </div>
               </div>
 
-              <p
+              {isOverBudget && (
+                <div
+                  className="
+                    flex items-start gap-3 rounded-lg
+                    border border-red-400/50 bg-red-500/[0.22] p-3
+                    text-sm text-red-50
+                  "
+                  role="alert"
+                >
+                  <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <p>
+                    <span className="font-semibold">Budget exceeded.</span>{' '}
+                    You are {formatPeso(totalExpenses - totalBudget)} over your
+                    monthly limit.
+                  </p>
+                </div>
+              )}
+
+              {isApproachingBudget && (
+                <div
+                  className="
+                    flex items-start gap-3 rounded-lg
+                    border border-amber-400/50 bg-amber-500/[0.22] p-3
+                    text-sm text-amber-50
+                  "
+                  role="status"
+                >
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <p>
+                    <span className="font-semibold">Approaching your limit.</span>{' '}
+                    You have used {Math.round(budgetPercentage)}% of your monthly
+                    budget.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs md:text-sm">
+                  <p className="text-white/90">Budget Usage</p>
+                </div>
+
+                <div
+                  className="
+                    h-3 w-full overflow-hidden rounded-full
+                    border border-[#724bf6]/[0.30] bg-[#170f57]/[0.55]
+                  "
+                >
+                  <div
+                    className="
+                      h-full rounded-full
+                      bg-gradient-to-r from-[#c8fb45] to-[#9ee82d]
+                      shadow-[0_0_12px_rgba(158,232,45,0.65)]
+                      transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
+                    "
+                    style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-white/90 md:text-sm">
+                    {formatPeso(Math.max(totalBudget - totalExpenses, 0))} left
+                  </p>
+                  <p className="text-xs font-medium text-[#c8fb45] md:text-sm">
+                    {Math.round(budgetPercentage)}% used
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* QUICK STATS */}
+          <div className="mb-6 grid grid-cols-2 gap-3 md:mb-8 md:grid-cols-4 md:gap-4">
+            {STATS.map((stat) => (
+              <div
+                key={stat.label}
                 className="
-                  line-clamp-3 max-w-3xl text-sm font-medium leading-6 text-[#C5CCDB]
-                  sm:line-clamp-2 md:text-base md:leading-7
+                  group relative overflow-hidden rounded-[20px] p-4 md:p-5
+                  border border-white/[0.14] bg-white/[0.075] backdrop-blur-xl
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)]
+                  transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
+                  hover:-translate-y-1 hover:border-white/[0.24] hover:bg-white/[0.12]
+                  hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_20px_55px_-18px_rgba(0,0,0,0.85)]
                 "
               >
-                {isLoadingInsight
-                  ? 'Analyzing your spending...'
-                  : aiInsight ||
-                  insightError ||
-                  'Get a personalized spending pattern and recommendation.'}
-              </p>
-            </div>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.10] via-transparent to-white/[0.015] opacity-70"
+                />
 
-            <div className="w-full shrink-0 md:w-auto">
-              <Button
-                className="
-                  h-12 w-full rounded-xl border-0
-                  bg-gradient-to-r from-[#6930FF] to-[#7538FF]
-                  px-6 text-sm font-bold text-white
-                  shadow-[0_0_20px_rgba(105,69,255,0.30)]
-                  transition-all duration-200
-                  hover:scale-[1.02] hover:from-[#7538FF] hover:to-[#824AFF]
-                  hover:shadow-[0_0_28px_rgba(105,69,255,0.45)]
-                  disabled:cursor-not-allowed disabled:opacity-50
-                  disabled:hover:scale-100
-                  sm:h-14 sm:text-base sm:px-8
-                  md:min-w-[170px]
-                "
-                onClick={generateInsight}
-                disabled={isLoadingInsight || expenses.length === 0}
-              >
-                {isLoadingInsight
-                  ? 'Loading...'
-                  : aiInsight
-                    ? 'Refresh'
-                    : 'Get Insight'}
-              </Button>
-            </div>
-          </div>
-        </Card>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-70"
+                />
 
-        {/* =========================
-            QUICK ADD EXPENSE — inline form
-        ========================== */}
-        <div className="mb-6 md:mb-8">
-          <div className="text-center mb-6 md:mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-4 rounded-full border border-[#9ee82d]/25 bg-[#9ee82d]/[0.08] text-[#c8ff75] text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-xl">
-              <Sparkles className="w-3.5 h-3.5" />
-              AI Expense Tracking
-            </div>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/[0.06] blur-2xl"
+                />
 
-            <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-white">
-              What did you spend on?
-            </h2>
+                <div className="relative z-10 flex h-full flex-col">
+                  <div className="flex items-center gap-2 pb-1 md:pb-2">
+                    <stat.icon
+                      className="h-4 w-4 text-white/50 md:h-5 md:w-5"
+                      aria-hidden="true"
+                    />
+                    <span className="text-xs font-medium text-white/50">
+                      {stat.label}
+                    </span>
+                  </div>
 
-            <p className="mt-2 text-sm md:text-base text-white/55 max-w-lg mx-auto">
-              Just describe your expense naturally. Xpnd AI will
-              automatically extract the amount, category, and details.
-            </p>
+                  <p className="mt-2 truncate text-xl font-semibold tabular-nums tracking-tight text-white md:text-2xl">
+                    {stat.value}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <QuickAddExpense showExamples={false} />
+          {/* QUICK ADD EXPENSE — header lives inside the same card */}
+          <div className="mb-6 md:mb-8">
+            <Card className={GLASS_SURFACE_DEEP}>
+              <div aria-hidden="true" className={HAIRLINE} />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#9ee82d]/12 blur-3xl"
+              />
+
+              <CardContent className="relative z-10 p-4 sm:p-6 md:p-7">
+                <div className="text-center mb-6 md:mb-8">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-4 rounded-full border border-[#9ee82d]/25 bg-[#9ee82d]/[0.08] text-[#c8ff75] text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-xl">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    AI Expense Tracking
+                  </div>
+
+                  <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-white">
+                    What did you spend on?
+                  </h2>
+
+                  <p className="mt-2 text-xs md:text-base text-white/55 max-w-lg mx-auto">
+                    Just describe your expense naturally. Xpnd AI will
+                    automatically extract the amount, category, and details.
+                  </p>
+                </div>
+
+                <QuickAddExpense
+                  showExamples={false}
+                  onOverlayChange={setOverlayActive}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* RECENT ACTIVITY */}
+          <RecentActivity expenses={expenses} />
         </div>
-
-        {/* =========================
-            RECENT ACTIVITY
-        ========================== */}
-        <RecentActivity expenses={expenses} />
       </div>
+
+      {/* ==================================================================
+          FLOATING AI ASSISTANT — unmounted while an AI overlay is active,
+          so it can never bleed through the loader/preview.
+      ================================================================== */}
+      {!overlayActive && (
+        <FloatingAIAssistant
+          insight={aiInsight}
+          isLoading={isLoadingInsight}
+          error={insightError}
+          onGenerate={generateInsight}
+          disabled={expenses.length === 0}
+        />
+      )}
     </>
   )
 }
