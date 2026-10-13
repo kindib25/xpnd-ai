@@ -113,57 +113,40 @@ export default function Loading() {
         </div>
 
         {/* =========================
-            AI INSIGHT — gradient border wrapper
+            QUICK ADD EXPENSE — deep glass surface
         ========================== */}
-        <div className="group relative mb-6 overflow-hidden rounded-[28px] border-0 bg-transparent p-[2px]">
-          {/* Gradient border ring */}
-          <div
-            aria-hidden="true"
+        <div className="mb-6 md:mb-8">
+          <Card
             className="
-              absolute inset-0 rounded-[28px]
-              bg-[linear-gradient(90deg,#7CFF3A_0%,#65E8FF_48%,#6945FF_100%)]
-              opacity-90
-            "
-          />
-
-          <div
-            className="
-              relative flex min-h-[190px]
-              flex-col justify-between gap-5
-              rounded-[26px] bg-[#0D1626]
-              px-5 py-6
-              sm:px-6 sm:py-7
-              md:flex-row md:items-center md:gap-8 md:px-8
-              lg:px-10
+              relative overflow-hidden rounded-[26px]
+              border border-white/[0.14]
+              bg-[#151922]/70
+              backdrop-blur-2xl
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_20px_60px_-35px_rgba(0,0,0,0.85)]
             "
           >
-            <div className="min-w-0 flex-1">
-              <div className="mb-3 flex items-center gap-2 md:gap-2.5">
-                <Skeleton className="h-9 w-9 shrink-0 rounded-md bg-white/10 sm:h-10 sm:w-10" />
-                <Skeleton className="h-6 w-20 bg-white/10 sm:h-7 md:h-8" />
+            <CardContent className="relative z-10 p-4 sm:p-6 md:p-7">
+              {/* Centered heading block */}
+              <div className="mb-6 flex flex-col items-center text-center md:mb-8">
+                {/* AI badge pill */}
+                <Skeleton className="h-7 w-44 rounded-full bg-[#9ee82d]/[0.10]" />
+
+                {/* h2 — "What did you spend on?" */}
+                <Skeleton className="mt-4 h-8 w-72 max-w-full bg-white/10 md:h-9" />
+
+                {/* subtitle — two lines, matches max-w-lg copy */}
+                <Skeleton className="mt-2 h-4 w-full max-w-lg bg-white/10" />
+                <Skeleton className="mt-1.5 h-4 w-4/5 max-w-md bg-white/10" />
               </div>
 
-              <Skeleton className="h-4 w-full max-w-3xl bg-white/10" />
-              <Skeleton className="mt-2 h-4 w-4/5 max-w-2xl bg-white/10" />
-            </div>
+              {/* Textarea — mirrors min-h-[120px] md:min-h-[140px] */}
+              <Skeleton className="h-[120px] w-full rounded-2xl bg-white/[0.045] md:h-[140px]" />
 
-            <div className="w-full shrink-0 md:w-auto">
-              <Skeleton className="h-12 w-full rounded-xl bg-white/10 sm:h-14 md:min-w-[170px]" />
-            </div>
-          </div>
-        </div>
-
-        {/* =========================
-            ADD EXPENSE
-        ========================== */}
-        <div className="mb-2 flex items-center justify-between md:mb-3">
-          <Skeleton className="h-5 w-24 bg-white/10 md:h-6 md:w-28" />
-        </div>
-
-        <div className="mb-6 md:mb-8">
-          <Card className="bg-primary/90">
-            <CardContent className="flex items-center justify-center py-6 md:py-8">
-              <Skeleton className="h-10 w-10 rounded-md bg-background/40 md:h-11 md:w-11" />
+              {/* Footer row — hint (sm+) + analyze button */}
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <Skeleton className="hidden h-4 w-44 bg-white/10 sm:block" />
+                <Skeleton className="ml-auto h-11 w-40 rounded-xl bg-[#9ee82d]/[0.18] md:h-12" />
+              </div>
             </CardContent>
           </Card>
         </div>

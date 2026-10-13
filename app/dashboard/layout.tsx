@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Navigation } from '@/components/navigation'
 import DashboardBackground from '@/components/dashboard-background'
+import { FloatingAICoach } from '@/components/floating-ai-coach'
 
 export default async function DashboardLayout({
   children,
@@ -29,6 +30,8 @@ export default async function DashboardLayout({
       <main className="flex-1 md:ml-64 overflow-y-auto pb-20 md:pb-0">
         {children}
       </main>
+
+        <FloatingAICoach />
 
       {/* Mobile Bottom Navigation - Hidden on desktop */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden border-t border-border bg-card">
