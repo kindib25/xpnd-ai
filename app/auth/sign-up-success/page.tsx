@@ -13,6 +13,7 @@ const STYLES = `
 .xpnd-success * {
   box-sizing: border-box;
 }
+  
 
 .xpnd-success {
   --navy: #080A18;
