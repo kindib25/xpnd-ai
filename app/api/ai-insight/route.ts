@@ -348,7 +348,7 @@ export async function POST(_request: NextRequest) {
 
     if (safeExpenses.length === 0) {
       return NextResponse.json({
-        insight: `No expenses logged this month yet, so start tracking to see where your ${currencySymbol} goes.`,
+        insight: `No expenses logged this month yet, so start tracking to see where your ₱ goes.`,
         model: MODEL,
         currency,
         month: currentMonth,
