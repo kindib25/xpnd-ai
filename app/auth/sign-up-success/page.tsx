@@ -2,26 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
-/* ------------------------------------------------------------------ */
-/* Styles — scoped to this page                                        */
-/* ------------------------------------------------------------------ */
 
 const STYLES = `
 .xpnd-success,
 .xpnd-success * {
   box-sizing: border-box;
 }
-  
 
 .xpnd-success {
-  --navy: #080A18;
-  --off: #F5F7FF;
+  --off: var(--foreground);
   --blue: #4F7DFF;
-  --purple: #7C5CFF;
+  --purple: var(--primary);
   --lime: #B6FF3B;
-  --violet: #A855F7;
 
   position: relative;
   min-height: 100vh;
@@ -30,16 +22,16 @@ const STYLES = `
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Extra bottom padding nudges the centered shell slightly upward */
   padding:
     24px
     max(20px, env(safe-area-inset-left))
     max(84px, 12vh)
     max(20px, env(safe-area-inset-right));
-  background: var(--navy);
-  color: var(--off);
+  background: var(--background);
+  color: var(--foreground);
   overflow: hidden;
   isolation: isolate;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 /* ================================================================== */
@@ -52,8 +44,8 @@ const STYLES = `
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, rgba(245, 247, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(245, 247, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--foreground) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--foreground) 4%, transparent) 1px, transparent 1px);
   background-size: 56px 56px;
   -webkit-mask-image:
     radial-gradient(ellipse 120% 70% at 50% 50%, #000 5%, transparent 78%);
@@ -83,7 +75,7 @@ const STYLES = `
   height: 620px;
   top: -260px;
   left: -200px;
-  background: radial-gradient(circle, rgba(79, 125, 255, 0.42), transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--blue) 42%, transparent), transparent 68%);
   filter: blur(100px);
   animation: xpndSuccDrift1 22s ease-in-out infinite alternate;
 }
@@ -93,7 +85,7 @@ const STYLES = `
   height: 680px;
   bottom: -280px;
   right: -220px;
-  background: radial-gradient(circle, rgba(124, 92, 255, 0.38), transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 38%, transparent), transparent 68%);
   filter: blur(100px);
   animation: xpndSuccDrift2 26s ease-in-out infinite alternate;
 }
@@ -104,7 +96,7 @@ const STYLES = `
   top: 55%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(182, 255, 59, 0.14), transparent 72%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--lime) 14%, transparent), transparent 72%);
   filter: blur(120px);
   animation: xpndSuccDrift3 30s ease-in-out infinite alternate;
 }
@@ -136,7 +128,6 @@ const STYLES = `
   display: flex;
   flex-direction: column;
   gap: 28px;
-  /* Optional extra nudge upward on top of the container padding */
   transform: translateY(-2vh);
 }
 
@@ -180,7 +171,7 @@ const STYLES = `
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 0.2;
-  color: rgba(245, 247, 255, 0.42);
+  color: color-mix(in srgb, var(--foreground) 42%, transparent);
 }
 
 /* ================================================================== */
@@ -191,30 +182,29 @@ const STYLES = `
   position: relative;
   padding: 36px 28px 32px !important;
   border-radius: 26px !important;
-  border: 1px solid rgba(245, 247, 255, 0.12) !important;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent) !important;
   background:
-    radial-gradient(130% 100% at 100% 0%, rgba(245, 247, 255, 0.11), transparent 52%),
-    radial-gradient(110% 90% at 0% 100%, rgba(124, 92, 255, 0.10), transparent 58%),
-    radial-gradient(100% 60% at 50% 0%, rgba(79, 125, 255, 0.07), transparent 62%),
+    radial-gradient(130% 100% at 100% 0%, color-mix(in srgb, var(--foreground) 11%, transparent), transparent 52%),
+    radial-gradient(110% 90% at 0% 100%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 58%),
+    radial-gradient(100% 60% at 50% 0%, color-mix(in srgb, var(--primary) 7%, transparent), transparent 62%),
     linear-gradient(
       180deg,
-      rgba(245, 247, 255, 0.075),
-      rgba(245, 247, 255, 0.022)
+      color-mix(in srgb, var(--foreground) 7.5%, transparent),
+      color-mix(in srgb, var(--foreground) 2.2%, transparent)
     ) !important;
   backdrop-filter: blur(28px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(150%) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-    inset 0 0 90px rgba(124, 92, 255, 0.055),
-    0 30px 90px -40px rgba(0, 0, 0, 0.9),
-    0 8px 30px -14px rgba(0, 0, 0, 0.55) !important;
-  color: var(--off) !important;
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 14%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 3%, transparent),
+    inset 0 0 90px color-mix(in srgb, var(--primary) 5.5%, transparent),
+    0 30px 90px -40px rgba(0, 0, 0, 0.35),
+    0 8px 30px -14px rgba(0, 0, 0, 0.18) !important;
+  color: var(--foreground) !important;
   overflow: hidden;
   isolation: isolate;
 }
 
-/* Soft colored halo behind the card */
 .xpnd-success-card::before {
   content: "";
   position: absolute;
@@ -222,13 +212,12 @@ const STYLES = `
   border-radius: 60px;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(124, 92, 255, 0.20), transparent 60%),
-    radial-gradient(ellipse at 72% 82%, rgba(79, 125, 255, 0.16), transparent 62%);
+    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 60%),
+    radial-gradient(ellipse at 72% 82%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 62%);
   filter: blur(50px);
   z-index: -1;
 }
 
-/* 1px centered glint + top sheen */
 .xpnd-success-card::after {
   content: "";
   position: absolute;
@@ -236,18 +225,17 @@ const STYLES = `
   border-radius: inherit;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent, rgba(245, 247, 255, 0.55), transparent)
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 55%, transparent), transparent)
       top center / 60% 1px no-repeat,
     radial-gradient(
       ellipse 55% 35% at 22% 0%,
-      rgba(255, 255, 255, 0.09),
+      color-mix(in srgb, var(--foreground) 9%, transparent),
       transparent 70%
     ),
-    linear-gradient(180deg, rgba(245, 247, 255, 0.10), transparent 38%);
+    linear-gradient(180deg, color-mix(in srgb, var(--foreground) 10%, transparent), transparent 38%);
   opacity: 0.95;
 }
 
-/* Reset shadcn card defaults inside the glass shell */
 .xpnd-success-card > * {
   position: relative;
   z-index: 1;
@@ -263,7 +251,7 @@ const STYLES = `
 }
 
 .xpnd-success-card [class*="card-title"] {
-  color: #ffffff !important;
+  color: var(--foreground) !important;
   font-weight: 600 !important;
   letter-spacing: -0.028em !important;
   font-size: 1.55rem !important;
@@ -289,13 +277,13 @@ const STYLES = `
   height: 64px;
   border-radius: 50%;
   background:
-    radial-gradient(120% 120% at 30% 0%, rgba(255, 255, 255, 0.28), transparent 55%),
-    linear-gradient(150deg, #4F7DFF 0%, #7C5CFF 55%, #B6FF3B 100%);
+    radial-gradient(120% 120% at 30% 0%, color-mix(in srgb, var(--foreground) 28%, transparent), transparent 55%),
+    linear-gradient(150deg, var(--blue) 0%, var(--primary) 55%, var(--lime) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 40%, transparent),
     inset 0 -1px 0 rgba(0, 0, 0, 0.18),
-    0 16px 40px -16px rgba(124, 92, 255, 0.9),
-    0 0 0 0 rgba(124, 92, 255, 0.35);
+    0 16px 40px -16px color-mix(in srgb, var(--primary) 90%, transparent),
+    0 0 0 0 color-mix(in srgb, var(--primary) 35%, transparent);
   animation: xpndSuccPop 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -305,7 +293,7 @@ const STYLES = `
   inset: -14px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(124, 92, 255, 0.32), transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 32%, transparent), transparent 70%);
   filter: blur(20px);
   z-index: -1;
 }
@@ -347,11 +335,11 @@ const STYLES = `
   margin: 0;
   font-size: 14.5px;
   line-height: 1.62;
-  color: rgba(245, 247, 255, 0.62);
+  color: color-mix(in srgb, var(--foreground) 62%, transparent);
 }
 
 .xpnd-success-body strong {
-  color: rgba(245, 247, 255, 0.95);
+  color: color-mix(in srgb, var(--foreground) 95%, transparent);
   font-weight: 500;
 }
 
@@ -366,7 +354,6 @@ const STYLES = `
   margin-top: 26px;
 }
 
-/* Primary — gradient pill with bevel */
 .xpnd-success-primary {
   position: relative;
   display: inline-flex;
@@ -377,7 +364,7 @@ const STYLES = `
   padding: 0 22px !important;
   border-radius: 999px !important;
   border: 1px solid transparent !important;
-  color: #060814 !important;
+  color: var(--primary-foreground) !important;
   font-family: inherit !important;
   font-size: 14.5px !important;
   font-weight: 600 !important;
@@ -385,14 +372,16 @@ const STYLES = `
   cursor: pointer;
   white-space: nowrap;
   background-image:
-    linear-gradient(100deg, #4F7DFF 0%, #7C5CFF 46%, #B6FF3B 100%) !important;
+    linear-gradient(100deg,
+      var(--primary) 0%,
+      color-mix(in srgb, var(--primary) 82%, var(--foreground)) 100%) !important;
   background-size: 200% 100% !important;
   background-position: 0% 50% !important;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px color-mix(in srgb, var(--foreground) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 24%, transparent),
     inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 10px 30px -12px rgba(79, 125, 255, 0.85) !important;
+    0 10px 30px -12px color-mix(in srgb, var(--primary) 85%, transparent) !important;
   transition:
     transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
@@ -406,18 +395,17 @@ const STYLES = `
   background-position: 100% 50% !important;
   transform: translateY(-1px);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    inset 0 0 0 1px color-mix(in srgb, var(--foreground) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 30%, transparent),
     inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-    0 18px 44px -14px rgba(124, 92, 255, 0.95),
-    0 0 0 6px rgba(124, 92, 255, 0.07) !important;
+    0 18px 44px -14px color-mix(in srgb, var(--primary) 95%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--primary) 7%, transparent) !important;
 }
 
 .xpnd-success-primary:active {
   transform: scale(0.985);
 }
 
-/* Secondary — glass ghost pill */
 .xpnd-success-ghost {
   position: relative;
   display: inline-flex;
@@ -427,14 +415,14 @@ const STYLES = `
   height: 46px;
   padding: 0 20px;
   border-radius: 999px;
-  border: 1px solid rgba(245, 247, 255, 0.12);
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
   background:
     linear-gradient(
       180deg,
-      rgba(245, 247, 255, 0.06),
-      rgba(245, 247, 255, 0.02)
+      color-mix(in srgb, var(--foreground) 6%, transparent),
+      color-mix(in srgb, var(--foreground) 2%, transparent)
     );
-  color: rgba(245, 247, 255, 0.86);
+  color: color-mix(in srgb, var(--foreground) 86%, transparent);
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
@@ -445,9 +433,9 @@ const STYLES = `
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
-    0 8px 22px -14px rgba(0, 0, 0, 0.75);
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 2%, transparent),
+    0 8px 22px -14px rgba(0, 0, 0, 0.35);
   transition:
     transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     background 0.3s ease,
@@ -460,15 +448,15 @@ const STYLES = `
   background:
     linear-gradient(
       180deg,
-      rgba(245, 247, 255, 0.10),
-      rgba(245, 247, 255, 0.04)
+      color-mix(in srgb, var(--foreground) 10%, transparent),
+      color-mix(in srgb, var(--foreground) 4%, transparent)
     );
-  border-color: rgba(245, 247, 255, 0.22);
+  border-color: color-mix(in srgb, var(--foreground) 22%, transparent);
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-    0 14px 32px -16px rgba(0, 0, 0, 0.85);
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 16%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 3%, transparent),
+    0 14px 32px -16px rgba(0, 0, 0, 0.45);
 }
 
 .xpnd-success-ghost:active {
@@ -486,24 +474,24 @@ const STYLES = `
   gap: 8px;
   margin-top: 22px;
   padding-top: 20px;
-  border-top: 1px solid rgba(245, 247, 255, 0.06);
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
   font-size: 12.5px;
-  color: rgba(245, 247, 255, 0.42);
+  color: color-mix(in srgb, var(--foreground) 42%, transparent);
   text-align: center;
 }
 
 .xpnd-success-note a {
-  color: rgba(245, 247, 255, 0.82);
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
   font-weight: 500;
   text-decoration: none;
-  border-bottom: 1px dashed rgba(245, 247, 255, 0.22);
+  border-bottom: 1px dashed color-mix(in srgb, var(--foreground) 22%, transparent);
   padding-bottom: 1px;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .xpnd-success-note a:hover {
-  color: #ffffff;
-  border-color: rgba(245, 247, 255, 0.5);
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 /* ================================================================== */
@@ -531,10 +519,6 @@ const STYLES = `
 }
 `;
 
-/* ------------------------------------------------------------------ */
-/* Page                                                               */
-/* ------------------------------------------------------------------ */
-
 export default function SignUpSuccessPage() {
   return (
     <div className="xpnd-success">
@@ -554,7 +538,12 @@ export default function SignUpSuccessPage() {
             <img
               src="/xpnd-ai-logo-dark.svg"
               alt="Xpnd AI"
-              className="xpnd-success-logo"
+              className="xpnd-success-logo hidden dark:block"
+            />
+            <img
+              src="/xpnd-ai-logo-light.svg"
+              alt="Xpnd AI"
+              className="xpnd-success-logo block dark:hidden"
             />
           </Link>
         </div>
@@ -562,7 +551,6 @@ export default function SignUpSuccessPage() {
         {/* Glass card */}
         <Card className="xpnd-success-card">
           <CardHeader>
-            {/* Gradient success mark */}
             <div className="xpnd-success-mark-wrap">
               <div className="xpnd-success-mark" aria-hidden="true">
                 <svg
@@ -593,10 +581,7 @@ export default function SignUpSuccessPage() {
             </div>
 
             <div className="xpnd-success-actions">
-              <Link
-                href="/auth/login"
-                className="xpnd-success-primary"
-              >
+              <Link href="/auth/login" className="xpnd-success-primary">
                 Go to Login
               </Link>
 

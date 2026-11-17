@@ -53,9 +53,7 @@ export default function SignUpPage() {
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
       setError(
-        error instanceof Error
-          ? error.message
-          : 'An error occurred',
+        error instanceof Error ? error.message : 'An error occurred',
       )
     } finally {
       setIsLoading(false)
@@ -63,24 +61,16 @@ export default function SignUpPage() {
   }
 
   const handleGoogleSignUp = async () => {
-    console.log('--- GOOGLE BUTTON CLICKED ---')
-
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      // Force an absolute URL. Supabase REJECTS relative URLs.
       const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`
-      console.log('--- REDIRECT URL SENT TO SUPABASE:', redirectUrl)
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        },
+        options: { redirectTo: redirectUrl },
       })
-
       if (error) throw error
     } catch (error: unknown) {
       console.error('Google Sign-In Error:', error)
@@ -90,7 +80,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="min-h-svh w-full text-[#F5F7FF]">
+    <main className="min-h-svh w-full text-foreground">
       <div className="mx-auto flex min-h-svh w-full max-w-[428px] flex-col px-8">
         <DashboardBackground />
 
@@ -100,32 +90,34 @@ export default function SignUpPage() {
             <img
               src="/xpnd-ai-logo-dark.svg"
               alt="Xpnd AI"
-              className="h-auto w-[140px] md:w-[160px]"
+              className="hidden h-auto w-[140px] dark:block md:w-[160px]"
+            />
+            <img
+              src="/xpnd-ai-logo-light.svg"
+              alt="Xpnd AI"
+              className="block h-auto w-[140px] dark:hidden md:w-[160px]"
             />
           </div>
         </Link>
 
         {/* Heading */}
         <div className="mt-[5%] text-center">
-          <h1 className="text-[18px] md:text-[24px] font-bold tracking-[-0.3px]">
+          <h1 className="text-[18px] font-bold tracking-[-0.3px] text-foreground md:text-[24px] dark:text-white">
             Create your account
           </h1>
 
-          <p className="mt-2 text-[15px] md:text-[17px] font-medium text-[#9B9AAF]">
+          <p className="mt-2 text-[15px] font-medium text-muted-foreground md:text-[17px] dark:text-white/55">
             Start tracking your expenses smarter
           </p>
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSignUp}
-          className="mt-[35px] space-y-5"
-        >
+        <form onSubmit={handleSignUp} className="mt-[35px] space-y-5">
           {/* Email */}
           <div>
             <label
               htmlFor="email"
-              className="mb-2 block text-[15px] font-semibold text-[#F5F7FF]"
+              className="mb-2 block text-[15px] font-semibold text-foreground dark:text-white"
             >
               Email
             </label>
@@ -138,18 +130,7 @@ export default function SignUpPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              className="
-                h-[56px]
-                rounded-[10px]
-                border-[#302C43]
-                bg-[#171522]
-                px-4
-                text-[16px]
-                text-[#F5F7FF]
-                placeholder:text-[#77738A]
-                focus-visible:border-[#7C5CFF]
-                focus-visible:ring-[#7C5CFF]/30
-              "
+              className="h-[56px] rounded-[10px] border-border bg-background px-4 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
             />
           </div>
 
@@ -157,7 +138,7 @@ export default function SignUpPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-2 block text-[15px] font-semibold text-[#F5F7FF]"
+              className="mb-2 block text-[15px] font-semibold text-foreground dark:text-white"
             >
               Password
             </label>
@@ -170,18 +151,7 @@ export default function SignUpPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              className="
-                h-[56px]
-                rounded-[10px]
-                border-[#302C43]
-                bg-[#171522]
-                px-4
-                text-[16px]
-                text-[#F5F7FF]
-                placeholder:text-[#77738A]
-                focus-visible:border-[#7C5CFF]
-                focus-visible:ring-[#7C5CFF]/30
-              "
+              className="h-[56px] rounded-[10px] border-border bg-background px-4 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
             />
           </div>
 
@@ -189,7 +159,7 @@ export default function SignUpPage() {
           <div>
             <label
               htmlFor="repeat-password"
-              className="mb-2 block text-[15px] font-semibold text-[#F5F7FF]"
+              className="mb-2 block text-[15px] font-semibold text-foreground dark:text-white"
             >
               Confirm Password
             </label>
@@ -202,24 +172,13 @@ export default function SignUpPage() {
               value={repeatPassword}
               onChange={(e) => setRepeatPassword(e.target.value)}
               disabled={isLoading}
-              className="
-                h-[56px]
-                rounded-[10px]
-                border-[#302C43]
-                bg-[#171522]
-                px-4
-                text-[16px]
-                text-[#F5F7FF]
-                placeholder:text-[#77738A]
-                focus-visible:border-[#7C5CFF]
-                focus-visible:ring-[#7C5CFF]/30
-              "
+              className="h-[56px] rounded-[10px] border-border bg-background px-4 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
             />
           </div>
 
           {/* Error */}
           {error && (
-            <p className="text-center text-sm text-red-400">
+            <p className="text-center text-sm text-red-500 dark:text-red-400">
               {error}
             </p>
           )}
@@ -228,21 +187,7 @@ export default function SignUpPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="
-              h-[58px]
-              w-full
-              rounded-[10px]
-              bg-gradient-to-r
-              from-[#B6FF3B]
-              to-[#7EEB2A]
-              text-[17px]
-              font-semibold
-              text-[#0D0D16]
-              shadow-[0_8px_25px_rgba(126,235,42,0.25)]
-              transition-all
-              hover:brightness-110
-              cursor-pointer
-            "
+            className="h-[58px] w-full cursor-pointer rounded-[10px] bg-gradient-to-r from-primary to-primary/85 text-[17px] font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:brightness-105 hover:shadow-xl hover:shadow-primary/30"
           >
             {isLoading ? 'Creating account...' : 'Create Account'}
           </Button>
@@ -250,19 +195,13 @@ export default function SignUpPage() {
 
         {/* Login */}
         <div className="mt-6 text-center text-[15px]">
-          <span className="text-[#9B9AAF]">
+          <span className="text-muted-foreground dark:text-white/55">
             Already have an account?{' '}
           </span>
 
           <Link
             href="/auth/login"
-            className="
-              font-semibold
-              text-[#B6FF3B]
-              underline
-              underline-offset-4
-              hover:text-[#7EEB2A]
-            "
+            className="font-semibold text-primary underline underline-offset-4 hover:opacity-80"
           >
             Login
           </Link>
@@ -270,13 +209,11 @@ export default function SignUpPage() {
 
         {/* Divider */}
         <div className="mt-[35px] flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#302C43]" />
-
-          <span className="px-1 text-[16px] font-semibold text-[#9B9AAF]">
+          <div className="h-px flex-1 bg-border" />
+          <span className="px-1 text-[16px] font-semibold text-muted-foreground dark:text-white/55">
             or
           </span>
-
-          <div className="h-px flex-1 bg-[#302C43]" />
+          <div className="h-px flex-1 bg-border" />
         </div>
 
         {/* Google */}
@@ -284,22 +221,7 @@ export default function SignUpPage() {
           <Button
             type="button"
             variant="outline"
-            className="
-              flex
-              h-[64px]
-              w-full
-              items-center
-              justify-center
-              rounded-[11px]
-              border
-              border-[#302C43]
-              bg-[#171522]
-              text-[#F5F7FF]
-              shadow-[0_8px_30px_rgba(0,0,0,0.20)]
-              hover:border-[#7C5CFF]
-              hover:bg-[#1D1A2C]
-              cursor-pointer
-            "
+            className="flex h-[64px] w-full cursor-pointer items-center justify-center rounded-[11px] border border-border bg-card text-foreground shadow-sm hover:border-primary/40 hover:bg-foreground/5 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:shadow-[0_8px_30px_rgba(0,0,0,0.20)] dark:hover:border-primary/50 dark:hover:bg-white/[0.06]"
             onClick={handleGoogleSignUp}
             disabled={isLoading}
           >
@@ -335,15 +257,14 @@ export default function SignUpPage() {
 
         {/* Terms */}
         <div className="mt-auto pb-[55px] pt-10 text-center">
-          <p className="text-[13px] font-medium text-[#77738A]">
+          <p className="text-[13px] font-medium text-muted-foreground dark:text-white/40">
             By creating an account, you agree to our
           </p>
 
-          <p className="text-[13px] font-bold text-[#F5F7FF]">
+          <p className="text-[13px] font-bold text-foreground dark:text-white">
             Terms of Service and Privacy Policy
           </p>
         </div>
-
       </div>
     </main>
   )

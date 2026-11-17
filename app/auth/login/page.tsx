@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import DashboardBackground from '@/components/dashboard-background'
-import { Eye, EyeOff,} from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,12 +31,6 @@ export default function LoginPage() {
         data: { session: Session | null }
         error: { message: string } | null
       }) => {
-        console.log('[v0] Auth getSession:', {
-          hasSession: Boolean(data.session),
-          userId: data.session?.user.id ?? null,
-          error: error?.message ?? null,
-        })
-
         if (isMounted && data.session) {
           window.location.replace('/dashboard')
         }
@@ -61,7 +55,6 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-
     const supabase = createClient()
 
     setIsLoading(true)
@@ -89,24 +82,16 @@ export default function LoginPage() {
   }
 
   const handleGoogleSignIn = async () => {
-    console.log('--- GOOGLE BUTTON CLICKED ---')
-
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      // Force an absolute URL. Supabase REJECTS relative URLs.
       const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`
-      console.log('--- REDIRECT URL SENT TO SUPABASE:', redirectUrl)
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        },
+        options: { redirectTo: redirectUrl },
       })
-
       if (error) throw error
     } catch (error: unknown) {
       console.error('Google Sign-In Error:', error)
@@ -116,23 +101,16 @@ export default function LoginPage() {
   }
 
   const handleAppleSignIn = async () => {
-    console.log('--- APPLE BUTTON CLICKED ---')
-
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
       const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`
-      console.log('--- REDIRECT URL SENT TO SUPABASE:', redirectUrl)
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
-        options: {
-          redirectTo: redirectUrl,
-        },
+        options: { redirectTo: redirectUrl },
       })
-
       if (error) throw error
     } catch (error: unknown) {
       console.error('Apple Sign-In Error:', error)
@@ -142,7 +120,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-svh w-full text-[#F5F7FF]">
+    <main className="min-h-svh w-full text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-[428px] flex-col px-8">
         <DashboardBackground />
 
@@ -152,30 +130,34 @@ export default function LoginPage() {
             <img
               src="/xpnd-ai-logo-dark.svg"
               alt="Xpnd AI"
-              className="h-auto w-[140px] md:w-[160px]"
+              className="hidden h-auto w-[140px] dark:block md:w-[160px]"
+            />
+            <img
+              src="/xpnd-ai-logo-light.svg"
+              alt="Xpnd AI"
+              className="block h-auto w-[140px] dark:hidden md:w-[160px]"
             />
           </div>
         </Link>
 
         {/* Heading */}
         <div className="mt-[5%] text-center">
-          <h2 className="text-[18px] font-bold tracking-[-0.3px] md:text-[24px]">
+          <h2 className="text-[18px] font-bold tracking-[-0.3px] text-foreground md:text-[24px] dark:text-white">
             Welcome to Xpnd AI
           </h2>
 
-          <p className="mt-2 text-[15px] font-medium text-[#9B9AAF] md:text-[17px]">
+          <p className="mt-2 text-[15px] font-medium text-muted-foreground md:text-[17px] dark:text-white/55">
             Sign in to continue
           </p>
         </div>
 
         {/* Email / Password Form */}
         <form onSubmit={handleLogin} className="mt-[45px] space-y-5">
-
           {/* Email */}
           <div>
             <label
               htmlFor="email"
-              className="mb-2 block text-[15px] font-semibold text-[#F5F7FF]"
+              className="mb-2 block text-[15px] font-semibold text-foreground dark:text-white"
             >
               Email
             </label>
@@ -188,18 +170,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              className="
-                h-[56px]
-                rounded-[10px]
-                border-[#302C43]
-                bg-[#171522]
-                px-4
-                text-[16px]
-                text-[#F5F7FF]
-                placeholder:text-[#77738A]
-                focus-visible:border-[#7C5CFF]
-                focus-visible:ring-[#7C5CFF]/30
-              "
+              className="h-[56px] rounded-[10px] border-border bg-background px-4 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
             />
           </div>
 
@@ -207,7 +178,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-2 block text-[15px] font-semibold text-[#F5F7FF]"
+              className="mb-2 block text-[15px] font-semibold text-foreground dark:text-white"
             >
               Password
             </label>
@@ -221,19 +192,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="
-                  h-[56px]
-                  rounded-[10px]
-                  border-[#302C43]
-                  bg-[#171522]
-                  px-4
-                  pr-12
-                  text-[16px]
-                  text-[#F5F7FF]
-                  placeholder:text-[#77738A]
-                  focus-visible:border-[#7C5CFF]
-                  focus-visible:ring-[#7C5CFF]/30
-                "
+                className="h-[56px] rounded-[10px] border-border bg-background px-4 pr-12 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
               />
 
               <button
@@ -241,26 +200,7 @@ export default function LoginPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="
-                  absolute
-                  right-3
-                  top-1/2
-                  flex
-                  h-9
-                  w-9
-                  -translate-y-1/2
-                  items-center
-                  justify-center
-                  rounded-md
-                  text-[#77738A]
-                  transition-colors
-                  hover:text-[#F5F7FF]
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-[#7C5CFF]/40
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white/40 dark:hover:text-white"
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -273,7 +213,7 @@ export default function LoginPage() {
 
           {/* Error */}
           {error && (
-            <p className="text-center text-sm text-red-400">
+            <p className="text-center text-sm text-red-500 dark:text-red-400">
               {error}
             </p>
           )}
@@ -282,21 +222,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="
-              h-[58px]
-              w-full
-              cursor-pointer
-              rounded-[10px]
-              bg-gradient-to-r
-              from-[#B6FF3B]
-              to-[#7EEB2A]
-              text-[17px]
-              font-semibold
-              text-[#0D0D16]
-              shadow-[0_8px_25px_rgba(126,235,42,0.25)]
-              transition-all
-              hover:brightness-110
-            "
+            className="h-[58px] w-full cursor-pointer rounded-[10px] bg-gradient-to-r from-primary to-primary/85 text-[17px] font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:brightness-105 hover:shadow-xl hover:shadow-primary/30"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
@@ -304,19 +230,13 @@ export default function LoginPage() {
 
         {/* Sign Up */}
         <div className="mt-6 text-center text-[15px]">
-          <span className="text-[#9B9AAF]">
+          <span className="text-muted-foreground dark:text-white/55">
             Don&apos;t have an account?{' '}
           </span>
 
           <Link
             href="/auth/sign-up"
-            className="
-              font-semibold
-              text-[#B6FF3B]
-              underline
-              underline-offset-4
-              hover:text-[#7EEB2A]
-            "
+            className="font-semibold text-primary underline underline-offset-4 hover:opacity-80"
           >
             Sign up
           </Link>
@@ -324,40 +244,22 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="mt-[45px] flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#302C43]" />
-
-          <span className="px-1 text-[17px] font-semibold text-[#9B9AAF]">
+          <div className="h-px flex-1 bg-border" />
+          <span className="px-1 text-[17px] font-semibold text-muted-foreground dark:text-white/55">
             or
           </span>
-
-          <div className="h-px flex-1 bg-[#302C43]" />
+          <div className="h-px flex-1 bg-border" />
         </div>
 
         {/* Social Login Buttons */}
         <div className="mt-[35px] grid grid-cols-2 gap-[19px]">
-
           {/* Google */}
           <Button
             type="button"
             variant="outline"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="
-    flex
-    h-[70px]
-    items-center
-    justify-center
-    gap-2.5
-    rounded-[11px]
-    border
-    border-[#302C43]
-    bg-[#171522]
-    text-[#F5F7FF]
-    shadow-[0_8px_30px_rgba(0,0,0,0.20)]
-    hover:border-[#7C5CFF]
-    hover:bg-[#1D1A2C]
-    cursor-pointer
-  "
+            className="flex h-[70px] cursor-pointer items-center justify-center gap-2.5 rounded-[11px] border border-border bg-card text-foreground shadow-sm hover:border-primary/40 hover:bg-foreground/5 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:shadow-[0_8px_30px_rgba(0,0,0,0.20)] dark:hover:border-primary/50 dark:hover:bg-white/[0.06]"
           >
             <svg
               className="h-5 w-5 shrink-0"
@@ -382,7 +284,6 @@ export default function LoginPage() {
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
               />
             </svg>
-
             <span className="text-[16px] font-semibold">Google</span>
           </Button>
 
@@ -392,31 +293,18 @@ export default function LoginPage() {
             variant="outline"
             onClick={handleAppleSignIn}
             disabled={true}
-            className="
-              h-[70px]
-              rounded-[11px]
-              border
-              border-[#302C43]
-              bg-[#171522]
-              text-[#F5F7FF]
-              shadow-[0_8px_30px_rgba(0,0,0,0.20)]
-              hover:border-[#7C5CFF]
-              hover:bg-[#1D1A2C]
-            "
+            className="h-[70px] rounded-[11px] border border-border bg-card text-foreground shadow-sm hover:border-primary/40 hover:bg-foreground/5 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:shadow-[0_8px_30px_rgba(0,0,0,0.20)] dark:hover:border-primary/50 dark:hover:bg-white/[0.06]"
           >
-            <span className="text-[16px] font-semibold">
-              Apple
-            </span>
+            <span className="text-[16px] font-semibold">Apple</span>
           </Button>
         </div>
 
         {/* Terms */}
         <div className="mt-auto pb-[70px] pt-10 text-center">
-          <p className="text-[14px] font-medium text-[#77738A]">
+          <p className="text-[14px] font-medium text-muted-foreground dark:text-white/40">
             By continuing, you agree to our
           </p>
-
-          <p className="text-[14px] font-bold text-[#F5F7FF]">
+          <p className="text-[14px] font-bold text-foreground dark:text-white">
             Terms of Service and Privacy Policy
           </p>
         </div>

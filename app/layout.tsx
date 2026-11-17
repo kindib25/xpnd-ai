@@ -2,19 +2,55 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { PwaRegister } from '@/components/pwa-register'
 import './globals.css'
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
-import { ThemeProvider } from 'next-themes' // <-- ADD THIS
+import { ThemeProvider } from 'next-themes'
 
 export const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
-});
+  subsets: ['latin'],
+  variable: '--font-geist',
+})
 
 export const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-});
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+})
+
+export const metadata: Metadata = {
+  title: 'Xpnd AI',
+  description:
+    'Track, analyze, and optimize your expenses with AI-powered insights. Smart budgeting made simple.',
+  generator: 'v0.app',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      {
+        url: '/xpnd-ai-icon.png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/xpnd-ai-icon.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/xpnd-ai-icon.png',
+        type: 'image/svg+xml',
+      },
+    ],
+    apple: '/xpnd-ai-icon.png',
+  },
+}
+
+export const viewport: Viewport = {
+  colorScheme: 'light dark',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#2563eb' },
+    { media: '(prefers-color-scheme: dark)', color: '#1e40af' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
 
 export default function RootLayout({
   children,
@@ -22,12 +58,26 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    // Add suppressHydrationWarning and remove hardcoded dark class
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+      <head>
+        {/*
+          Apply the saved accent color BEFORE paint to prevent a flash
+          of the default accent. Runs synchronously in <head> so it
+          always beats React hydration.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var a=localStorage.getItem('app-accent');if(a)document.documentElement.setAttribute('data-accent',a);}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body
+        className={`${geist.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+      >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
         </ThemeProvider>
+
         <Toaster
           position="bottom-right"
           richColors
