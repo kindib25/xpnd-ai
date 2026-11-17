@@ -33,16 +33,9 @@ const FAB_SIZE = 64
 const FAB_MARGIN = 20
 const BUBBLE_RESERVE = 340
 
-/**
- * Extra bottom clearance on small screens so the FAB never overlaps the
- * mobile bottom navigation on first paint. Tune this to match your nav's
- * actual height (typical mobile bottom navs are 64–80px, plus a little
- * breathing room).
- */
 const MOBILE_NAV_CLEARANCE = 80
-const MOBILE_BREAKPOINT = 768 // matches Tailwind's `md`
+const MOBILE_BREAKPOINT = 768
 
-/** How far from the bottom edge the FAB is allowed to sit. */
 function getBottomOffset(viewportWidth: number) {
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   return FAB_MARGIN + (isMobile ? MOBILE_NAV_CLEARANCE : 0)
@@ -67,15 +60,15 @@ function CoachAvatar({
       aria-hidden="true"
     >
       <img
-        src="/ai-agent.png" // <-- your filename in /public
+        src="/ai-agent.png"
         alt=""
         draggable={false}
         onDragStart={(e) => e.preventDefault()}
-        className="pointer-events-none h-full w-full select-none rounded-full border border-white/10 object-cover shadow-[0_0_20px_-4px_rgba(105,69,255,0.85)]"
+        className="pointer-events-none h-full w-full select-none rounded-full border border-border object-cover shadow-[0_0_20px_-4px_var(--primary)] dark:border-white/10"
       />
       {thinking && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-[#0D1626]/50 backdrop-blur-[1px]">
-          <span className="h-2.5 w-2.5 animate-ping rounded-full bg-[#65E8FF]" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-card/50 backdrop-blur-[1px] dark:bg-[#0D1626]/50">
+          <span className="h-2.5 w-2.5 animate-ping rounded-full bg-primary" />
         </div>
       )}
     </div>
@@ -83,7 +76,7 @@ function CoachAvatar({
 }
 
 // ---------------------------------------------------------------------------
-// Draggable FAB + chat bubble (presentational)
+// Draggable FAB + chat bubble
 // ---------------------------------------------------------------------------
 interface FloatingAIAssistantProps {
   insight: string | null
@@ -128,25 +121,15 @@ function FloatingAIAssistant({
 
       setViewport({ w, h })
       setPos((prev) => {
-        // First paint — snap to bottom-right, above the mobile nav if any.
         if (!prev) {
           return {
             x: w - FAB_SIZE - FAB_MARGIN,
             y: h - FAB_SIZE - bottomOffset,
           }
         }
-
-        // On resize, re-clamp into the safe area so it can't hide behind
-        // the mobile nav or get pushed off-screen.
         return {
-          x: Math.max(
-            FAB_MARGIN,
-            Math.min(w - FAB_SIZE - FAB_MARGIN, prev.x)
-          ),
-          y: Math.max(
-            FAB_MARGIN,
-            Math.min(h - FAB_SIZE - bottomOffset, prev.y)
-          ),
+          x: Math.max(FAB_MARGIN, Math.min(w - FAB_SIZE - FAB_MARGIN, prev.x)),
+          y: Math.max(FAB_MARGIN, Math.min(h - FAB_SIZE - bottomOffset, prev.y)),
         }
       })
     }
@@ -185,17 +168,11 @@ function FloatingAIAssistant({
       const bottomOffset = getBottomOffset(viewport.w)
       const newX = Math.max(
         FAB_MARGIN,
-        Math.min(
-          viewport.w - FAB_SIZE - FAB_MARGIN,
-          dragRef.current.startPosX + dx
-        )
+        Math.min(viewport.w - FAB_SIZE - FAB_MARGIN, dragRef.current.startPosX + dx)
       )
       const newY = Math.max(
         FAB_MARGIN,
-        Math.min(
-          viewport.h - FAB_SIZE - bottomOffset,
-          dragRef.current.startPosY + dy
-        )
+        Math.min(viewport.h - FAB_SIZE - bottomOffset, dragRef.current.startPosY + dy)
       )
       setPos({ x: newX, y: newY })
     }
@@ -251,32 +228,34 @@ function FloatingAIAssistant({
           aria-label={`${COACH.name}, ${COACH.role}`}
           className={`
             absolute w-[min(92vw,368px)] overflow-hidden rounded-3xl
-            border border-white/[0.14] bg-[#0D1626]/95 backdrop-blur-2xl
-            shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_28px_70px_-22px_rgba(0,0,0,0.9)]
+            border border-border bg-card/95 backdrop-blur-2xl
+            shadow-xl
             animate-in fade-in duration-200
+            dark:border-white/[0.14] dark:bg-[#0D1626]/95 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_28px_70px_-22px_rgba(0,0,0,0.9)]
             ${openUpward ? 'bottom-full mb-3 slide-in-from-bottom-3' : 'top-full mt-3 slide-in-from-top-3'}
             ${alignRight ? 'right-0' : 'left-0'}
           `}
         >
+          {/* Signature brand gradient bar — kept as Kai's identity */}
           <div
             aria-hidden="true"
             className="h-[3px] w-full bg-[linear-gradient(90deg,#7CFF3A,#65E8FF,#6945FF)]"
           />
 
-          <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] px-4 py-3.5">
+          <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3.5 dark:border-white/[0.08]">
             <div className="flex items-center gap-3">
               <CoachAvatar size={40} thinking={isLoading} />
               <div className="leading-tight">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-foreground dark:text-white">
                     {COACH.name}
                   </p>
-                  <span className="rounded-full border border-[#7CFF3A]/30 bg-[#7CFF3A]/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wide text-[#c8ff75]">
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wide text-primary">
                     Coach
                   </span>
                 </div>
-                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/50">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#7CFF3A] shadow-[0_0_6px_rgba(124,255,58,0.9)]" />
+                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground dark:text-white/50">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_6px_var(--primary)]" />
                   {COACH.role} · {COACH.status}
                 </p>
               </div>
@@ -286,59 +265,49 @@ function FloatingAIAssistant({
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close coach"
-              className="
-                grid h-7 w-7 place-items-center rounded-full
-                text-white/55 transition-colors
-                hover:bg-white/[0.08] hover:text-white
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd]
-              "
+              className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-white/55 dark:hover:bg-white/[0.08] dark:hover:text-white"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
 
           <div className="space-y-3 px-4 py-3.5">
+            {/* Greeting bubble */}
             <div className="flex items-start gap-2.5">
               <CoachAvatar size={28} className="mt-0.5" />
-              <div className="relative rounded-2xl rounded-tl-sm border border-white/[0.10] bg-white/[0.05] px-3.5 py-2.5 text-[13px] leading-relaxed text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <div className="relative rounded-2xl rounded-tl-sm border border-border bg-muted/50 px-3.5 py-2.5 text-[13px] leading-relaxed text-foreground/80 shadow-sm dark:border-white/[0.10] dark:bg-white/[0.05] dark:text-white/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                 {greeting}
               </div>
             </div>
 
+            {/* Insight bubble */}
             <div className="flex items-start gap-2.5">
               <div className="w-7 shrink-0" aria-hidden="true" />
-              <div
-                className="
-                  relative flex-1 rounded-2xl rounded-tl-sm
-                  border border-white/[0.10] bg-[linear-gradient(180deg,rgba(105,69,255,0.14),rgba(255,255,255,0.04))]
-                  px-3.5 py-3 text-[13px] leading-relaxed text-white/90
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
-                "
-              >
+              <div className="relative flex-1 rounded-2xl rounded-tl-sm border border-primary/20 bg-primary/5 px-3.5 py-3 text-[13px] leading-relaxed text-foreground/90 shadow-sm dark:border-white/[0.10] dark:bg-[linear-gradient(180deg,rgba(105,69,255,0.14),rgba(255,255,255,0.04))] dark:text-white/90 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 {isLoading ? (
-                  <span className="flex items-center gap-2 text-white/75">
+                  <span className="flex items-center gap-2 text-muted-foreground dark:text-white/75">
                     <span className="flex gap-1">
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#c8ff75] [animation-delay:-0.2s]" />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#c8ff75] [animation-delay:-0.1s]" />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#c8ff75]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.2s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.1s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
                     </span>
                     Kai is reviewing your numbers…
                   </span>
                 ) : error ? (
-                  <span className="flex items-start gap-2 text-red-200">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />
+                  <span className="flex items-start gap-2 text-red-600 dark:text-red-200">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500 dark:text-red-300" />
                     <span>{error}</span>
                   </span>
                 ) : insight ? (
                   insight
                 ) : (
-                  <span className="text-white/55">{COACH_EMPTY_STATE}</span>
+                  <span className="text-muted-foreground dark:text-white/55">{COACH_EMPTY_STATE}</span>
                 )}
               </div>
             </div>
 
             <div className="flex items-center justify-between gap-2 pt-0.5">
-              <span className="flex items-center gap-1.5 text-[10px] text-white/35">
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 dark:text-white/35">
                 <MessageCircle className="h-3 w-3" />
                 Powered by Xpnd AI
               </span>
@@ -347,16 +316,7 @@ function FloatingAIAssistant({
                 type="button"
                 onClick={onGenerate}
                 disabled={isLoading || disabled}
-                className="
-                  inline-flex items-center gap-1.5 rounded-xl
-                  border border-[#6930FF]/40 bg-gradient-to-r from-[#6930FF] to-[#7538FF]
-                  px-3.5 py-2 text-xs font-semibold text-white
-                  shadow-[0_0_16px_rgba(105,69,255,0.35)]
-                  transition-all duration-200
-                  hover:scale-[1.02] hover:shadow-[0_0_22px_rgba(105,69,255,0.5)]
-                  disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd]
-                "
+                className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all duration-200 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {isLoading ? (
                   <>
@@ -384,53 +344,53 @@ function FloatingAIAssistant({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onClick={handleClick}
-        aria-label={
-          open
-            ? `Close ${COACH.name}, ${COACH.role}`
-            : `Open ${COACH.name}, ${COACH.role}`
-        }
+        aria-label={open ? `Close ${COACH.name}, ${COACH.role}` : `Open ${COACH.name}, ${COACH.role}`}
         aria-expanded={open}
         style={{ touchAction: 'none', width: FAB_SIZE, height: FAB_SIZE }}
         className={`
           group relative grid select-none place-items-center rounded-full
           transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]
           ${dragging ? 'scale-105 cursor-grabbing' : 'cursor-grab hover:scale-[1.06]'}
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4b5fd] focus-visible:ring-offset-2 focus-visible:ring-offset-[#13161a]
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
         `}
       >
+        {/* FAB ambient glow */}
         <span
           aria-hidden="true"
-          className="absolute inset-0 -z-10 rounded-full bg-[#6945FF]/45 blur-xl opacity-70"
+          className="absolute inset-0 -z-10 rounded-full bg-primary/40 blur-xl opacity-70"
         />
 
+        {/* Ping when new insight is ready */}
         {!open && insight && !isLoading && (
           <span
             aria-hidden="true"
-            className="absolute inset-0 -z-10 animate-ping rounded-full bg-[#7CFF3A]/25"
+            className="absolute inset-0 -z-10 animate-ping rounded-full bg-primary/25"
           />
         )}
 
         {open ? (
-          <div className="grid h-full w-full place-items-center rounded-full border border-white/[0.16] bg-[#0D1626]/90 backdrop-blur-xl">
-            <X className="h-6 w-6 text-white" />
+          <div className="grid h-full w-full place-items-center rounded-full border border-border bg-card/90 backdrop-blur-xl dark:border-white/[0.16] dark:bg-[#0D1626]/90">
+            <X className="h-6 w-6 text-foreground dark:text-white" />
           </div>
         ) : (
           <CoachAvatar size={FAB_SIZE} thinking={isLoading} />
         )}
 
+        {/* Bottom-right online dot */}
         {!open && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-[#0D1626] bg-[#0D1626]"
+            className="pointer-events-none absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-background bg-background dark:border-[#0D1626] dark:bg-[#0D1626]"
           >
-            <span className="h-2.5 w-2.5 rounded-full bg-[#7CFF3A] shadow-[0_0_8px_rgba(124,255,58,0.95)]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
           </span>
         )}
 
+        {/* Top-right notification dot */}
         {!open && insight && !isLoading && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute -top-0.5 right-1 h-2.5 w-2.5 rounded-full bg-[#65E8FF] ring-2 ring-[#0D1626]"
+            className="pointer-events-none absolute -top-0.5 right-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background dark:ring-[#0D1626]"
           />
         )}
       </button>
@@ -439,7 +399,7 @@ function FloatingAIAssistant({
 }
 
 // ---------------------------------------------------------------------------
-// FloatingAICoach — self-contained wrapper (fetch data + render coach)
+// FloatingAICoach — self-contained wrapper
 // ---------------------------------------------------------------------------
 export function FloatingAICoach() {
   const [expenses, setExpenses] = useState<any[]>([])
@@ -449,16 +409,13 @@ export function FloatingAICoach() {
   const [insightError, setInsightError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
-  // Fetch user's data once on mount so the coach works on any page.
   useEffect(() => {
     let cancelled = false
 
     const load = async () => {
       try {
         const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const { data: { user } } = await supabase.auth.getUser()
 
         if (!user) {
           if (!cancelled) setReady(true)
@@ -466,11 +423,7 @@ export function FloatingAICoach() {
         }
 
         const [expRes, budRes] = await Promise.all([
-          supabase
-            .from('expenses')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('date', { ascending: false }),
+          supabase.from('expenses').select('*').eq('user_id', user.id).order('date', { ascending: false }),
           supabase.from('budgets').select('*').eq('user_id', user.id),
         ])
 
@@ -509,9 +462,7 @@ export function FloatingAICoach() {
       setAiInsight(data.insight)
     } catch (error) {
       console.error('[coach] Insight request failed:', error)
-      setInsightError(
-        "I couldn't pull your numbers just now. Give me a moment and try again."
-      )
+      setInsightError("I couldn't pull your numbers just now. Give me a moment and try again.")
     } finally {
       setIsLoadingInsight(false)
     }

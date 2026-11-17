@@ -60,8 +60,6 @@ export function GoalsList({
   const [isRecordingRemainder, setIsRecordingRemainder] =
     useState(false)
 
-  // Keeps the success notice visible after the remainder
-  // has been successfully added and the page is refreshed.
   const [recordedRemainder, setRecordedRemainder] = useState(0)
 
   const [allocationDraft, setAllocationDraft] = useState<
@@ -75,13 +73,6 @@ export function GoalsList({
     deadline: '',
   })
 
-  /*
-   * Automatically record previous budget remainders.
-   *
-   * The database column `savings_remainder_recorded`
-   * is the source of truth for whether a budget remainder
-   * has already been transferred to savings.
-   */
   useEffect(() => {
     if (remainder <= 0) return
 
@@ -90,224 +81,94 @@ export function GoalsList({
 
       try {
         const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
 
-        if (!user) {
-          throw new Error('Not authenticated')
-        }
+        const { data: budgets, error: budgetsError } = await supabase
+          .from('monthly_budgets')
+          .select('id, month_year, limit_amount, savings_remainder_recorded')
+          .eq('user_id', user.id)
+          .eq('savings_remainder_recorded', false)
+          .lt('month_year', new Date().toISOString().substring(0, 7))
 
-        /*
-         * Get all previous monthly budgets that have not
-         * yet had their remainder transferred to savings.
-         */
-        const { data: budgets, error: budgetsError } =
-          await supabase
-            .from('monthly_budgets')
-            .select(
-              'id, month_year, limit_amount, savings_remainder_recorded'
-            )
-            .eq('user_id', user.id)
-            .eq('savings_remainder_recorded', false)
-            .lt(
-              'month_year',
-              new Date().toISOString().substring(0, 7)
-            )
+        if (budgetsError) throw budgetsError
+        if (!budgets || budgets.length === 0) return
 
-        if (budgetsError) {
-          throw budgetsError
-        }
+        const { data: expenses, error: expensesError } = await supabase
+          .from('expenses')
+          .select('date, amount')
+          .eq('user_id', user.id)
+          .lt('date', `${new Date().toISOString().substring(0, 7)}-01`)
 
-        if (!budgets || budgets.length === 0) {
-          return
-        }
+        if (expensesError) throw expensesError
 
-        /*
-         * Get expenses from previous months.
-         */
-        const { data: expenses, error: expensesError } =
-          await supabase
-            .from('expenses')
-            .select('date, amount')
-            .eq('user_id', user.id)
-            .lt(
-              'date',
-              `${new Date().toISOString().substring(0, 7)}-01`
-            )
-
-        if (expensesError) {
-          throw expensesError
-        }
-
-        /*
-         * Calculate total spending for each month.
-         */
         const spentByMonth = (expenses || []).reduce(
-          (
-            totals: Record<string, number>,
-            expense: {
-              date: string
-              amount: number | string
-            }
-          ) => {
+          (totals: Record<string, number>, expense: { date: string; amount: number | string }) => {
             const month = String(expense.date).substring(0, 7)
-
-            totals[month] =
-              (totals[month] || 0) +
-              Number(expense.amount || 0)
-
+            totals[month] = (totals[month] || 0) + Number(expense.amount || 0)
             return totals
           },
           {}
         )
 
-        /*
-         * Calculate the remainder only for budgets
-         * that have not been recorded yet.
-         */
         const budgetsWithRemainder = budgets
-          .map(
-            (budget: {
-              id: string
-              month_year: string
-              limit_amount: number | string | null
-            }) => {
-              const limit = Number(
-                budget.limit_amount || 0
-              )
+          .map((budget: { id: string; month_year: string; limit_amount: number | string | null }) => {
+            const limit = Number(budget.limit_amount || 0)
+            const spent = spentByMonth[budget.month_year] || 0
+            const budgetRemainder = Math.max(0, limit - spent)
+            return { ...budget, remainder: budgetRemainder }
+          })
+          .filter((budget: { remainder: number }) => budget.remainder > 0)
 
-              const spent =
-                spentByMonth[budget.month_year] || 0
+        if (budgetsWithRemainder.length === 0) return
 
-              const budgetRemainder = Math.max(
-                0,
-                limit - spent
-              )
-
-              return {
-                ...budget,
-                remainder: budgetRemainder,
-              }
-            }
-          )
-          .filter(
-            (budget: { remainder: number }) =>
-              budget.remainder > 0
-          )
-
-        if (budgetsWithRemainder.length === 0) {
-          return
-        }
-
-        /*
-         * Calculate the amount that should be added to savings.
-         */
         const amountToAdd = budgetsWithRemainder.reduce(
-          (
-            total: number,
-            budget: { remainder: number }
-          ) => total + budget.remainder,
+          (total: number, budget: { remainder: number }) => total + budget.remainder,
           0
         )
 
-        if (amountToAdd <= 0) {
-          return
-        }
+        if (amountToAdd <= 0) return
 
-        /*
-         * Get the latest profile value from Supabase.
-         */
-        const {
-          data: latestProfile,
-          error: profileFetchError,
-        } = await supabase
+        const { data: latestProfile, error: profileFetchError } = await supabase
           .from('profiles')
           .select('total_saved_amount')
           .eq('id', user.id)
           .single()
 
-        if (profileFetchError) {
-          throw profileFetchError
-        }
+        if (profileFetchError) throw profileFetchError
 
-        const currentSaved = Number(
-          latestProfile?.total_saved_amount || 0
-        )
+        const currentSaved = Number(latestProfile?.total_saved_amount || 0)
+        const newTotalSaved = currentSaved + amountToAdd
 
-        const newTotalSaved =
-          currentSaved + amountToAdd
-
-        /*
-         * Update total saved amount.
-         */
-        const {
-          data: updatedProfile,
-          error: updateError,
-        } = await supabase
+        const { data: updatedProfile, error: updateError } = await supabase
           .from('profiles')
-          .update({
-            total_saved_amount: newTotalSaved,
-          })
+          .update({ total_saved_amount: newTotalSaved })
           .eq('id', user.id)
           .select('id, total_saved_amount')
           .single()
 
-        if (updateError || !updatedProfile) {
-          throw (
-            updateError ||
-            new Error('Profile was not updated')
-          )
-        }
+        if (updateError || !updatedProfile) throw (updateError || new Error('Profile was not updated'))
 
-        /*
-         * Mark every processed monthly budget as recorded.
-         */
-        const budgetIds = budgetsWithRemainder.map(
-          (budget: { id: string }) => budget.id
-        )
+        const budgetIds = budgetsWithRemainder.map((budget: { id: string }) => budget.id)
 
-        const {
-          error: markBudgetsError,
-        } = await supabase
+        const { error: markBudgetsError } = await supabase
           .from('monthly_budgets')
-          .update({
-            savings_remainder_recorded: true,
-          })
+          .update({ savings_remainder_recorded: true })
           .in('id', budgetIds)
           .eq('user_id', user.id)
 
-        if (markBudgetsError) {
-          throw markBudgetsError
-        }
+        if (markBudgetsError) throw markBudgetsError
 
-        /*
-         * Update local UI.
-         */
-        const updatedAmount = Number(
-          updatedProfile.total_saved_amount || 0
-        )
+        const updatedAmount = Number(updatedProfile.total_saved_amount || 0)
 
         setTotalSaved(updatedAmount)
         setSavedDraft(String(updatedAmount))
-
-        /*
-         * IMPORTANT:
-         * Store the successfully recorded remainder
-         * separately from the original `remainder` prop.
-         *
-         * This allows the success notice to remain visible
-         * even after router.refresh() changes the prop to 0.
-         */
         setRecordedRemainder(amountToAdd)
 
         router.refresh()
       } catch (error) {
-        console.error(
-          'Failed to record budget remainder:',
-          error
-        )
+        console.error('Failed to record budget remainder:', error)
       } finally {
         setIsRecordingRemainder(false)
       }
@@ -316,18 +177,9 @@ export function GoalsList({
     recordRemainder()
   }, [remainder, router])
 
-  /*
-   * Update local state if the profile value changes.
-   *
-   * Do not reset recordedRemainder here because the
-   * success notice should remain visible after refresh.
-   */
   useEffect(() => {
     if (remainder <= 0) {
-      const amount = Number(
-        profile?.total_saved_amount || 0
-      )
-
+      const amount = Number(profile?.total_saved_amount || 0)
       setTotalSaved(amount)
       setSavedDraft(String(amount))
     }
@@ -347,17 +199,11 @@ export function GoalsList({
     })}`
   }
 
-  /*
-   * Open edit dialog.
-   */
   const openEditSavedDialog = () => {
     setSavedDraft(String(totalSaved))
     setIsEditingSaved(true)
   }
 
-  /*
-   * Save total saved amount.
-   */
   const handleSaveTotal = async () => {
     const amount = Number(savedDraft)
 
@@ -370,37 +216,20 @@ export function GoalsList({
 
     try {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-      if (!user) {
-        throw new Error('Not authenticated')
-      }
-
-      const {
-        data: updatedProfile,
-        error,
-      } = await supabase
+      const { data: updatedProfile, error } = await supabase
         .from('profiles')
-        .update({
-          total_saved_amount: amount,
-        })
+        .update({ total_saved_amount: amount })
         .eq('id', user.id)
         .select('id, total_saved_amount')
         .single()
 
-      if (error || !updatedProfile) {
-        throw (
-          error ||
-          new Error('Profile was not updated')
-        )
-      }
+      if (error || !updatedProfile) throw (error || new Error('Profile was not updated'))
 
-      const updatedAmount = Number(
-        updatedProfile.total_saved_amount || 0
-      )
+      const updatedAmount = Number(updatedProfile.total_saved_amount || 0)
 
       setTotalSaved(updatedAmount)
       setSavedDraft(String(updatedAmount))
@@ -415,13 +244,8 @@ export function GoalsList({
     }
   }
 
-  /*
-   * Allocate savings to a goal.
-   */
   const handleAllocate = async (goal: any) => {
-    const amount = Number(
-      allocationDraft[goal.id]
-    )
+    const amount = Number(allocationDraft[goal.id])
 
     if (!Number.isFinite(amount) || amount <= 0) {
       alert('Enter an amount greater than zero')
@@ -429,34 +253,22 @@ export function GoalsList({
     }
 
     if (amount > totalSaved) {
-      alert(
-        'You cannot allocate more than your total saved amount'
-      )
+      alert('You cannot allocate more than your total saved amount')
       return
     }
 
-    const currentAmount = Number(
-      goal.current_amount || 0
-    )
-
-    const targetAmount = Number(
-      goal.target_amount || 0
-    )
+    const currentAmount = Number(goal.current_amount || 0)
+    const targetAmount = Number(goal.target_amount || 0)
 
     if (currentAmount >= targetAmount) {
       alert('This goal is already complete')
       return
     }
 
-    const remainingGoalAmount =
-      targetAmount - currentAmount
+    const remainingGoalAmount = targetAmount - currentAmount
 
     if (amount > remainingGoalAmount) {
-      alert(
-        `You only need ${formatCurrency(
-          remainingGoalAmount
-        )} to complete this goal`
-      )
+      alert(`You only need ${formatCurrency(remainingGoalAmount)} to complete this goal`)
       return
     }
 
@@ -464,63 +276,35 @@ export function GoalsList({
 
     try {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-      if (!user) {
-        throw new Error('Not authenticated')
-      }
+      const { error: goalError } = await supabase
+        .from('savings_goals')
+        .update({ current_amount: currentAmount + amount })
+        .eq('id', goal.id)
+        .eq('user_id', user.id)
 
-      const { error: goalError } =
-        await supabase
-          .from('savings_goals')
-          .update({
-            current_amount:
-              currentAmount + amount,
-          })
-          .eq('id', goal.id)
-          .eq('user_id', user.id)
+      if (goalError) throw goalError
 
-      if (goalError) {
-        throw goalError
-      }
+      const nextTotal = totalSaved - amount
 
-      const nextTotal =
-        totalSaved - amount
-
-      const {
-        data: updatedProfile,
-        error: profileError,
-      } = await supabase
+      const { data: updatedProfile, error: profileError } = await supabase
         .from('profiles')
-        .update({
-          total_saved_amount: nextTotal,
-        })
+        .update({ total_saved_amount: nextTotal })
         .eq('id', user.id)
         .select('id, total_saved_amount')
         .single()
 
-      if (profileError || !updatedProfile) {
-        throw (
-          profileError ||
-          new Error('Profile was not updated')
-        )
-      }
+      if (profileError || !updatedProfile) throw (profileError || new Error('Profile was not updated'))
 
-      const updatedAmount = Number(
-        updatedProfile.total_saved_amount || 0
-      )
+      const updatedAmount = Number(updatedProfile.total_saved_amount || 0)
 
       setTotalSaved(updatedAmount)
       setSavedDraft(String(updatedAmount))
 
-      setAllocationDraft((draft) => ({
-        ...draft,
-        [goal.id]: '',
-      }))
-
+      setAllocationDraft((draft) => ({ ...draft, [goal.id]: '' }))
       router.refresh()
     } catch (error) {
       console.error(error)
@@ -530,22 +314,13 @@ export function GoalsList({
     }
   }
 
-  /*
-   * Add new savings goal.
-   */
-  const handleAddGoal = async (
-    e: React.FormEvent
-  ) => {
+  const handleAddGoal = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!newGoal.name || !newGoal.target) {
-      return
-    }
+    if (!newGoal.name || !newGoal.target) return
 
     const target = Number(newGoal.target)
-    const current = Number(
-      newGoal.current || 0
-    )
+    const current = Number(newGoal.current || 0)
 
     if (!Number.isFinite(target) || target <= 0) {
       alert('Enter a valid target amount')
@@ -558,9 +333,7 @@ export function GoalsList({
     }
 
     if (current > target) {
-      alert(
-        'Already saved amount cannot be greater than the target amount'
-      )
+      alert('Already saved amount cannot be greater than the target amount')
       return
     }
 
@@ -568,38 +341,21 @@ export function GoalsList({
 
     try {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-      if (!user) {
-        throw new Error('Not authenticated')
-      }
-
-      const { error } =
-        await supabase
-          .from('savings_goals')
-          .insert({
-            user_id: user.id,
-            name: newGoal.name,
-            target_amount: target,
-            current_amount: current,
-            deadline:
-              newGoal.deadline || null,
-          })
-
-      if (error) {
-        throw error
-      }
-
-      setNewGoal({
-        name: '',
-        target: '',
-        current: '',
-        deadline: '',
+      const { error } = await supabase.from('savings_goals').insert({
+        user_id: user.id,
+        name: newGoal.name,
+        target_amount: target,
+        current_amount: current,
+        deadline: newGoal.deadline || null,
       })
 
+      if (error) throw error
+
+      setNewGoal({ name: '', target: '', current: '', deadline: '' })
       setIsAdding(false)
 
       router.refresh()
@@ -611,37 +367,22 @@ export function GoalsList({
     }
   }
 
-  /*
-   * Delete goal.
-   */
-  const handleDeleteGoal = async (
-    id: string
-  ) => {
-    if (!confirm('Delete this goal?')) {
-      return
-    }
+  const handleDeleteGoal = async (id: string) => {
+    if (!confirm('Delete this goal?')) return
 
     try {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-      if (!user) {
-        throw new Error('Not authenticated')
-      }
+      const { error } = await supabase
+        .from('savings_goals')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
 
-      const { error } =
-        await supabase
-          .from('savings_goals')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', user.id)
-
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
       router.refresh()
     } catch (error) {
@@ -654,29 +395,19 @@ export function GoalsList({
     <div className="w-full space-y-5 sm:space-y-6">
 
       {/* =========================================================
-          AMBIENT BACKGROUND — fixed, full-viewport, out of content flow.
-          Colour orbs give the backdrop-blur something real to bite on.
+          AMBIENT BACKGROUND — FIXED FOR LIGHT/DARK MODE
       ========================================================== */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
-          }}
-        />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-background transition-colors duration-500 dark:bg-[radial-gradient(120%_120%_at_50%_0%,#30333a_0%,#1a1d22_42%,#13161a_72%,#0f1115_100%)]" />
 
-        {/* Lime orb — primary accent, upper-left */}
-        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-[#9ee82d]/[0.14] blur-[130px]" />
+        {/* Primary orb — dynamic accent color, upper-left */}
+        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-primary/10 blur-[130px] dark:bg-primary/15" />
 
-        {/* Violet orb — brand purple, right */}
-        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-[#724bf6]/[0.20] blur-[140px]" />
+        {/* Primary orb — brand purple, right */}
+        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-primary/5 blur-[140px] dark:bg-primary/10" />
 
         {/* Sky/cyan counterweight, bottom */}
-        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/[0.10] blur-[140px]" />
+        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/10 blur-[140px]" />
       </div>
 
       {/* =========================================
@@ -695,13 +426,8 @@ export function GoalsList({
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Available savings
-                    </p>
-
-                    <p className="text-xs text-muted-foreground/70">
-                      Money available for your goals
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">Available savings</p>
+                    <p className="text-xs text-muted-foreground/70">Money available for your goals</p>
                   </div>
                 </div>
 
@@ -724,107 +450,65 @@ export function GoalsList({
 
                 <div className="mt-2 flex items-center gap-2">
                   <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-
-                  <p className="text-xs text-muted-foreground">
-                    Allocate this amount toward your goals
-                  </p>
+                  <p className="text-xs text-muted-foreground">Allocate this amount toward your goals</p>
                 </div>
               </div>
 
-              {/* =========================================
-                  BUDGET REMAINDER NOTICE
-              ========================================= */}
-
-              {/* Processing notice */}
               {isRecordingRemainder && (
                 <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-
-                  <p className="text-xs font-medium text-primary">
-                    Adding previous budget remainder...
-                  </p>
+                  <p className="text-xs font-medium text-primary">Adding previous budget remainder...</p>
                 </div>
               )}
 
-              {/* Success notice */}
-              {recordedRemainder > 0 &&
-                !isRecordingRemainder && (
-                  <div className="mt-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
-                    <p className="text-xs leading-relaxed text-primary">
-                      {formatCurrency(
-                        recordedRemainder
-                      )}{' '}
-                      from your previous budget was
-                      added to savings.
-                    </p>
-                  </div>
-                )}
+              {recordedRemainder > 0 && !isRecordingRemainder && (
+                <div className="mt-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
+                  <p className="text-xs leading-relaxed text-primary">
+                    {formatCurrency(recordedRemainder)} from your previous budget was added to savings.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* =========================================
-          EDIT TOTAL SAVED AMOUNT DIALOG
-      ========================================= */}
-      <Dialog
-        open={isEditingSaved}
-        onOpenChange={(open) => {
-          if (!isLoading) {
-            setIsEditingSaved(open)
-
-            if (!open) {
-              setSavedDraft(String(totalSaved))
-            }
-          }
-        }}
-      >
+      {/* EDIT TOTAL SAVED AMOUNT DIALOG */}
+      <Dialog open={isEditingSaved} onOpenChange={(open) => {
+        if (!isLoading) {
+          setIsEditingSaved(open)
+          if (!open) setSavedDraft(String(totalSaved))
+        }
+      }}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-3xl">
           <DialogHeader>
             <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
               <PiggyBank className="h-5 w-5 text-primary" />
             </div>
-
-            <DialogTitle className="text-xl">
-              Edit total savings
-            </DialogTitle>
-
+            <DialogTitle className="text-xl">Edit total savings</DialogTitle>
             <DialogDescription>
-              Update the amount of money currently available
-              for your savings goals.
+              Update the amount of money currently available for your savings goals.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2 py-2">
-            <Label htmlFor="dialog-total-saved">
-              Total saved amount
-            </Label>
-
+            <Label htmlFor="dialog-total-saved">Total saved amount</Label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                ₱
-              </span>
-
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
               <Input
                 id="dialog-total-saved"
                 type="number"
                 min="0"
                 step="0.01"
                 value={savedDraft}
-                onChange={(e) =>
-                  setSavedDraft(e.target.value)
-                }
+                onChange={(e) => setSavedDraft(e.target.value)}
                 disabled={isLoading}
                 className="h-12 rounded-xl pl-8 text-base"
                 autoFocus
               />
             </div>
-
             <p className="text-xs text-muted-foreground">
-              Current amount:{' '}
-              <span className="font-medium text-foreground">
-                {formatCurrency(totalSaved)}
-              </span>
+              Current amount: <span className="font-medium text-foreground">{formatCurrency(totalSaved)}</span>
             </p>
           </div>
 
@@ -832,35 +516,20 @@ export function GoalsList({
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setSavedDraft(String(totalSaved))
-                setIsEditingSaved(false)
-              }}
+              onClick={() => { setSavedDraft(String(totalSaved)); setIsEditingSaved(false) }}
               disabled={isLoading}
               className="h-11 w-full rounded-xl sm:w-auto"
             >
-              <X className="mr-2 h-4 w-4" />
-              Cancel
+              <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
-
-            <Button
-              type="button"
-              onClick={handleSaveTotal}
-              disabled={isLoading}
-              className="h-11 w-full rounded-xl sm:w-auto"
-            >
-              <Check className="mr-2 h-4 w-4" />
-              {isLoading
-                ? 'Saving...'
-                : 'Save changes'}
+            <Button type="button" onClick={handleSaveTotal} disabled={isLoading} className="h-11 w-full rounded-xl sm:w-auto">
+              <Check className="mr-2 h-4 w-4" /> {isLoading ? 'Saving...' : 'Save changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* =========================================
-          GOALS
-      ========================================= */}
+      {/* GOALS */}
       <Card className="overflow-hidden rounded-3xl border bg-card shadow-sm">
         <CardHeader className="space-y-4 p-5 pb-4 sm:p-6 sm:pb-5">
           <div className="flex items-center justify-between gap-3">
@@ -868,279 +537,108 @@ export function GoalsList({
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                 <Target className="h-5 w-5 text-primary" />
               </div>
-
               <div className="min-w-0">
-                <CardTitle className="text-lg font-bold">
-                  Your Goals
-                </CardTitle>
-
+                <CardTitle className="text-lg font-bold">Your Goals</CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {goals.length === 0
-                    ? 'Start building your savings'
-                    : `${goals.length} ${goals.length === 1
-                      ? 'goal'
-                      : 'goals'
-                    }`}
+                  {goals.length === 0 ? 'Start building your savings' : `${goals.length} ${goals.length === 1 ? 'goal' : 'goals'}`}
                 </p>
               </div>
             </div>
 
             {!isAdding && (
-              <Button
-                size="sm"
-                onClick={() => setIsAdding(true)}
-                className="shrink-0 rounded-xl"
-              >
+              <Button size="sm" onClick={() => setIsAdding(true)} className="shrink-0 rounded-xl">
                 <Plus className="mr-1.5 h-4 w-4" />
-
-                <span className="hidden xs:inline sm:inline">
-                  New Goal
-                </span>
-
-                <span className="xs:hidden sm:hidden">
-                  Add
-                </span>
+                <span className="hidden xs:inline sm:inline">New Goal</span>
+                <span className="xs:hidden sm:hidden">Add</span>
               </Button>
             )}
           </div>
         </CardHeader>
 
         <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
-          {/* ADD GOAL FORM */}
           {isAdding && (
-            <form
-              onSubmit={handleAddGoal}
-              className="mb-5 overflow-hidden rounded-2xl border bg-muted/30"
-            >
+            <form onSubmit={handleAddGoal} className="mb-5 overflow-hidden rounded-2xl border bg-muted/30">
               <div className="border-b bg-muted/40 px-4 py-3 sm:px-5">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" />
-
                   <div>
-                    <p className="text-sm font-semibold">
-                      Create a savings goal
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      Give your savings something to work toward.
-                    </p>
+                    <p className="text-sm font-semibold">Create a savings goal</p>
+                    <p className="text-xs text-muted-foreground">Give your savings something to work toward.</p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4 p-4 sm:p-5">
                 <div className="space-y-1.5">
-                  <Label htmlFor="goal-name">
-                    Goal name
-                  </Label>
-
-                  <Input
-                    id="goal-name"
-                    placeholder="e.g. Vacation Fund"
-                    value={newGoal.name}
-                    onChange={(e) =>
-                      setNewGoal({
-                        ...newGoal,
-                        name: e.target.value,
-                      })
-                    }
-                    disabled={isLoading}
-                    className="h-11 rounded-xl bg-background"
-                  />
+                  <Label htmlFor="goal-name">Goal name</Label>
+                  <Input id="goal-name" placeholder="e.g. Vacation Fund" value={newGoal.name} onChange={(e) => setNewGoal({ ...newGoal, name: e.target.value })} disabled={isLoading} className="h-11 rounded-xl bg-background" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="goal-target">
-                      Target amount
-                    </Label>
-
+                    <Label htmlFor="goal-target">Target amount</Label>
                     <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        ₱
-                      </span>
-
-                      <Input
-                        id="goal-target"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="10,000"
-                        value={newGoal.target}
-                        onChange={(e) =>
-                          setNewGoal({
-                            ...newGoal,
-                            target: e.target.value,
-                          })
-                        }
-                        disabled={isLoading}
-                        className="h-11 rounded-xl bg-background pl-8"
-                      />
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
+                      <Input id="goal-target" type="number" min="0.01" step="0.01" placeholder="10,000" value={newGoal.target} onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })} disabled={isLoading} className="h-11 rounded-xl bg-background pl-8" />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="goal-current">
-                      Already saved
-                    </Label>
-
+                    <Label htmlFor="goal-current">Already saved</Label>
                     <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        ₱
-                      </span>
-
-                      <Input
-                        id="goal-current"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0"
-                        value={newGoal.current}
-                        onChange={(e) =>
-                          setNewGoal({
-                            ...newGoal,
-                            current: e.target.value,
-                          })
-                        }
-                        disabled={isLoading}
-                        className="h-11 rounded-xl bg-background pl-8"
-                      />
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
+                      <Input id="goal-current" type="number" min="0" step="0.01" placeholder="0" value={newGoal.current} onChange={(e) => setNewGoal({ ...newGoal, current: e.target.value })} disabled={isLoading} className="h-11 rounded-xl bg-background pl-8" />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="goal-deadline">
-                    Deadline
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">
-                      optional
-                    </span>
+                    Deadline <span className="ml-1 text-xs font-normal text-muted-foreground">optional</span>
                   </Label>
-
-                  <Input
-                    id="goal-deadline"
-                    type="date"
-                    value={newGoal.deadline}
-                    onChange={(e) =>
-                      setNewGoal({
-                        ...newGoal,
-                        deadline: e.target.value,
-                      })
-                    }
-                    disabled={isLoading}
-                    className="h-11 rounded-xl bg-background"
-                  />
+                  <Input id="goal-deadline" type="date" value={newGoal.deadline} onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value })} disabled={isLoading} className="h-11 rounded-xl bg-background" />
                 </div>
 
                 <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsAdding(false)
-
-                      setNewGoal({
-                        name: '',
-                        target: '',
-                        current: '',
-                        deadline: '',
-                      })
-                    }}
-                    disabled={isLoading}
-                    className="h-11 rounded-xl sm:w-auto"
-                  >
+                  <Button type="button" variant="outline" onClick={() => { setIsAdding(false); setNewGoal({ name: '', target: '', current: '', deadline: '' }) }} disabled={isLoading} className="h-11 rounded-xl sm:w-auto">
                     Cancel
                   </Button>
-
-                  <Button
-                    type="submit"
-                    disabled={
-                      isLoading ||
-                      !newGoal.name ||
-                      !newGoal.target
-                    }
-                    className="h-11 rounded-xl sm:w-auto"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Goal
+                  <Button type="submit" disabled={isLoading || !newGoal.name || !newGoal.target} className="h-11 rounded-xl sm:w-auto">
+                    <Plus className="mr-2 h-4 w-4" /> Add Goal
                   </Button>
                 </div>
               </div>
             </form>
           )}
 
-          {/* EMPTY STATE */}
           {goals.length === 0 ? (
             <div className="rounded-2xl border border-dashed bg-muted/20 px-5 py-10 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
                 <PiggyBank className="h-6 w-6 text-primary" />
               </div>
-
-              <h3 className="mt-4 text-sm font-semibold">
-                No savings goals yet
-              </h3>
-
+              <h3 className="mt-4 text-sm font-semibold">No savings goals yet</h3>
               <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">
-                Create a goal for something you want to
-                save for and track your progress here.
+                Create a goal for something you want to save for and track your progress here.
               </p>
-
               {!isAdding && (
-                <Button
-                  size="sm"
-                  className="mt-5 rounded-xl"
-                  onClick={() => setIsAdding(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create your first goal
+                <Button size="sm" className="mt-5 rounded-xl" onClick={() => setIsAdding(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Create your first goal
                 </Button>
               )}
             </div>
           ) : (
             <div className="space-y-3">
               {goals.map((goal) => {
-                const current = Number(
-                  goal.current_amount || 0
-                )
-
-                const target = Number(
-                  goal.target_amount || 0
-                )
-
-                const progress =
-                  target > 0
-                    ? Math.min(
-                      100,
-                      (current / target) * 100
-                    )
-                    : 0
-
-                const daysLeft = goal.deadline
-                  ? Math.ceil(
-                    (new Date(
-                      goal.deadline
-                    ).getTime() -
-                      Date.now()) /
-                    86400000
-                  )
-                  : null
-
-                const remaining = Math.max(
-                  target - current,
-                  0
-                )
-
-                const isComplete =
-                  remaining <= 0
-
-                const allocationValue =
-                  allocationDraft[goal.id] || ''
+                const current = Number(goal.current_amount || 0)
+                const target = Number(goal.target_amount || 0)
+                const progress = target > 0 ? Math.min(100, (current / target) * 100) : 0
+                const daysLeft = goal.deadline ? Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / 86400000) : null
+                const remaining = Math.max(target - current, 0)
+                const isComplete = remaining <= 0
+                const allocationValue = allocationDraft[goal.id] || ''
 
                 return (
-                  <div
-                    key={goal.id}
-                    className="group overflow-hidden rounded-2xl border bg-background transition-colors hover:bg-muted/20"
-                  >
+                  <div key={goal.id} className="group overflow-hidden rounded-2xl border bg-background transition-colors hover:bg-muted/20">
                     <div className="p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
@@ -1148,104 +646,45 @@ export function GoalsList({
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                               <Target className="h-4 w-4 text-primary" />
                             </div>
-
-                            <h3 className="min-w-0 truncate text-sm font-semibold sm:text-base">
-                              {goal.name}
-                            </h3>
+                            <h3 className="min-w-0 truncate text-sm font-semibold sm:text-base">{goal.name}</h3>
                           </div>
 
                           <div className="mt-3">
                             <p className="text-xl font-bold tracking-tight sm:text-2xl">
-                              {formatShortCurrency(
-                                current
-                              )}
-
-                              <span className="ml-1 text-sm font-normal text-muted-foreground">
-                                of{' '}
-                                {formatShortCurrency(
-                                  target
-                                )}
-                              </span>
+                              {formatShortCurrency(current)}
+                              <span className="ml-1 text-sm font-normal text-muted-foreground">of {formatShortCurrency(target)}</span>
                             </p>
                           </div>
                         </div>
 
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            handleDeleteGoal(
-                              goal.id
-                            )
-                          }
-                          aria-label={`Delete ${goal.name}`}
-                          disabled={isLoading}
-                          className="h-9 w-9 shrink-0 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        >
+                        <Button size="icon" variant="ghost" onClick={() => handleDeleteGoal(goal.id)} aria-label={`Delete ${goal.name}`} disabled={isLoading} className="h-9 w-9 shrink-0 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
                       <div className="mt-4">
                         <div className="mb-2 flex items-center justify-between gap-3">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            Progress
-                          </span>
-
-                          <span className="text-xs font-bold text-primary">
-                            {Math.round(progress)}%
-                          </span>
+                          <span className="text-xs font-medium text-muted-foreground">Progress</span>
+                          <span className="text-xs font-bold text-primary">{Math.round(progress)}%</span>
                         </div>
-
-                        <Progress
-                          value={progress}
-                          className="h-2.5"
-                        />
+                        <Progress value={progress} className="h-2.5" />
                       </div>
 
                       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         <div className="rounded-xl bg-muted/40 px-3 py-2.5">
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                            Remaining
-                          </p>
-
-                          <p className="mt-0.5 truncate text-sm font-semibold">
-                            {formatCurrency(
-                              remaining
-                            )}
-                          </p>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Remaining</p>
+                          <p className="mt-0.5 truncate text-sm font-semibold">{formatCurrency(remaining)}</p>
                         </div>
-
                         <div className="rounded-xl bg-muted/40 px-3 py-2.5">
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                            Target
-                          </p>
-
-                          <p className="mt-0.5 truncate text-sm font-semibold">
-                            {formatCurrency(
-                              target
-                            )}
-                          </p>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Target</p>
+                          <p className="mt-0.5 truncate text-sm font-semibold">{formatCurrency(target)}</p>
                         </div>
-
                         <div className="col-span-2 rounded-xl bg-muted/40 px-3 py-2.5 sm:col-span-1">
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                            Deadline
-                          </p>
-
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Deadline</p>
                           <div className="mt-0.5 flex items-center gap-1.5">
                             <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-
                             <p className="truncate text-sm font-semibold">
-                              {!goal.deadline
-                                ? 'No deadline'
-                                : daysLeft === null
-                                  ? 'No deadline'
-                                  : daysLeft > 0
-                                    ? `${daysLeft} days left`
-                                    : daysLeft === 0
-                                      ? 'Due today'
-                                      : 'Passed'}
+                              {!goal.deadline ? 'No deadline' : daysLeft === null ? 'No deadline' : daysLeft > 0 ? `${daysLeft} days left` : daysLeft === 0 ? 'Due today' : 'Passed'}
                             </p>
                           </div>
                         </div>
@@ -1255,78 +694,32 @@ export function GoalsList({
                         <div className="mt-4 border-t pt-4">
                           <div className="mb-2.5 flex items-center justify-between gap-2">
                             <div>
-                              <p className="text-sm font-semibold">
-                                Add to this goal
-                              </p>
-
-                              <p className="text-xs text-muted-foreground">
-                                Available:{' '}
-                                {formatCurrency(
-                                  totalSaved
-                                )}
-                              </p>
+                              <p className="text-sm font-semibold">Add to this goal</p>
+                              <p className="text-xs text-muted-foreground">Available: {formatCurrency(totalSaved)}</p>
                             </div>
-
                             {remaining > 0 && (
-                              <span className="hidden text-xs text-muted-foreground sm:block">
-                                Need{' '}
-                                {formatCurrency(
-                                  remaining
-                                )}
-                              </span>
+                              <span className="hidden text-xs text-muted-foreground sm:block">Need {formatCurrency(remaining)}</span>
                             )}
                           </div>
 
                           <div className="flex flex-col gap-2 sm:flex-row">
                             <div className="relative flex-1">
-                              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                                ₱
-                              </span>
-
+                              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
                               <Input
                                 aria-label={`Amount to add to ${goal.name}`}
                                 type="number"
                                 min="0.01"
-                                max={Math.min(
-                                  totalSaved,
-                                  remaining
-                                )}
+                                max={Math.min(totalSaved, remaining)}
                                 step="0.01"
                                 placeholder="Enter amount"
                                 value={allocationValue}
-                                onChange={(e) =>
-                                  setAllocationDraft(
-                                    (draft) => ({
-                                      ...draft,
-                                      [goal.id]:
-                                        e.target.value,
-                                    })
-                                  )
-                                }
-                                disabled={
-                                  isLoading ||
-                                  totalSaved <= 0
-                                }
+                                onChange={(e) => setAllocationDraft((draft) => ({ ...draft, [goal.id]: e.target.value }))}
+                                disabled={isLoading || totalSaved <= 0}
                                 className="h-11 rounded-xl pl-8"
                               />
                             </div>
-
-                            <Button
-                              onClick={() =>
-                                handleAllocate(
-                                  goal
-                                )
-                              }
-                              disabled={
-                                isLoading ||
-                                totalSaved <= 0 ||
-                                remaining <= 0 ||
-                                !allocationValue
-                              }
-                              className="h-11 w-full rounded-xl sm:w-auto sm:min-w-[130px]"
-                            >
-                              <ArrowUpRight className="mr-2 h-4 w-4" />
-                              Add savings
+                            <Button onClick={() => handleAllocate(goal)} disabled={isLoading || totalSaved <= 0 || remaining <= 0 || !allocationValue} className="h-11 w-full rounded-xl sm:w-auto sm:min-w-[130px]">
+                              <ArrowUpRight className="mr-2 h-4 w-4" /> Add savings
                             </Button>
                           </div>
                         </div>
@@ -1337,15 +730,9 @@ export function GoalsList({
                           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
                             <Check className="h-3.5 w-3.5 text-primary" />
                           </div>
-
                           <div>
-                            <p className="text-xs font-semibold text-primary">
-                              Goal completed
-                            </p>
-
-                            <p className="text-[11px] text-muted-foreground">
-                              You reached your savings target.
-                            </p>
+                            <p className="text-xs font-semibold text-primary">Goal completed</p>
+                            <p className="text-[11px] text-muted-foreground">You reached your savings target.</p>
                           </div>
                         </div>
                       )}

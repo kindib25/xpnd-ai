@@ -49,8 +49,6 @@ const money = (value: number) =>
 
 /**
  * Timezone-safe "YYYY-MM" extraction.
- * Avoids `new Date().toISOString()` which shifts month boundaries
- * in negative UTC offsets.
  */
 function monthKey(value: string): string {
   if (!value) return ''
@@ -115,7 +113,7 @@ export function BudgetsList({
     ? 'from-red-500 to-red-400 shadow-[0_0_12px_rgba(239,68,68,0.55)]'
     : isMonthlyApproaching
       ? 'from-amber-400 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.50)]'
-      : 'from-[#c8fb45] to-[#8bef3d] shadow-[0_0_12px_rgba(158,232,45,0.50)]'
+      : 'from-primary to-primary/80 shadow-[0_0_12px_var(--primary)]'
 
   const getBudgetProgress = (budget: any) => {
     const spent = expenses
@@ -153,9 +151,7 @@ export function BudgetsList({
 
     try {
       const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       const { error: saveError } = await supabase
@@ -202,9 +198,7 @@ export function BudgetsList({
 
     try {
       const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       const { error: insertError } = await supabase.from('budgets').insert({
@@ -222,9 +216,7 @@ export function BudgetsList({
       router.refresh()
     } catch (insertError) {
       console.error('[v0] Error adding category budget:', insertError)
-      toast.error(
-        'Could not add category budget. Check that the category is not already listed.'
-      )
+      toast.error('Could not add category budget. Check that the category is not already listed.')
     } finally {
       setIsLoading(false)
     }
@@ -233,11 +225,7 @@ export function BudgetsList({
   // --- Delete --------------------------------------------------------------
   const confirmDeleteBudget = async (id: string, category: string) => {
     const supabase = createClient()
-
-    const { error: deleteError } = await supabase
-      .from('budgets')
-      .delete()
-      .eq('id', id)
+    const { error: deleteError } = await supabase.from('budgets').delete().eq('id', id)
 
     if (deleteError) {
       console.error('[v0] Error deleting budget:', deleteError)
@@ -252,14 +240,8 @@ export function BudgetsList({
   const handleDeleteBudget = (id: string, category: string) => {
     toast.warning(`Delete ${category} budget?`, {
       description: 'This action cannot be undone.',
-      action: {
-        label: 'Delete',
-        onClick: () => confirmDeleteBudget(id, category),
-      },
-      cancel: {
-        label: 'Cancel',
-        onClick: () => { },
-      },
+      action: { label: 'Delete', onClick: () => confirmDeleteBudget(id, category) },
+      cancel: { label: 'Cancel', onClick: () => { } },
     })
   }
 
@@ -278,95 +260,24 @@ export function BudgetsList({
 
   return (
     <div className="space-y-6">
-      {/* =========================================================
-          AMBIENT BACKGROUND — fixed, full-viewport, out of content flow.
-          Colour orbs give the backdrop-blur something real to bite on.
-      ========================================================== */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(120% 120% at 50% 0%, #30333a 0%, #1a1d22 42%, #13161a 72%, #0f1115 100%)',
-          }}
-        />
-
-        {/* Lime orb — primary accent, upper-left */}
-        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-[#9ee82d]/[0.14] blur-[130px]" />
-
-        {/* Violet orb — brand purple, right */}
-        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-[#724bf6]/[0.20] blur-[140px]" />
-
-        {/* Sky/cyan counterweight, bottom */}
-        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/[0.10] blur-[140px]" />
+      {/* AMBIENT BACKGROUND */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-background transition-colors duration-500 dark:bg-[radial-gradient(120%_120%_at_50%_0%,#30333a_0%,#1a1d22_42%,#13161a_72%,#0f1115_100%)]" />
+        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-primary/10 blur-[130px] dark:bg-primary/15" />
+        <div className="absolute -right-40 top-1/3 h-[380px] w-[380px] rounded-full bg-primary/5 blur-[140px] dark:bg-primary/10" />
+        <div className="absolute bottom-[-140px] left-1/3 h-[400px] w-[400px] rounded-full bg-sky-400/10 blur-[140px]" />
       </div>
       
-      {/* =========================================================
-          THIS MONTH OVERVIEW — featured glass card
-      ========================================================== */}
-      <Card
-        className="
-          relative
-          mb-6
-          overflow-hidden
-          rounded-[18px]
-          border
-          border-[#9ee82d]/[0.22]
-          bg-[#0f1115]/[0.55]
-          text-white
-          backdrop-blur-[28px]
-          shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_10px_36px_-24px_rgba(0,0,0,0.40)]
-          md:mb-8
-        "
-      >
-        {/* Lime tint overlay */}
-        <div
-          aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute inset-0
-            bg-[#9ee82d]/[0.14]
-          "
-        />
-
-        {/* Glass gradient */}
-        <div
-          aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute inset-0
-            bg-gradient-to-br
-            from-white/[0.16]
-            via-transparent
-            to-white/[0.03]
-          "
-        />
-
-        {/* Top specular hairline — tinted to the card hue */}
-        <div
-          aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute inset-x-5 top-0
-            h-px
-            bg-gradient-to-r
-            from-transparent
-            via-[#9ee82d]/50
-            to-transparent
-          "
-        />
+      {/* THIS MONTH OVERVIEW */}
+      <Card className="relative mb-6 overflow-hidden rounded-[18px] border border-primary/20 bg-card/80 text-card-foreground backdrop-blur-[28px] shadow-sm md:mb-8 dark:border-primary/40 dark:bg-[#0f1115]/[0.55] dark:text-white dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_10px_36px_-24px_rgba(0,0,0,0.40)]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-primary/5 dark:bg-primary/10" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground/[0.02] via-transparent to-transparent dark:from-white/[0.16] dark:to-white/[0.03]" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
         <CardHeader className="relative z-10 flex flex-row items-center justify-between pb-3 md:pb-4">
           <div>
-            <CardTitle className="text-xs font-bold text-[#b6f04a] md:text-sm">
-              This Month Overview
-            </CardTitle>
-            <p className="mt-1 text-xs text-white/60 md:text-sm">
-              {monthYear}
-            </p>
+            <CardTitle className="text-xs font-bold text-primary md:text-sm">This Month Overview</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground md:text-sm dark:text-white/60">{monthYear}</p>
           </div>
 
           <Button
@@ -374,180 +285,53 @@ export function BudgetsList({
             variant="ghost"
             onClick={() => setEditingMonthly((value) => !value)}
             aria-label="Edit monthly budget"
-            className="
-              group
-              relative
-              cursor-pointer
-              overflow-hidden
-              rounded-full
-              border
-              border-white/[0.14]
-              bg-white/[0.08]
-              px-5
-              py-0
-              text-white/80
-              backdrop-blur-xl
-              transition-[background-color,border-color,color]
-              duration-500
-              ease-[cubic-bezier(0.16,1,0.3,1)]
-              hover:border-white/[0.20]
-              hover:bg-white/[0.14]
-              hover:text-white
-              md:px-8
-            "
+            className="group relative cursor-pointer overflow-hidden rounded-full border border-border bg-background px-5 py-0 text-foreground backdrop-blur-xl transition-all duration-500 hover:bg-foreground/5 md:px-8 dark:border-white/[0.14] dark:bg-white/[0.08] dark:text-white/80 dark:hover:border-white/[0.20] dark:hover:bg-white/[0.14] dark:hover:text-white"
           >
             <span className="relative z-10">Edit</span>
-            {/* Hover sheen — transform-based, compositor-friendly */}
-            <span
-              aria-hidden="true"
-              className="
-                pointer-events-none
-                absolute inset-y-0
-                left-0
-                w-1/2
-                -translate-x-full
-                bg-gradient-to-r
-                from-transparent
-                via-white/[0.10]
-                to-transparent
-                transition-transform
-                duration-500
-                ease-[cubic-bezier(0.16,1,0.3,1)]
-                group-hover:translate-x-[300%]
-              "
-            />
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-1/2 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-500 group-hover:translate-x-[300%] dark:via-white/[0.10]" />
           </Button>
         </CardHeader>
 
         <CardContent className="relative z-10 space-y-4 md:space-y-6">
-          {/* Spending summary */}
           <div className="grid grid-cols-2 gap-4 md:gap-8">
             <div>
-              <p className="mb-1 text-xs font-medium text-white/60 md:mb-2">
-                Total Spent
-              </p>
-              <p className="text-2xl font-bold text-white md:text-3xl">
-                {money(totalSpent)}
-              </p>
+              <p className="mb-1 text-xs font-medium text-muted-foreground md:mb-2 dark:text-white/60">Total Spent</p>
+              <p className="text-2xl font-bold text-foreground md:text-3xl dark:text-white">{money(totalSpent)}</p>
             </div>
-
             <div className="text-right">
-              <p className="mb-1 text-xs font-medium text-white/60 md:mb-2">
-                Budget
-              </p>
-              <p className="text-2xl font-bold text-[#b6f04a] md:text-3xl">
-                {money(monthlyLimit)}
-              </p>
+              <p className="mb-1 text-xs font-medium text-muted-foreground md:mb-2 dark:text-white/60">Budget</p>
+              <p className="text-2xl font-bold text-primary md:text-3xl">{money(monthlyLimit)}</p>
             </div>
           </div>
 
-          {/* Alerts — no blur, contrast-safe text */}
           {isMonthlyOverBudget && (
-            <div
-              className="
-                flex items-start gap-3
-                rounded-lg
-                border border-red-400/30
-                bg-red-500/[0.14]
-                p-3
-                text-sm text-red-100
-              "
-              role="alert"
-            >
-              <span
-                className="
-                  flex h-6 w-6 shrink-0 items-center justify-center
-                  rounded-full
-                  border border-red-400/30
-                  bg-red-500/[0.14]
-                "
-              >
+            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-400/30 dark:bg-red-500/[0.14] dark:text-red-100" role="alert">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-100 dark:border-red-400/30 dark:bg-red-500/[0.14]">
                 <CircleAlert className="size-3.5" aria-hidden="true" />
               </span>
-              <p>
-                <span className="font-semibold">Budget exceeded.</span>{' '}
-                You are {money(totalSpent - monthlyLimit)} over your monthly
-                limit.
-              </p>
+              <p><span className="font-semibold">Budget exceeded.</span> You are {money(totalSpent - monthlyLimit)} over your monthly limit.</p>
             </div>
           )}
 
           {isMonthlyApproaching && (
-            <div
-              className="
-                flex items-start gap-3
-                rounded-lg
-                border border-amber-400/30
-                bg-amber-500/[0.14]
-                p-3
-                text-sm text-amber-100
-              "
-              role="status"
-            >
-              <span
-                className="
-                  flex h-6 w-6 shrink-0 items-center justify-center
-                  rounded-full
-                  border border-amber-400/30
-                  bg-amber-500/[0.14]
-                "
-              >
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/[0.14] dark:text-amber-100" role="status">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-100 dark:border-amber-400/30 dark:bg-amber-500/[0.14]">
                 <AlertTriangle className="size-3.5" aria-hidden="true" />
               </span>
-              <p>
-                <span className="font-semibold">Approaching your limit.</span>{' '}
-                You have used {Math.round(monthlyPercentage)}% of your monthly
-                budget.
-              </p>
+              <p><span className="font-semibold">Approaching your limit.</span> You have used {Math.round(monthlyPercentage)}% of your monthly budget.</p>
             </div>
           )}
 
-          {/* Budget progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs md:text-sm">
-              <p className="text-white/60">Budget Usage</p>
+              <p className="text-muted-foreground dark:text-white/60">Budget Usage</p>
             </div>
-
-            <div
-              className="
-                h-3 w-full
-                overflow-hidden
-                rounded-full
-                border border-white/[0.08]
-                bg-white/[0.10]
-              "
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(monthlyPercentage)}
-              aria-label="Monthly budget usage"
-            >
-              <div
-                className={`
-                  h-full
-                  rounded-full
-                  bg-gradient-to-r
-                  ${monthlyBarTone}
-                  transition-[width,background,box-shadow]
-                  duration-700
-                  ease-[cubic-bezier(0.16,1,0.3,1)]
-                `}
-                style={{ width: `${Math.min(monthlyPercentage, 100)}%` }}
-              />
+            <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-foreground/10 dark:border-white/[0.08] dark:bg-white/[0.10]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(monthlyPercentage)}>
+              <div className={`h-full rounded-full bg-gradient-to-r ${monthlyBarTone} transition-[width,background,box-shadow] duration-700`} style={{ width: `${Math.min(monthlyPercentage, 100)}%` }} />
             </div>
-
             <div className="flex items-center justify-between">
-              <p className="text-xs text-white/60 md:text-sm">
-                {money(Math.max(remaining, 0))} left
-              </p>
-              <p
-                className={`text-xs font-medium md:text-sm ${isMonthlyOverBudget
-                  ? 'text-red-300'
-                  : isMonthlyApproaching
-                    ? 'text-amber-300'
-                    : 'text-[#b6f04a]'
-                  }`}
-              >
+              <p className="text-xs text-muted-foreground md:text-sm dark:text-white/60">{money(Math.max(remaining, 0))} left</p>
+              <p className={`text-xs font-medium md:text-sm ${isMonthlyOverBudget ? 'text-red-500 dark:text-red-300' : isMonthlyApproaching ? 'text-amber-500 dark:text-amber-300' : 'text-primary'}`}>
                 {Math.round(monthlyPercentage)}% used
               </p>
             </div>
@@ -555,239 +339,74 @@ export function BudgetsList({
         </CardContent>
       </Card>
 
-      {/* =========================================================
-          CATEGORY BUDGETS
-      ========================================================== */}
+      {/* CATEGORY BUDGETS */}
       <section>
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">
-              Category Budgets
-            </h2>
-            <p className="text-sm text-white/50">{monthYear}</p>
+            <h2 className="text-xl font-semibold text-foreground dark:text-white">Category Budgets</h2>
+            <p className="text-sm text-muted-foreground dark:text-white/50">{monthYear}</p>
           </div>
 
           {!isAdding && (
             <Button
               size="sm"
-              onClick={() => {
-                setCategoryError('')
-                setIsAdding(true)
-              }}
-              className="
-                cursor-pointer
-                rounded-full
-                border border-white/[0.14]
-                bg-white/[0.08]
-                text-white/80
-                backdrop-blur-xl
-                transition-[background-color,border-color,color]
-                duration-300
-                hover:border-white/[0.20]
-                hover:bg-white/[0.14]
-                hover:text-white
-              "
+              onClick={() => { setCategoryError(''); setIsAdding(true) }}
+              className="cursor-pointer rounded-full border border-border bg-background text-foreground backdrop-blur-xl transition-all duration-300 hover:bg-foreground/5 dark:border-white/[0.14] dark:bg-white/[0.08] dark:text-white/80 dark:hover:border-white/[0.20] dark:hover:bg-white/[0.14] dark:hover:text-white"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Add category
+              <Plus className="mr-2 h-4 w-4" /> Add category
             </Button>
           )}
         </div>
 
         <div>
           {budgets.length === 0 ? (
-            <div
-              className="
-                rounded-xl
-                border border-white/[0.10]
-                bg-white/[0.05]
-                p-8
-                text-center
-                text-white/60
-                shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
-              "
-            >
+            <div className="rounded-xl border border-border bg-card/50 p-8 text-center text-muted-foreground shadow-sm dark:border-white/[0.10] dark:bg-white/[0.05] dark:text-white/60 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
               No category budgets set yet.
             </div>
           ) : (
             <div className="space-y-4">
-
               {budgets.map((budget) => {
                 const progress = getBudgetProgress(budget);
                 const isOverBudget = progress.spent > progress.limit;
-                const isApproaching =
-                  progress.percentage >= 80 && !isOverBudget;
+                const isApproaching = progress.percentage >= 80 && !isOverBudget;
 
                 return (
-                  <div
-                    key={budget.id}
-                    className="
-        group relative isolate overflow-hidden
-        rounded-[20px] p-4 md:p-5
+                  <div key={budget.id} className="group relative isolate overflow-hidden rounded-[20px] p-4 md:p-5 border border-border bg-card/80 backdrop-blur-xl shadow-sm transition-all duration-700 hover:-translate-y-1 hover:bg-card dark:border-white/[0.14] dark:bg-white/[0.075] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)] dark:hover:border-white/[0.24] dark:hover:bg-white/[0.12]">
+                    <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground/[0.02] via-transparent to-transparent opacity-70 dark:from-white/[0.10] dark:to-white/[0.015]" />
+                    <div aria-hidden="true" className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent opacity-70 dark:via-white/40" />
+                    <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-primary/5 blur-2xl dark:bg-white/[0.06]" />
 
-        border border-white/[0.14]
-        bg-white/[0.075]
-        backdrop-blur-xl
-
-        shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_40px_-18px_rgba(0,0,0,0.55)]
-
-        transition-all duration-700
-        ease-[cubic-bezier(0.16,1,0.3,1)]
-
-        hover:-translate-y-1
-        hover:border-white/[0.24]
-        hover:bg-white/[0.12]
-        hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_20px_55px_-18px_rgba(0,0,0,0.65)]
-      "
-                  >
-                    {/* Glass surface gradient */}
-                    <div
-                      aria-hidden="true"
-                      className="
-          pointer-events-none absolute inset-0
-          bg-gradient-to-br
-          from-white/[0.10]
-          via-transparent
-          to-white/[0.015]
-          opacity-70
-        "
-                    />
-
-                    {/* Top edge reflection */}
-                    <div
-                      aria-hidden="true"
-                      className="
-          pointer-events-none absolute inset-x-4 top-0
-          h-px bg-gradient-to-r
-          from-transparent via-white/40 to-transparent
-          opacity-70
-        "
-                    />
-
-                    {/* Soft corner glow */}
-                    <div
-                      aria-hidden="true"
-                      className="
-          pointer-events-none absolute -right-12 -top-12
-          h-28 w-28 rounded-full
-          bg-white/[0.06] blur-2xl
-        "
-                    />
-
-                    {/* Foreground content */}
                     <div className="relative z-10 flex items-center gap-4">
-                      {/* Category icon */}
-                      <div
-                        className="
-            flex h-16 w-16 shrink-0 items-center
-            justify-center rounded-xl
-
-            border border-white/[0.10]
-            bg-white/[0.06]
-            text-white/70
-
-            shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
-            transition-colors duration-500
-            group-hover:bg-white/[0.10]
-          "
-                      >
-                        <span className="text-2xl">
-                          {budget.category.charAt(0)}
-                        </span>
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-border bg-foreground/5 text-muted-foreground shadow-sm transition-colors duration-500 group-hover:bg-foreground/10 dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-white/70 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:group-hover:bg-white/[0.10]">
+                        <span className="text-2xl text-foreground dark:text-white">{budget.category.charAt(0)}</span>
                       </div>
 
-                      {/* Budget details */}
                       <div className="min-w-0 flex-1">
-                        {/* Category and percentage */}
                         <div className="flex items-center justify-between gap-3">
-                          <h3 className="truncate font-semibold text-white">
-                            {budget.category}
-                          </h3>
-
-                          <span
-                            className={
-                              isOverBudget
-                                ? "shrink-0 font-semibold text-red-400"
-                                : isApproaching
-                                  ? "shrink-0 font-semibold text-amber-300"
-                                  : "shrink-0 font-semibold text-white/80"
-                            }
-                          >
+                          <h3 className="truncate font-semibold text-foreground dark:text-white">{budget.category}</h3>
+                          <span className={isOverBudget ? "shrink-0 font-semibold text-red-500 dark:text-red-400" : isApproaching ? "shrink-0 font-semibold text-amber-500 dark:text-amber-300" : "shrink-0 font-semibold text-muted-foreground dark:text-white/80"}>
                             {Math.round(progress.percentage)}%
                           </span>
                         </div>
 
-                        {/* Spent amount and delete button */}
                         <div className="mt-1 flex items-center justify-between gap-3">
-                          <p className="text-sm text-white/50">
-                            {money(progress.spent)} / {money(progress.limit)}
-                          </p>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="
-                h-7 w-7 shrink-0 p-0
-                text-white/40
-                transition-colors
-                hover:bg-red-500/10
-                hover:text-red-400
-              "
-                            onClick={() =>
-                              handleDeleteBudget(
-                                budget.id,
-                                budget.category
-                              )
-                            }
-                            aria-label={`Delete ${budget.category} budget`}
-                          >
+                          <p className="text-sm text-muted-foreground dark:text-white/50">{money(progress.spent)} / {money(progress.limit)}</p>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 shrink-0 p-0 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:text-white/40 dark:hover:bg-red-500/10 dark:hover:text-red-400" onClick={() => handleDeleteBudget(budget.id, budget.category)} aria-label={`Delete ${budget.category} budget`}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
 
-                        {/* Progress bar */}
-                        <Progress
-                          value={progress.percentage}
-                          className={`
-              mt-3 h-2 overflow-hidden
-              bg-white/[0.10]
+                        <Progress value={progress.percentage} className={`mt-3 h-2 overflow-hidden bg-foreground/10 dark:bg-white/[0.10] ${isOverBudget ? "[&>div]:!bg-red-400" : ""} ${isApproaching ? "[&>div]:!bg-amber-300" : "[&>div]:!bg-primary"}`} />
 
-              ${isOverBudget ? "[&>div]:!bg-red-400" : ""}
-              ${isApproaching ? "[&>div]:!bg-amber-300" : ""}
-            `}
-                        />
-
-                        {/* Over-budget warning */}
                         {isOverBudget && (
-                          <p
-                            className="
-                mt-2 flex items-center gap-2
-                text-xs font-medium text-red-400
-              "
-                            role="alert"
-                          >
-                            <CircleAlert
-                              className="size-3.5 shrink-0"
-                              aria-hidden="true"
-                            />
-                            Over by {money(progress.spent - progress.limit)}
+                          <p className="mt-2 flex items-center gap-2 text-xs font-medium text-red-500 dark:text-red-400" role="alert">
+                            <CircleAlert className="size-3.5 shrink-0" aria-hidden="true" /> Over by {money(progress.spent - progress.limit)}
                           </p>
                         )}
 
-                        {/* Approaching-limit warning */}
                         {isApproaching && (
-                          <p
-                            className="
-                mt-2 flex items-center gap-2
-                text-xs font-medium text-amber-300
-              "
-                            role="status"
-                          >
-                            <AlertTriangle
-                              className="size-3.5 shrink-0"
-                              aria-hidden="true"
-                            />
-                            Approaching this category limit
+                          <p className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-500 dark:text-amber-300" role="status">
+                            <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" /> Approaching this category limit
                           </p>
                         )}
                       </div>
@@ -800,138 +419,31 @@ export function BudgetsList({
         </div>
       </section>
 
-      {/* =========================================================
-          EDIT MONTHLY BUDGET — glass modal
-      ========================================================== */}
+      {/* EDIT MONTHLY BUDGET MODAL */}
       {editingMonthly && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
-          onClick={closeMonthlyModal}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="monthly-modal-title"
-            onClick={(event) => event.stopPropagation()}
-            className="
-              relative w-full max-w-md
-              overflow-hidden
-              rounded-2xl
-              border border-white/[0.14]
-              bg-[#0f1115]/[0.72]
-              p-6
-              text-white
-              backdrop-blur-2xl
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-30px_rgba(0,0,0,0.9)]
-            "
-          >
-            {/* Top specular */}
-            <div
-              aria-hidden="true"
-              className="
-                pointer-events-none absolute inset-x-6 top-0
-                h-px
-                bg-gradient-to-r from-transparent via-white/40 to-transparent
-              "
-            />
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm" onClick={closeMonthlyModal}>
+          <div role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()} className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background/95 p-6 text-foreground backdrop-blur-2xl shadow-xl dark:border-white/[0.14] dark:bg-[#0f1115]/[0.72] dark:text-white dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-30px_rgba(0,0,0,0.9)]">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent dark:via-white/40" />
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2
-                  id="monthly-modal-title"
-                  className="text-base font-semibold text-white md:text-lg"
-                >
-                  Edit Monthly Budget
-                </h2>
-                <p className="text-xs text-white/50 md:text-sm">
-                  Set your budget limit for {monthYear}
-                </p>
+                <h2 className="text-base font-semibold text-foreground md:text-lg dark:text-white">Edit Monthly Budget</h2>
+                <p className="text-xs text-muted-foreground md:text-sm dark:text-white/50">Set your budget limit for {monthYear}</p>
               </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={closeMonthlyModal}
-                disabled={isLoading}
-                aria-label="Close"
-                className="
-                  rounded-full
-                  bg-white/[0.08]
-                  text-white/70
-                  transition-colors
-                  hover:bg-red-500/[0.20]
-                  hover:text-red-200
-                "
-              >
+              <Button type="button" variant="ghost" size="icon" onClick={closeMonthlyModal} disabled={isLoading} className="rounded-full bg-foreground/5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:bg-white/[0.08] dark:text-white/70 dark:hover:bg-red-500/[0.20] dark:hover:text-red-200">
                 <X className="h-5 w-5" />
               </Button>
             </div>
 
             <form onSubmit={saveMonthlyBudget} className="space-y-4">
               <div className="space-y-2">
-                <Label
-                  htmlFor="monthly-amount"
-                  className="text-xs font-medium text-white md:text-sm"
-                >
-                  Monthly budget limit
-                </Label>
-
-                <Input
-                  id="monthly-amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={monthlyAmount}
-                  onChange={(event) => setMonthlyAmount(event.target.value)}
-                  disabled={isLoading}
-                  placeholder="10000"
-                  autoFocus
-                  className="
-                    h-11
-                    border-white/[0.14]
-                    bg-white/[0.06]
-                    text-white
-                    placeholder:text-white/40
-                  "
-                />
+                <Label htmlFor="monthly-amount" className="text-xs font-medium text-foreground md:text-sm dark:text-white">Monthly budget limit</Label>
+                <Input id="monthly-amount" type="number" min="0.01" step="0.01" value={monthlyAmount} onChange={(event) => setMonthlyAmount(event.target.value)} disabled={isLoading} placeholder="10000" autoFocus className="h-11 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-white/[0.14] dark:bg-white/[0.06] dark:text-white dark:placeholder:text-white/40" />
               </div>
-
               {monthlyError && (
-                <p
-                  className="
-                    rounded-lg
-                    border border-red-400/30
-                    bg-red-500/[0.14]
-                    px-3 py-2
-                    text-sm text-red-200
-                  "
-                  role="alert"
-                >
-                  {monthlyError}
-                </p>
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-400/30 dark:bg-red-500/[0.14] dark:text-red-200" role="alert">{monthlyError}</p>
               )}
-
               <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="
-                    h-11 w-full
-                    rounded-xl
-                    border border-[#9ee82d]/25
-                    bg-[#9ee82d]
-                    font-semibold
-                    text-[#11131c]
-                    shadow-[0_8px_24px_-12px_rgba(158,232,45,0.65),inset_0_1px_0_rgba(255,255,255,0.45)]
-                    transition-all
-                    duration-300
-                    hover:bg-[#b0f34b]
-                    hover:shadow-[0_10px_30px_-12px_rgba(158,232,45,0.75)]
-                    disabled:opacity-50
-                    sm:w-auto
-                  "
-                >
+                <Button type="submit" disabled={isLoading} className="h-11 w-full rounded-xl border border-primary/30 bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50 sm:w-auto">
                   {isLoading ? 'Saving...' : 'Save Budget'}
                 </Button>
               </div>
@@ -940,168 +452,47 @@ export function BudgetsList({
         </div>
       )}
 
-      {/* =========================================================
-          ADD CATEGORY BUDGET — glass modal
-      ========================================================== */}
+      {/* ADD CATEGORY BUDGET MODAL */}
       {isAdding && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
-          onClick={closeAddModal}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="add-category-modal-title"
-            onClick={(event) => event.stopPropagation()}
-            className="
-              relative w-full max-w-md
-              overflow-hidden
-              rounded-2xl
-              border border-white/[0.14]
-              bg-[#0f1115]/[0.72]
-              p-6
-              text-white
-              backdrop-blur-2xl
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-30px_rgba(0,0,0,0.9)]
-            "
-          >
-            <div
-              aria-hidden="true"
-              className="
-                pointer-events-none absolute inset-x-6 top-0
-                h-px
-                bg-gradient-to-r from-transparent via-white/40 to-transparent
-              "
-            />
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm" onClick={closeAddModal}>
+          <div role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()} className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background/95 p-6 text-foreground backdrop-blur-2xl shadow-xl dark:border-white/[0.14] dark:bg-[#0f1115]/[0.72] dark:text-white dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_30px_80px_-30px_rgba(0,0,0,0.9)]">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent dark:via-white/40" />
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2
-                  id="add-category-modal-title"
-                  className="text-lg font-semibold text-white"
-                >
-                  Add Category Budget
-                </h2>
-                <p className="text-sm text-white/50">
-                  Set a budget for a spending category
-                </p>
+                <h2 className="text-lg font-semibold text-foreground dark:text-white">Add Category Budget</h2>
+                <p className="text-sm text-muted-foreground dark:text-white/50">Set a budget for a spending category</p>
               </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={closeAddModal}
-                disabled={isLoading}
-                aria-label="Close"
-                className="
-                  rounded-full
-                  bg-white/[0.08]
-                  text-white/70
-                  transition-colors
-                  hover:bg-red-500/[0.20]
-                  hover:text-red-200
-                "
-              >
+              <Button type="button" variant="ghost" size="icon" onClick={closeAddModal} disabled={isLoading} className="rounded-full bg-foreground/5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:bg-white/[0.08] dark:text-white/70 dark:hover:bg-red-500/[0.20] dark:hover:text-red-200">
                 <X className="h-5 w-5" />
               </Button>
             </div>
 
             <form onSubmit={handleAddBudget} className="space-y-4">
-              {/* Category */}
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-white/80">
-                  Category
-                </Label>
-
-                <Select
-                  value={newCategory}
-                  onValueChange={(value) => setNewCategory(value || '')}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger
-                    id="category"
-                    className="
-                      h-11
-                      border-white/[0.14]
-                      bg-white/[0.06]
-                      text-white
-                    "
-                  >
+                <Label htmlFor="category" className="text-foreground/80 dark:text-white/80">Category</Label>
+                <Select value={newCategory} onValueChange={(value) => setNewCategory(value || '')} disabled={isLoading}>
+                  <SelectTrigger id="category" className="h-11 border-border bg-background text-foreground dark:border-white/[0.14] dark:bg-white/[0.06] dark:text-white">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
-
                   <SelectContent>
-                    {CATEGORIES.filter(
-                      (category) =>
-                        !budgets.some(
-                          (budget) => budget.category === category
-                        )
-                    ).map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
+                    {CATEGORIES.filter((category) => !budgets.some((budget) => budget.category === category)).map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Amount */}
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-white/80">
-                  Budget Amount
-                </Label>
-
-                <Input
-                  id="amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="1000"
-                  value={newAmount}
-                  onChange={(event) => setNewAmount(event.target.value)}
-                  disabled={isLoading}
-                  className="
-                    h-11
-                    border-white/[0.14]
-                    bg-white/[0.06]
-                    text-white
-                    placeholder:text-white/40
-                  "
-                />
+                <Label htmlFor="amount" className="text-foreground/80 dark:text-white/80">Budget Amount</Label>
+                <Input id="amount" type="number" min="0.01" step="0.01" placeholder="1000" value={newAmount} onChange={(event) => setNewAmount(event.target.value)} disabled={isLoading} className="h-11 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-white/[0.14] dark:bg-white/[0.06] dark:text-white dark:placeholder:text-white/40" />
               </div>
 
               {categoryError && (
-                <p
-                  className="
-                    rounded-lg
-                    border border-red-400/30
-                    bg-red-500/[0.14]
-                    px-3 py-2
-                    text-sm text-red-200
-                  "
-                  role="alert"
-                >
-                  {categoryError}
-                </p>
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-400/30 dark:bg-red-500/[0.14] dark:text-red-200" role="alert">{categoryError}</p>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="submit"
-                  disabled={isLoading || !newCategory || !newAmount}
-                  className="
-                    cursor-pointer
-                    rounded-xl
-                    bg-primary
-                    px-5 py-2.5
-                    font-semibold
-                    text-primary-foreground
-                    transition-colors
-                    hover:bg-primary/90
-                    disabled:opacity-50
-                  "
-                >
+                <Button type="submit" disabled={isLoading || !newCategory || !newAmount} className="cursor-pointer rounded-xl border border-primary/30 bg-primary px-5 py-2.5 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">
                   {isLoading ? 'Adding...' : 'Add Budget'}
                 </Button>
               </div>

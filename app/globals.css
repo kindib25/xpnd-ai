@@ -48,44 +48,39 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* 1. DEFAULT THEME IS NOW DARK MODE */
+/* 1. DEFAULT THEME IS LIGHT MODE */
 :root {
-  color-scheme: dark;
-  --background: #040613;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #9ee82d;
-  --primary-foreground: #0f172a;
-  --secondary: #334155;
-  --secondary-foreground: #f1f5f9;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --accent: #10b981;
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #724bf6; /* Default Accent (Violet) */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
   --accent-foreground: #0f172a;
   --destructive: #ef4444;
-  --border: #334155;
-  --input: #334155;
-  --ring: #64748b;
-  --chart-1: #3b82f6;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #a78bfa;
-  --sidebar: #1e293b;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #3b82f6;
-  --sidebar-primary-foreground: #0f172a;
-  --sidebar-accent: #10b981;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #724bf6;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #724bf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
   --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #334155;
-  --sidebar-ring: #64748b;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #724bf6;
   --radius: 0.75rem;
 }
 
-/* Keep the .dark class for Shadcn compatibility */
+/* 2. DARK MODE (Your original colors) */
 .dark {
   color-scheme: dark;
   --background: #040613;
@@ -94,7 +89,7 @@
   --card-foreground: #f1f5f9;
   --popover: #1e293b;
   --popover-foreground: #f1f5f9;
-  --primary: #9ee82d;
+  --primary: #724bf6; /* Default Accent (Violet) */
   --primary-foreground: #0f172a;
   --secondary: #334155;
   --secondary-foreground: #f1f5f9;
@@ -105,7 +100,7 @@
   --destructive: #ef4444;
   --border: #334155;
   --input: #334155;
-  --ring: #64748b;
+  --ring: #724bf6;
   --chart-1: #3b82f6;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
@@ -113,13 +108,23 @@
   --chart-5: #a78bfa;
   --sidebar: #1e293b;
   --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #3b82f6;
+  --sidebar-primary: #724bf6;
   --sidebar-primary-foreground: #0f172a;
   --sidebar-accent: #10b981;
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #334155;
-  --sidebar-ring: #64748b;
+  --sidebar-ring: #724bf6;
 }
+
+/* 3. ACCENT COLOR OVERRIDES */
+[data-accent="violet"] { --primary: #724bf6; --ring: #724bf6; --primary-foreground: #ffffff; }
+[data-accent="blue"] { --primary: #3b82f6; --ring: #3b82f6; --primary-foreground: #ffffff; }
+[data-accent="emerald"] { --primary: #10b981; --ring: #10b981; --primary-foreground: #ffffff; }
+[data-accent="rose"] { --primary: #f43f5e; --ring: #f43f5e; --primary-foreground: #ffffff; }
+[data-accent="orange"] { --primary: #f97316; --ring: #f97316; --primary-foreground: #ffffff; }
+[data-accent="cyan"] { --primary: #06b6d4; --ring: #06b6d4; --primary-foreground: #ffffff; }
+[data-accent="lime"] { --primary: #9ee82d; --ring: #9ee82d; --primary-foreground: #17200a; } /* Dark text for lime */
+
 
 /* 2. REMOVED THE @media (prefers-color-scheme: dark) BLOCK ENTIRELY */
 
@@ -334,50 +339,61 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  /* allow clicks to pass through */
   z-index: 0;
+  /* Base background — flips with theme */
+  background: var(--background);
+}
+
+/* Dark mode: original dark base */
+.dark .ai-grid-background {
   background: #07070b;
 }
 
-/* Moving Grid */
+/* Grid lines — dark on light, light on dark */
 .grid-layer {
   position: absolute;
   inset: -100%;
   background-image:
-    linear-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
   background-size: 50px 50px;
-  transform:
-    perspective(900px) rotateX(72deg);
-  animation:
-    gridMove 18s linear infinite;
-  opacity: .45;
+  transform: perspective(900px) rotateX(72deg);
+  animation: gridMove 18s linear infinite;
+  opacity: 0.45;
 }
 
-/* Purple / Blue Glow */
+.dark .grid-layer {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+/* Glow — now follows the chosen accent color */
 .glow-layer {
   position: absolute;
   inset: -20%;
-  background:
-    radial-gradient(circle at center,
-      rgba(120, 90, 255, .25),
-      rgba(80, 120, 255, .12),
-      transparent 65%);
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--primary) 25%, transparent),
+    color-mix(in srgb, var(--primary) 12%, transparent),
+    transparent 65%
+  );
   filter: blur(80px);
-  animation:
-    glowFloat 10s ease-in-out infinite;
+  animation: glowFloat 10s ease-in-out infinite;
 }
 
-/* Film Grain */
+/* Noise — dark speckle on light, light speckle on dark */
 .noise-layer {
   position: absolute;
   inset: 0;
-  opacity: .035;
-  background-image:
-    radial-gradient(circle, white 1px, transparent 1px);
+  opacity: 0.035;
+  background-image: radial-gradient(circle, black 1px, transparent 1px);
   background-size: 4px 4px;
-  animation:
-    noiseMove .25s steps(2) infinite;
+  animation: noiseMove 0.25s steps(2) infinite;
+}
+
+.dark .noise-layer {
+  background-image: radial-gradient(circle, white 1px, transparent 1px);
 }
 
 /* ========================= */
@@ -456,9 +472,9 @@
 }
 
 /* Grid Pattern */
-.bg-grid{
+.bg-grid {
   background-image:
-      linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
-  background-size:40px 40px;
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
 }

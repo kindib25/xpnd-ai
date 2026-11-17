@@ -30,48 +30,52 @@ export function FinancePageNavigation() {
       {/* Page Title Trigger */}
       <SheetTrigger
         className="
-    group
-    -ml-2
-    inline-flex
-    items-center
-    gap-2
-    rounded-2xl
-    border
-    border-white/30
-    bg-white/[0.03]
-    px-6
-    py-4
-    text-3xl
-    font-bold
-    tracking-tight
-    text-foreground
-    outline-none
-    transition-all
-    duration-200
-    hover:border-white/[0.14]
-    hover:bg-white/[0.05]
-    focus-visible:ring-2
-    focus-visible:ring-primary/30
-    md:text-4xl
-    cursor-pointer
-  "
+          group
+          -ml-2
+          inline-flex
+          items-center
+          gap-2
+          rounded-2xl
+          border
+          border-border
+          bg-card/50
+          px-6
+          py-4
+          text-3xl
+          font-bold
+          tracking-tight
+          text-foreground
+          outline-none
+          transition-all
+          duration-200
+          hover:bg-foreground/5
+          focus-visible:ring-2
+          focus-visible:ring-primary/30
+          md:text-4xl
+          cursor-pointer
+          dark:border-white/30
+          dark:bg-white/[0.03]
+          dark:hover:border-white/[0.14]
+          dark:hover:bg-white/[0.05]
+        "
       >
         <span>{currentTitle}</span>
 
         <Menu
           className="
-      h-5
-      w-5
-      ml-2
-      text-muted-foreground
-      transition-transform
-      duration-200
-      group-data-[state=open]:rotate-180
-      group-data-[state=open]:text-foreground
-      md:h-6
-      md:w-6
-      cursor-pointer
-    "
+            h-5
+            w-5
+            ml-2
+            text-muted-foreground
+            transition-transform
+            duration-200
+            group-data-[state=open]:rotate-180
+            group-data-[state=open]:text-foreground
+            md:h-6
+            md:w-6
+            cursor-pointer
+            dark:group-data-[state=open]:text-white
+          "
         />
       </SheetTrigger>
 
@@ -80,24 +84,27 @@ export function FinancePageNavigation() {
         side="bottom"
         className="
           rounded-t-3xl
-          border-white/[0.06]
-          bg-[#0E141C]/95
+          border-border
+          bg-background/95
           px-4
           pb-8
           pt-5
-          shadow-[0_-24px_60px_-15px_rgba(0,0,0,0.85)]
+          shadow-xl
           backdrop-blur-xl
+          dark:border-white/[0.06]
+          dark:bg-[#0E141C]/95
+          dark:shadow-[0_-24px_60px_-15px_rgba(0,0,0,0.85)]
         "
       >
         {/* Drag indicator */}
-        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/15" />
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-foreground/15 dark:bg-white/15" />
 
         <SheetHeader className="mb-5 text-left">
-          <SheetTitle className="text-lg font-semibold text-white">
+          <SheetTitle className="text-lg font-semibold text-foreground dark:text-white">
             Manage finances
           </SheetTitle>
 
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-muted-foreground dark:text-white/40">
             Choose what you want to manage
           </p>
         </SheetHeader>
@@ -117,9 +124,10 @@ export function FinancePageNavigation() {
               py-3.5
               outline-none
               transition-colors
-              ${isBudgetPage
-                ? "border-primary/20 bg-primary/[0.08]"
-                : "border-white/[0.05] bg-white/[0.02]"
+              ${
+                isBudgetPage
+                  ? "border-primary/30 bg-primary/[0.08]"
+                  : "border-border bg-foreground/[0.02] dark:border-white/[0.05] dark:bg-white/[0.02]"
               }
             `}
           >
@@ -133,9 +141,10 @@ export function FinancePageNavigation() {
                 items-center
                 justify-center
                 rounded-xl
-                ${isBudgetPage
-                  ? "bg-primary/15 text-primary"
-                  : "bg-white/[0.05] text-white/50"
+                ${
+                  isBudgetPage
+                    ? "bg-primary/15 text-primary"
+                    : "bg-foreground/5 text-muted-foreground dark:bg-white/[0.05] dark:text-white/50"
                 }
               `}
             >
@@ -148,16 +157,17 @@ export function FinancePageNavigation() {
                 className={`
                   text-sm
                   font-medium
-                  ${isBudgetPage
-                    ? "text-white"
-                    : "text-white/85"
+                  ${
+                    isBudgetPage
+                      ? "text-primary"
+                      : "text-foreground dark:text-white/85"
                   }
                 `}
               >
                 Budget
               </p>
 
-              <p className="mt-0.5 text-xs text-white/35">
+              <p className="mt-0.5 text-xs text-muted-foreground dark:text-white/35">
                 Manage your spending
               </p>
             </div>
@@ -182,9 +192,10 @@ export function FinancePageNavigation() {
               py-3.5
               outline-none
               transition-colors
-              ${isGoalsPage
-                ? "border-primary/20 bg-primary/[0.08]"
-                : "border-white/[0.05] bg-white/[0.02]"
+              ${
+                isGoalsPage
+                  ? "border-primary/30 bg-primary/[0.08]"
+                  : "border-border bg-foreground/[0.02] dark:border-white/[0.05] dark:bg-white/[0.02]"
               }
             `}
           >
@@ -198,9 +209,10 @@ export function FinancePageNavigation() {
                 items-center
                 justify-center
                 rounded-xl
-                ${isGoalsPage
-                  ? "bg-primary/15 text-primary"
-                  : "bg-white/[0.05] text-white/50"
+                ${
+                  isGoalsPage
+                    ? "bg-primary/15 text-primary"
+                    : "bg-foreground/5 text-muted-foreground dark:bg-white/[0.05] dark:text-white/50"
                 }
               `}
             >
@@ -213,16 +225,17 @@ export function FinancePageNavigation() {
                 className={`
                   text-sm
                   font-medium
-                  ${isGoalsPage
-                    ? "text-white"
-                    : "text-white/85"
+                  ${
+                    isGoalsPage
+                      ? "text-primary"
+                      : "text-foreground dark:text-white/85"
                   }
                 `}
               >
                 Savings Goals
               </p>
 
-              <p className="mt-0.5 text-xs text-white/35">
+              <p className="mt-0.5 text-xs text-muted-foreground dark:text-white/35">
                 Track your savings
               </p>
             </div>
