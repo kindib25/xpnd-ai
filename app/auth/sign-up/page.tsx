@@ -5,63 +5,83 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import DashboardBackground from '@/components/dashboard-background'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    const supabase = createClient()
-
-    setIsLoading(true)
     setError(null)
 
+    const trimmedEmail = email.trim()
+
+    // ---- Client-side validation (run BEFORE setting loading) ----
     if (password !== repeatPassword) {
       setError('Passwords do not match')
-      setIsLoading(false)
       return
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
-      setIsLoading(false)
       return
     }
 
+    setIsLoading(true)
+
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
+      const redirectTo =
+        process.env.NODE_ENV === 'development' &&
+        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
+          ? process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
+          : `${window.location.origin}/auth/callback?next=/dashboard`
+
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
         password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback?next=/dashboard`,
-        },
+        options: { emailRedirectTo: redirectTo },
       })
 
       if (error) throw error
 
+      // ---- Duplicate email detection ----
+      // When email confirmation is ON, Supabase returns a fake user object
+      // (with an empty `identities` array) for an existing email instead of
+      // throwing an error. Detect that and surface a real message.
+      if (data.user && (data.user.identities?.length ?? 0) === 0) {
+        setError(
+          'An account with this email already exists. Please log in instead.',
+        )
+        return
+      }
+
+      // ---- Confirmation OFF: user is signed in immediately ----
+      if (data.session) {
+        router.replace('/dashboard')
+        router.refresh()
+        return
+      }
+
+      // ---- Confirmation ON: no session yet, tell user to check email ----
       router.push('/auth/sign-up-success')
-    } catch (error: unknown) {
-      setError(
-        error instanceof Error ? error.message : 'An error occurred',
-      )
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleGoogleSignUp = async () => {
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
@@ -72,8 +92,8 @@ export default function SignUpPage() {
         options: { redirectTo: redirectUrl },
       })
       if (error) throw error
-    } catch (error: unknown) {
-      console.error('Google Sign-In Error:', error)
+    } catch (err: unknown) {
+      console.error('Google Sign-In Error:', err)
       setError('Google sign-in could not be started. Please try again.')
       setIsLoading(false)
     }
@@ -126,6 +146,7 @@ export default function SignUpPage() {
               id="email"
               type="email"
               placeholder="you@example.com"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -143,16 +164,33 @@ export default function SignUpPage() {
               Password
             </label>
 
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              className="h-[56px] rounded-[10px] border-border bg-background px-4 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="h-[56px] rounded-[10px] border-border bg-background px-4 pr-12 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white/40 dark:hover:text-white"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Confirm Password */}
@@ -164,16 +202,46 @@ export default function SignUpPage() {
               Confirm Password
             </label>
 
-            <Input
-              id="repeat-password"
-              type="password"
-              placeholder="Re-enter your password"
-              required
-              value={repeatPassword}
-              onChange={(e) => setRepeatPassword(e.target.value)}
-              disabled={isLoading}
-              className="h-[56px] rounded-[10px] border-border bg-background px-4 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
-            />
+            <div className="relative">
+              <Input
+                id="repeat-password"
+                type={showRepeatPassword ? 'text' : 'password'}
+                placeholder="Re-enter your password"
+                autoComplete="new-password"
+                required
+                value={repeatPassword}
+                onChange={(e) => setRepeatPassword(e.target.value)}
+                disabled={isLoading}
+                aria-invalid={
+                  repeatPassword.length > 0 && repeatPassword !== password
+                    ? true
+                    : undefined
+                }
+                className="h-[56px] rounded-[10px] border-border bg-background px-4 pr-12 text-[16px] text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/30 dark:border-white/[0.10] dark:bg-white/[0.035] dark:text-white dark:placeholder:text-white/35"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowRepeatPassword(!showRepeatPassword)}
+                disabled={isLoading}
+                aria-label={
+                  showRepeatPassword ? 'Hide password' : 'Show password'
+                }
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white/40 dark:hover:text-white"
+              >
+                {showRepeatPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+
+            {repeatPassword.length > 0 && repeatPassword !== password && (
+              <p className="mt-1.5 text-[13px] text-red-500 dark:text-red-400">
+                Passwords do not match
+              </p>
+            )}
           </div>
 
           {/* Error */}
